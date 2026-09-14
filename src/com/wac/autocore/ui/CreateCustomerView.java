@@ -7,6 +7,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 
+//formulär för att skapa nya kunder
 public class CreateCustomerView extends VBox {
 
     public CreateCustomerView() {
@@ -15,6 +16,8 @@ public class CreateCustomerView extends VBox {
         Label title = new Label("Create customer");
         title.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
 
+
+        //kunduppgifter
         TextField nameField = new TextField();
         TextField phoneField = new TextField();
         TextField emailField = new TextField();
@@ -36,6 +39,8 @@ public class CreateCustomerView extends VBox {
                     "Customer created successfully.\n" + customer
             );
 
+
+// fälten töms så att nästa kund kan registreras
             nameField.clear();
             phoneField.clear();
             emailField.clear();

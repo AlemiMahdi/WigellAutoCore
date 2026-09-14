@@ -10,16 +10,20 @@ import javafx.scene.control.TableView;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
+//befintliga kunder
 public class CustomerView extends VBox {
 
     public CustomerView() {
         setSpacing(15);
 
+
         Label title = new Label("Customers");
         title.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
 
+        //Varje rad i tabellen representerar en kund
         TableView<Customer> table = new TableView<>();
 
+        //kolumneran kopplas till kundens uppgifter
         TableColumn<Customer, String> idColumn = new TableColumn<>("ID");
         idColumn.setCellValueFactory(cell ->
                 new ReadOnlyStringWrapper(
@@ -51,6 +55,7 @@ public class CustomerView extends VBox {
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         table.setPlaceholder(new Label("No customers found."));
 
+        //hämtar kundlistan när vyn skapas.
         table.setItems(
                 FXCollections.observableArrayList(Database.getCustomers())
         );
