@@ -27,8 +27,6 @@ public class ShowBookingsView {
 
         TableView<Booking> table = new TableView<>();
 
-
-        // ID
         TableColumn<Booking, Integer> idColumn =
                 new TableColumn<>("ID");
 
@@ -36,8 +34,6 @@ public class ShowBookingsView {
                 new PropertyValueFactory<Booking, Integer>("id")
         );
 
-
-        // Vehicle ID
         TableColumn<Booking, Integer> vehicleColumn =
                 new TableColumn<>("Vehicle ID");
 
@@ -45,8 +41,6 @@ public class ShowBookingsView {
                 new PropertyValueFactory<Booking, Integer>("vehicleId")
         );
 
-
-        // Date
         TableColumn<Booking, LocalDate> dateColumn =
                 new TableColumn<>("Date");
 
@@ -54,8 +48,6 @@ public class ShowBookingsView {
                 new PropertyValueFactory<Booking, LocalDate>("date")
         );
 
-
-        // Description
         TableColumn<Booking, String> descriptionColumn =
                 new TableColumn<>("Description");
 
@@ -63,8 +55,6 @@ public class ShowBookingsView {
                 new PropertyValueFactory<Booking, String>("description")
         );
 
-
-        // Status
         TableColumn<Booking, String> statusColumn =
                 new TableColumn<>("Status");
 
