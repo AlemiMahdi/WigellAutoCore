@@ -168,10 +168,10 @@ public class AutoCoreApp extends Application {
                 showPage("Create booking"));
 
         showServices.setOnAction(event ->
-                showPage("Services"));
+                contentPane.getChildren().setAll(new ServiceView()));
 
         showMechanics.setOnAction(event ->
-                showPage("Mechanics"));
+                contentPane.getChildren().setAll(new MechanicView()));
 
         showWorkOrders.setOnAction(event ->
                 showPage("Work orders"));
