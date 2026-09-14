@@ -156,10 +156,10 @@ public class AutoCoreApp extends Application {
                 showPage("Create customer"));
 
         showVehicles.setOnAction(event ->
-                showPage("Vehicles"));
+                contentPane.getChildren().setAll(ShowVehicleView.build()));
 
         createVehicle.setOnAction(event ->
-                showPage("Create vehicle"));
+                contentPane.getChildren().setAll(CreateVehicleView.build()));
 
         showBookings.setOnAction(event ->
                 showPage("Bookings"));
