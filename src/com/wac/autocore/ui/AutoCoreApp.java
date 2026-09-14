@@ -11,6 +11,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import com.wac.autocore.ui.views.ShowBookingsView;
 
 public class AutoCoreApp extends Application {
 
@@ -21,10 +22,7 @@ public class AutoCoreApp extends Application {
 
         BorderPane root = new BorderPane();
 
-        // Titel högst upp
         VBox header = createHeader();
-
-        // Meny till vänster
         ScrollPane menu = createMenu();
 
         // Område där våra olika sidor ska visas
@@ -161,8 +159,16 @@ public class AutoCoreApp extends Application {
         createVehicle.setOnAction(event ->
                 showPage("Create vehicle"));
 
-        showBookings.setOnAction(event ->
-                showPage("Bookings"));
+        showBookings.setOnAction(event -> {
+
+            ShowBookingsView bookingsView =
+                    new ShowBookingsView();
+
+            contentPane.getChildren().setAll(
+                    bookingsView.getView()
+            );
+        });
+
 
         createBooking.setOnAction(event ->
                 showPage("Create booking"));
