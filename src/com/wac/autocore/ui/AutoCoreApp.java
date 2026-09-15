@@ -189,7 +189,7 @@ public class AutoCoreApp extends Application {
                 showPage("Start work order"));
 
         completeWorkOrder.setOnAction(event ->
-                showPage("Complete work order"));
+                contentPane.getChildren().setAll(CompleteWorkOrderView.build()));
 
         showInvoices.setOnAction(event ->
                 showPage("Invoices"));
