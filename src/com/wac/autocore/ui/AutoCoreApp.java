@@ -12,6 +12,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import com.wac.autocore.ui.views.ShowBookingsView;
+import com.wac.autocore.ui.views.ShowPaymentsView;
 
 public class AutoCoreApp extends Application {
 
@@ -197,8 +198,15 @@ public class AutoCoreApp extends Application {
         createInvoice.setOnAction(event ->
                 contentPane.getChildren().setAll(CreateInvoiceView.build()));
 
-        showPayments.setOnAction(event ->
-                showPage("Payments"));
+        showPayments.setOnAction(event -> {
+
+            ShowPaymentsView paymentsView =
+                    new ShowPaymentsView();
+
+            contentPane.getChildren().setAll(
+                    paymentsView.getView()
+            );
+        });
 
         processPayment.setOnAction(event ->
                 showPage("Process payment"));
