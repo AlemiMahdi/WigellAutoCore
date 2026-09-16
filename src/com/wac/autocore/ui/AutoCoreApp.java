@@ -12,6 +12,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import com.wac.autocore.ui.views.ShowBookingsView;
+import com.wac.autocore.ui.views.ShowWorkOrdersView;
 
 public class AutoCoreApp extends Application {
 
@@ -179,8 +180,15 @@ public class AutoCoreApp extends Application {
         showMechanics.setOnAction(event ->
                 contentPane.getChildren().setAll(new MechanicView()));
 
-        showWorkOrders.setOnAction(event ->
-                showPage("Work orders"));
+        showWorkOrders.setOnAction(event -> {
+
+            ShowWorkOrdersView workOrdersView =
+                    new ShowWorkOrdersView();
+
+            contentPane.getChildren().setAll(
+                    workOrdersView.getView()
+            );
+        });
 
         createWorkOrder.setOnAction(event ->
                 showPage("Create work order"));
