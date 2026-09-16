@@ -11,7 +11,9 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+
 import com.wac.autocore.ui.views.ShowBookingsView;
+import com.wac.autocore.ui.views.CreateBookingView;
 
 public class AutoCoreApp extends Application {
 
@@ -170,8 +172,15 @@ public class AutoCoreApp extends Application {
         });
 
 
-        createBooking.setOnAction(event ->
-                showPage("Create booking"));
+        createBooking.setOnAction(event -> {
+
+            CreateBookingView createBookingView =
+                    new CreateBookingView();
+
+            contentPane.getChildren().setAll(
+                    createBookingView.getView()
+            );
+        });
 
         showServices.setOnAction(event ->
                 contentPane.getChildren().setAll(new ServiceView()));
