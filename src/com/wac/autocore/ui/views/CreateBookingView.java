@@ -104,9 +104,6 @@ public class CreateBookingView {
                         "Please enter a valid vehicle ID."
                 );
 
-            } if (datePicker.getValue() == null) {
-                messageLabel.setText("Please select a date.");
-                return;
             }
         });
 
