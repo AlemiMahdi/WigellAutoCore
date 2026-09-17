@@ -14,6 +14,7 @@ import javafx.stage.Stage;
 
 import com.wac.autocore.ui.views.ShowBookingsView;
 import com.wac.autocore.ui.views.CreateBookingView;
+import com.wac.autocore.ui.views.ProcessPaymentView;
 
 public class AutoCoreApp extends Application {
 
@@ -209,8 +210,15 @@ public class AutoCoreApp extends Application {
         showPayments.setOnAction(event ->
                 showPage("Payments"));
 
-        processPayment.setOnAction(event ->
-                showPage("Process payment"));
+        processPayment.setOnAction(event -> {
+
+            ProcessPaymentView paymentView =
+                    new ProcessPaymentView();
+
+            contentPane.getChildren().setAll(
+                    paymentView.getView()
+            );
+        });
 
         exit.setOnAction(event ->
                 System.exit(0));
