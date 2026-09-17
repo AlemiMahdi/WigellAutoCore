@@ -201,10 +201,10 @@ public class AutoCoreApp extends Application {
                 showPage("Complete work order"));
 
         showInvoices.setOnAction(event ->
-                showPage("Invoices"));
+                contentPane.getChildren().setAll(ShowInvoiceView.build()));
 
         createInvoice.setOnAction(event ->
-                showPage("Create invoice"));
+                contentPane.getChildren().setAll(CreateInvoiceView.build()));
 
         showPayments.setOnAction(event ->
                 showPage("Payments"));
