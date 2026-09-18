@@ -11,8 +11,14 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+
 import com.wac.autocore.ui.views.ShowBookingsView;
 import com.wac.autocore.ui.views.ShowPaymentsView;
+
+import com.wac.autocore.ui.views.ShowWorkOrdersView;
+import com.wac.autocore.ui.views.CreateBookingView;
+
+
 
 public class AutoCoreApp extends Application {
 
@@ -171,8 +177,15 @@ public class AutoCoreApp extends Application {
         });
 
 
-        createBooking.setOnAction(event ->
-                showPage("Create booking"));
+        createBooking.setOnAction(event -> {
+
+            CreateBookingView createBookingView =
+                    new CreateBookingView();
+
+            contentPane.getChildren().setAll(
+                    createBookingView.getView()
+            );
+        });
 
         showServices.setOnAction(event ->
                 contentPane.getChildren().setAll(new ServiceView()));
@@ -180,8 +193,15 @@ public class AutoCoreApp extends Application {
         showMechanics.setOnAction(event ->
                 contentPane.getChildren().setAll(new MechanicView()));
 
-        showWorkOrders.setOnAction(event ->
-                showPage("Work orders"));
+        showWorkOrders.setOnAction(event -> {
+
+            ShowWorkOrdersView workOrdersView =
+                    new ShowWorkOrdersView();
+
+            contentPane.getChildren().setAll(
+                    workOrdersView.getView()
+            );
+        });
 
         createWorkOrder.setOnAction(event ->
                 showPage("Create work order"));
@@ -190,7 +210,7 @@ public class AutoCoreApp extends Application {
                 showPage("Start work order"));
 
         completeWorkOrder.setOnAction(event ->
-                showPage("Complete work order"));
+                contentPane.getChildren().setAll(CompleteWorkOrderView.build()));
 
         showInvoices.setOnAction(event ->
                 contentPane.getChildren().setAll(ShowInvoiceView.build()));
