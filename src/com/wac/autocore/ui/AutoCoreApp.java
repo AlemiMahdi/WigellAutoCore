@@ -186,7 +186,7 @@ public class AutoCoreApp extends Application {
                 contentPane.getChildren().setAll(new CreateWorkOrderView()));
 
         startWorkOrder.setOnAction(event ->
-                showPage("Start work order"));
+                contentPane.getChildren().setAll(new StartWorkOrderView()));
 
         completeWorkOrder.setOnAction(event ->
                 showPage("Complete work order"));
