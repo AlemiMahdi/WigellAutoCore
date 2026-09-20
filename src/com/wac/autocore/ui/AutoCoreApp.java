@@ -189,10 +189,10 @@ public class AutoCoreApp extends Application {
         });
 
         showServices.setOnAction(event ->
-                contentPane.getChildren().setAll(new ServiceView()));
+                showPage("Services"));
 
         showMechanics.setOnAction(event ->
-                contentPane.getChildren().setAll(new MechanicView()));
+                showPage("Mechanics"));
 
         showWorkOrders.setOnAction(event -> {
 
@@ -205,10 +205,10 @@ public class AutoCoreApp extends Application {
         });
 
         createWorkOrder.setOnAction(event ->
-                showPage("Create work order"));
+                contentPane.getChildren().setAll(new CreateWorkOrderView()));
 
         startWorkOrder.setOnAction(event ->
-                showPage("Start work order"));
+                contentPane.getChildren().setAll(new StartWorkOrderView()));
 
         completeWorkOrder.setOnAction(event ->
                 contentPane.getChildren().setAll(CompleteWorkOrderView.build()));
