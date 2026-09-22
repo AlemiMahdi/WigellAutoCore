@@ -3,14 +3,13 @@ package com.wac.autocore.ui;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.Labeled;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
 import com.wac.autocore.ui.views.ShowBookingsView;
@@ -23,7 +22,9 @@ import com.wac.autocore.ui.views.ProcessPaymentView;
 public class AutoCoreApp extends Application {
 
     private StackPane contentPane;
-    private Button activeButton;
+    private HBox categoryArea;
+    private Label categoryLabel;
+    private Labeled activeButton;
 
     @Override
     public void start(Stage primaryStage) {
@@ -56,18 +57,25 @@ public class AutoCoreApp extends Application {
 
         Label title = new Label("WIGELL AUTOCORE");
         title.getStyleClass().add("app-title");
-        title.setStyle(
-                "-fx-font-size: 26px;" +
-                        "-fx-font-weight: bold;"
-        );
+        title.setStyle("-fx-font-size: 26px; -fx-font-weight: bold;");
 
-        Label subtitle = new Label("A Wigell Group Company");
-        subtitle.getStyleClass().add("app-subtitle");
+        Label subtible = new Label("A Wigell Group Company");
+        subtible.getStyleClass().add("app-subtitle");
 
-        VBox header = new VBox(5, title, subtitle);
+        categoryLabel = new Label();
+        categoryLabel.getStyleClass().add("category-label");
+
+        VBox nameBlock = new VBox(5, title, subtible);
+
+        categoryArea = new HBox(10);
+        categoryArea.setAlignment(Pos.CENTER);
+
+        HBox topRow = new HBox(30, nameBlock, categoryLabel , categoryArea);
+        topRow.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(categoryArea, Priority.ALWAYS);
+
+        VBox header = new VBox(topRow);
         header.getStyleClass().add("app-header");
-
-        header.setAlignment(Pos.CENTER);
         header.setPadding(new Insets(20));
 
         return header;
@@ -139,8 +147,20 @@ public class AutoCoreApp extends Application {
         divider.setMaxWidth(Double.MAX_VALUE);
         VBox.setMargin(divider, new Insets(6, 8, 6, 8));
 
+        Label dashboard = new Label("DASHBOARD");
+        dashboard.getStyleClass().add("nav-section-label");
+        dashboard.setCursor(Cursor.HAND);
+
+        dashboard.setOnMouseClicked(mouseEvent -> {
+            categoryArea.getChildren().clear();
+            categoryLabel.setText("");
+            showWelcomePage();
+            setActiveButton(dashboard);
+        });
+
 
         menuBox.getChildren().addAll(
+                dashboard,
                 createNavSection("CUSTOMERS", showCustomers, createCustomer),
                 createNavSection("VEHICLES", showVehicles, createVehicle),
                 createNavSection("BOOKINGS", showBookings, createBooking),
@@ -246,6 +266,7 @@ public class AutoCoreApp extends Application {
 
 
         ScrollPane scrollPane = new ScrollPane(menuBox);
+        scrollPane.getStyleClass().add("app-sidebar");
 
         scrollPane.setFitToWidth(true);
 
@@ -265,9 +286,19 @@ public class AutoCoreApp extends Application {
     private VBox createNavSection(String sectionTitle, Button... buttons){
         Label label = new Label(sectionTitle);
         label.getStyleClass().add("nav-section-label");
+        label.setCursor(Cursor.HAND);
 
-        VBox section = new VBox(3, label);
-        section.getChildren().addAll(buttons);
+        label.setOnMouseClicked(mouseEvent -> {
+            categoryArea.getChildren().setAll(buttons);
+            categoryLabel.setText(sectionTitle);
+            setActiveButton(label);
+
+        });
+
+
+
+        VBox section = new VBox(label);
+
 
         return section;
     }
@@ -298,12 +329,12 @@ public class AutoCoreApp extends Application {
         contentPane.getChildren().setAll(pageTitle);
     }
 
-    private void setActiveButton(Button button){
+    private void setActiveButton(Labeled item){
         if (activeButton != null) {
             activeButton.getStyleClass().remove("nav-item-active");
         }
-        button.getStyleClass().add("nav-item-active");
-        activeButton = button;
+        item.getStyleClass().add("nav-item-active");
+        activeButton = item;
     }
 
     public static void main(String[] args) {
