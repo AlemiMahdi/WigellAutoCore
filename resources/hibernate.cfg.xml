@@ -12,5 +12,9 @@
         <property name="hibernate.show_sql">true</property>
         <property name="hibernate.format_sql">true</property>
         <property name="hibernate.hbm2ddl.auto">update</property>
+
+        <mapping class="com.wac.autocore.entity.CustomerEntity"/>
+        <mapping class="com.wac.autocore.entity.VehicleEntity"/>
+
     </session-factory>
 </hibernate-configuration>
