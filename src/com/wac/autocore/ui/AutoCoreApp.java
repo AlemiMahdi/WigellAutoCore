@@ -1,5 +1,7 @@
 package com.wac.autocore.ui;
 
+import javafx.application.Platform;
+import com.wac.autocore.data.HibernateUtil;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -48,6 +50,10 @@ public class AutoCoreApp extends Application {
         primaryStage.setTitle("Wigell AutoCore");
         primaryStage.setScene(scene);
         primaryStage.show();
+    }
+    @Override
+    public void stop(){
+        HibernateUtil.shutDown();
     }
 
     private VBox createHeader() {
@@ -240,7 +246,7 @@ public class AutoCoreApp extends Application {
         });
 
         exit.setOnAction(event ->
-                System.exit(0));
+                Platform.exit());
 
 
         ScrollPane scrollPane = new ScrollPane(menuBox);
