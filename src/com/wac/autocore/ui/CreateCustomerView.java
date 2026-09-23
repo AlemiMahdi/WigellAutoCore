@@ -6,6 +6,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
+import com.wac.autocore.data.Database;
+import com.wac.autocore.repository.CustomerRepository;
 
 //formulär för att skapa nya kunder
 public class CreateCustomerView extends VBox {
@@ -28,6 +30,8 @@ public class CreateCustomerView extends VBox {
 
         GarageSystem garageSystem = new GarageSystem();
 
+        CustomerRepository customerRepository = new CustomerRepository();
+
         saveButton.setOnAction(event -> {
             Customer customer = garageSystem.createCustomer(
                     nameField.getText(),
@@ -35,12 +39,25 @@ public class CreateCustomerView extends VBox {
                     emailField.getText()
             );
 
+            try {
+                // Sparar kunden i MySQL innan vi visar en bekräftelse.
+                customerRepository.save(customer);
+            } catch (RuntimeException exception) {
+                // Tar bort kunden ur minnet om databassparandet misslyckas.
+                Database.getCustomers().remove(customer);
+
+                confirmation.setText(
+                        "Customer could not be saved. Please try again."
+                );
+                exception.printStackTrace();
+                return;
+            }
+
             confirmation.setText(
                     "Customer created successfully.\n" + customer
             );
 
-
-// fälten töms så att nästa kund kan registreras
+            // Tömmer fälten först när kunden har sparats.
             nameField.clear();
             phoneField.clear();
             emailField.clear();

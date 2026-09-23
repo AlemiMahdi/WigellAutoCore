@@ -8,6 +8,8 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
+import com.wac.autocore.data.Database;
+import com.wac.autocore.repository.VehicleRepository;
 
 
 public class CreateVehicleView {
@@ -18,6 +20,8 @@ public class CreateVehicleView {
      */
     public static VBox build() {
         GarageSystem garageSystem = new GarageSystem();
+
+        VehicleRepository vehicleRepository = new VehicleRepository();
 
         // GridPane ger oss ett rutnät (rader/kolumner) att placera
         // labels och textfält i, som ett formulär.
@@ -80,17 +84,36 @@ public class CreateVehicleView {
             Vehicle vehicle = garageSystem.createVehicle(registrationNumber, brand, model, year, customerId);
 
             if (vehicle == null) {
-                statusLabel.setText("Kunde inte skapa fordon. Kontrollera kund-ID.");
-            } else {
-                statusLabel.setText("Fordon skapat: " + vehicle.getRegistrationNumber());
-
-                // Töm formuläret så det är redo för nästa fordon.
-                regField.clear();
-                brandField.clear();
-                modelField.clear();
-                yearField.clear();
-                customerField.clear();
+                statusLabel.setText(
+                        "Kunde inte skapa fordon. Kontrollera kund-ID."
+                );
+                return;
             }
+
+            try {
+                // Sparar fordonet i MySQL innan bekräftelsen visas.
+                vehicleRepository.save(vehicle);
+            } catch (RuntimeException exception) {
+                // Ångrar tillägget i minnet om databassparandet misslyckas.
+                Database.getVehicles().remove(vehicle);
+
+                statusLabel.setText(
+                        "Fordonet kunde inte sparas. Försök igen."
+                );
+                exception.printStackTrace();
+                return;
+            }
+
+            statusLabel.setText(
+                    "Fordon skapat: " + vehicle.getRegistrationNumber()
+            );
+
+// Tömmer formuläret efter att sparandet har lyckats.
+            regField.clear();
+            brandField.clear();
+            modelField.clear();
+            yearField.clear();
+            customerField.clear();
         });
 
         VBox root = new VBox(15, form, createButton, statusLabel);

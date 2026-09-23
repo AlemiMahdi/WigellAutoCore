@@ -4,6 +4,8 @@ import com.wac.autocore.data.HibernateUtil;
 import com.wac.autocore.entity.VehicleEntity;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
+import com.wac.autocore.model.Vehicle;
+import java.util.ArrayList;
 
 import java.util.List;
 
@@ -49,5 +51,39 @@ public class VehicleRepository {
                 throw exception;
             }
         }
+    }
+
+    // Omvandlar originalets fordon till en entity och sparar det.
+    public void save(Vehicle vehicle) {
+        VehicleEntity entity = new VehicleEntity();
+
+        entity.setId(vehicle.getId());
+        entity.setRegistrationNumber(vehicle.getRegistrationNumber());
+        entity.setBrand(vehicle.getBrand());
+        entity.setModel(vehicle.getModel());
+        entity.setYear(vehicle.getYear());
+        entity.setCustomerId(vehicle.getCustomerId());
+
+        save(entity);
+    }
+
+    // Hämtar databasens fordon som originalets Vehicle-objekt.
+    public List<Vehicle> findAllVehicles() {
+        List<Vehicle> vehicles = new ArrayList<>();
+
+        for (VehicleEntity entity : findAll()) {
+            Vehicle vehicle = new Vehicle(
+                    entity.getId(),
+                    entity.getRegistrationNumber(),
+                    entity.getBrand(),
+                    entity.getModel(),
+                    entity.getYear(),
+                    entity.getCustomerId()
+            );
+
+            vehicles.add(vehicle);
+        }
+
+        return vehicles;
     }
 }
