@@ -29,6 +29,10 @@ import java.util.List;
 
 import com.wac.autocore.model.Vehicle;
 import com.wac.autocore.repository.VehicleRepository;
+import com.wac.autocore.model.ServiceItem;
+import com.wac.autocore.model.Mechanic;
+import com.wac.autocore.repository.ServiceItemRepository;
+import com.wac.autocore.repository.MechanicRepository;
 
 
 public class AutoCoreApp extends Application {
@@ -40,6 +44,9 @@ public class AutoCoreApp extends Application {
         try {
             loadCustomers();
             loadVehicles();
+            loadServiceItems();
+            loadMechanics();
+
         } catch (RuntimeException exception) {
             exception.printStackTrace();
 
@@ -105,50 +112,113 @@ public class AutoCoreApp extends Application {
 
     // Läser in fordon efter att kunderna har laddats.
     private void loadVehicles() {
-        VehicleRepository repository = new VehicleRepository();
-        List<Vehicle> savedVehicles = repository.findAllVehicles();
+                VehicleRepository repository = new VehicleRepository();
+                List<Vehicle> savedVehicles = repository.findAllVehicles();
 
-        boolean firstRun = savedVehicles.isEmpty();
+                boolean firstRun = savedVehicles.isEmpty();
 
-        List<Vehicle> vehicles = firstRun
-                ? Database.getVehicles()
-                : savedVehicles;
+                List<Vehicle> vehicles = firstRun
+                        ? Database.getVehicles()
+                        : savedVehicles;
 
-        for (int i = 0; i < vehicles.size(); i++) {
-            Vehicle vehicle = vehicles.get(i);
+                for (int i = 0; i < vehicles.size(); i++) {
+                Vehicle vehicle = vehicles.get(i);
 
-            // Originalet använder listans storlek + 1 för nästa ID.
-            if (vehicle.getId() != i + 1) {
-                throw new IllegalStateException(
-                        "Vehicle IDs must be consecutive, starting at 1."
-                );
-            }
+                // Originalet använder listans storlek + 1 för nästa ID.
+                if (vehicle.getId() != i + 1) {
+                        throw new IllegalStateException(
+                                "Vehicle IDs must be consecutive, starting at 1."
+                        );
+                }
 
-            // Kontrollerar att fordonets kund finns.
-            boolean customerExists = Database.getCustomers().stream()
-                    .anyMatch(customer ->
-                            customer.getId() == vehicle.getCustomerId());
+                // Kontrollerar att fordonets kund finns.
+                boolean customerExists = Database.getCustomers().stream()
+                        .anyMatch(customer ->
+                                customer.getId() == vehicle.getCustomerId());
 
-            if (!customerExists) {
-                throw new IllegalStateException(
-                        "Customer missing for vehicle " + vehicle.getId()
-                );
-            }
+                if (!customerExists) {
+                        throw new IllegalStateException(
+                                "Customer missing for vehicle " + vehicle.getId()
+                        );
+                }
+                }
+
+                if (firstRun) {
+                // Sparar originalets exempelfordon när tabellen är tom.
+                for (Vehicle vehicle : vehicles) {
+                        repository.save(vehicle);
+                }
+                } else {
+                // Återställer sparade fordon i programmets minne.
+                Database.getVehicles().clear();
+                Database.getVehicles().addAll(savedVehicles);
+                }
         }
 
-        if (firstRun) {
-            // Sparar originalets exempelfordon när tabellen är tom.
-            for (Vehicle vehicle : vehicles) {
-                repository.save(vehicle);
-            }
-        } else {
-            // Återställer sparade fordon i programmets minne.
-            Database.getVehicles().clear();
-            Database.getVehicles().addAll(savedVehicles);
+    private void loadServiceItems() {
+
+    ServiceItemRepository repository =
+            new ServiceItemRepository();
+
+    List<ServiceItem> savedServiceItems =
+            repository.findAllServiceItems();
+
+    if (savedServiceItems.isEmpty()) {
+
+        // Första starten: sparar originalets exempeldata.
+        for (ServiceItem serviceItem : Database.getServiceItems()) {
+            repository.save(serviceItem);
+        }
+
+        return;
+    }
+
+    // Kontrollerar att ID:n följer originalets struktur.
+    for (int i = 0; i < savedServiceItems.size(); i++) {
+        if (savedServiceItems.get(i).getId() != i + 1) {
+            throw new IllegalStateException(
+                    "Service item IDs must be consecutive, starting at 1."
+            );
         }
     }
 
+    // Ersätter minnesdatan med datan från databasen.
+    Database.getServiceItems().clear();
+    Database.getServiceItems().addAll(savedServiceItems);
+}
 
+
+    private void loadMechanics() {
+
+        MechanicRepository repository =
+                new MechanicRepository();
+
+        List<Mechanic> savedMechanics =
+                repository.findAllMechanics();
+
+        if (savedMechanics.isEmpty()) {
+
+                // Första starten: sparar originalets exempeldata.
+                for (Mechanic mechanic : Database.getMechanics()) {
+                repository.save(mechanic);
+                }
+
+                return;
+        }
+
+        // Kontrollerar ID-ordningen.
+        for (int i = 0; i < savedMechanics.size(); i++) {
+                if (savedMechanics.get(i).getId() != i + 1) {
+                throw new IllegalStateException(
+                        "Mechanic IDs must be consecutive, starting at 1."
+                );
+                }
+        }
+
+        // Ersätter minnesdatan med datan från databasen.
+        Database.getMechanics().clear();
+        Database.getMechanics().addAll(savedMechanics);
+        }
     @Override
     public void stop() {
         HibernateUtil.shutDown();
