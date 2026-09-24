@@ -20,7 +20,15 @@ import com.wac.autocore.ui.views.ShowPaymentsView;
 import com.wac.autocore.ui.views.ShowWorkOrdersView;
 import com.wac.autocore.ui.views.CreateBookingView;
 import com.wac.autocore.ui.views.ProcessPaymentView;
+import com.wac.autocore.data.Database;
+import com.wac.autocore.model.Customer;
+import com.wac.autocore.repository.CustomerRepository;
+import javafx.scene.control.Alert;
 
+import java.util.List;
+
+import com.wac.autocore.model.Vehicle;
+import com.wac.autocore.repository.VehicleRepository;
 
 
 public class AutoCoreApp extends Application {
@@ -29,6 +37,23 @@ public class AutoCoreApp extends Application {
 
     @Override
     public void start(Stage primaryStage) {
+        try {
+            loadCustomers();
+            loadVehicles();
+        } catch (RuntimeException exception) {
+            exception.printStackTrace();
+
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Database error");
+            alert.setHeaderText("Customers or vehicles could not be loaded.");
+            alert.setContentText(
+                    "Check the database connection and restart the application."
+            );
+            alert.showAndWait();
+
+            javafx.application.Platform.exit();
+            return;
+        }
 
         BorderPane root = new BorderPane();
 
@@ -51,8 +76,81 @@ public class AutoCoreApp extends Application {
         primaryStage.setScene(scene);
         primaryStage.show();
     }
+
+    private void loadCustomers() {
+        CustomerRepository repository = new CustomerRepository();
+        List<Customer> savedCustomers = repository.findAllCustomers();
+
+        if (savedCustomers.isEmpty()) {
+            // Sparar originalets exempelkunder vid första starten.
+            for (Customer customer : Database.getCustomers()) {
+                repository.save(customer);
+            }
+            return;
+        }
+
+        // Kontrollerar ID-ordningen eftersom originalet använder kundlistans storlek + 1 för att skapa nästa ID.
+        for (int i = 0; i < savedCustomers.size(); i++) {
+            if (savedCustomers.get(i).getId() != i + 1) {
+                throw new IllegalStateException(
+                        "Customer IDs must be consecutive, starting at 1."
+                );
+            }
+        }
+
+        // Ersätter kunderna i minnet med de sparade kunderna.
+        Database.getCustomers().clear();
+        Database.getCustomers().addAll(savedCustomers);
+    }
+
+    // Läser in fordon efter att kunderna har laddats.
+    private void loadVehicles() {
+        VehicleRepository repository = new VehicleRepository();
+        List<Vehicle> savedVehicles = repository.findAllVehicles();
+
+        boolean firstRun = savedVehicles.isEmpty();
+
+        List<Vehicle> vehicles = firstRun
+                ? Database.getVehicles()
+                : savedVehicles;
+
+        for (int i = 0; i < vehicles.size(); i++) {
+            Vehicle vehicle = vehicles.get(i);
+
+            // Originalet använder listans storlek + 1 för nästa ID.
+            if (vehicle.getId() != i + 1) {
+                throw new IllegalStateException(
+                        "Vehicle IDs must be consecutive, starting at 1."
+                );
+            }
+
+            // Kontrollerar att fordonets kund finns.
+            boolean customerExists = Database.getCustomers().stream()
+                    .anyMatch(customer ->
+                            customer.getId() == vehicle.getCustomerId());
+
+            if (!customerExists) {
+                throw new IllegalStateException(
+                        "Customer missing for vehicle " + vehicle.getId()
+                );
+            }
+        }
+
+        if (firstRun) {
+            // Sparar originalets exempelfordon när tabellen är tom.
+            for (Vehicle vehicle : vehicles) {
+                repository.save(vehicle);
+            }
+        } else {
+            // Återställer sparade fordon i programmets minne.
+            Database.getVehicles().clear();
+            Database.getVehicles().addAll(savedVehicles);
+        }
+    }
+
+
     @Override
-    public void stop(){
+    public void stop() {
         HibernateUtil.shutDown();
     }
 
@@ -61,7 +159,7 @@ public class AutoCoreApp extends Application {
         Label title = new Label("WIGELL AUTOCORE");
         title.setStyle(
                 "-fx-font-size: 26px;" +
-                "-fx-font-weight: bold;"
+                        "-fx-font-weight: bold;"
         );
 
         Label subtitle = new Label("A Wigell Group Company");
@@ -274,7 +372,7 @@ public class AutoCoreApp extends Application {
 
         welcome.setStyle(
                 "-fx-font-size: 24px;" +
-                "-fx-font-weight: bold;"
+                        "-fx-font-weight: bold;"
         );
 
         contentPane.getChildren().setAll(welcome);
@@ -286,7 +384,7 @@ public class AutoCoreApp extends Application {
 
         pageTitle.setStyle(
                 "-fx-font-size: 24px;" +
-                "-fx-font-weight: bold;"
+                        "-fx-font-weight: bold;"
         );
 
         contentPane.getChildren().setAll(pageTitle);
