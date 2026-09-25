@@ -52,7 +52,7 @@ public class AutoCoreApp extends Application {
 
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Database error");
-            alert.setHeaderText("Customers or vehicles could not be loaded.");
+            alert.setHeaderText("Could not load data from the database.");
             alert.setContentText(
                     "Check the database connection and restart the application."
             );
