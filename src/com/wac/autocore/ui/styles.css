@@ -1,29 +1,46 @@
 .root {
-    -fx-sidebar-bg: #282a36;
+    -fx-sidebar-bg: #343746;
     -fx-header-bg: #282a36;
     -fx-accent: #bd93f9;
     -fx-accent-soft: rgba(189,147,249,0.14);
     -fx-accent-text: #d6b8ff;
-    -fx-content-bg: #1e1f29;
+    -fx-content-bg: #282a36;
     -fx-text-light: #f8f8f2;
     -fx-text-muted: #6272a4;
+    -fx-card-bg: #343746;
+    -fx-border: #44475a;
+    -fx-text-secondary: #a4a9cf;
+    -fx-success: #50fa7b;
+    -fx-warning: #f1fa8c;
+    -fx-danger: #ff5555;
 }
+
+/* ===== Header ===== */
 
 .app-header {
     -fx-background-color: -fx-header-bg;
 }
 
-.app-sidebar {
-    -fx-background-color: -fx-sidebar-bg;
-}
-
 .app-title {
-    -fx-text-fill: #ffffff;
+    -fx-text-fill: -fx-text-light;
 }
 
 .app-subtitle {
     -fx-text-fill: -fx-text-muted;
 }
+
+.category-label {
+    -fx-text-fill: -fx-accent-text;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+}
+
+/* ===== Sidomeny ===== */
+
+.app-sidebar {
+    -fx-background-color: -fx-sidebar-bg;
+}
+
 .app-sidebar .button {
     -fx-background-color: transparent;
     -fx-text-fill: -fx-text-light;
@@ -35,76 +52,121 @@
 }
 
 .app-sidebar .button:hover {
-    -fx-background-color: #2a3140;
+    -fx-background-color: rgba(248,248,242,0.06);
 }
+
 .nav-section-label {
     -fx-font-size: 10.5px;
     -fx-font-weight: bold;
     -fx-text-fill: -fx-text-muted;
 }
 
+.nav-divider {
+    -fx-background-color: -fx-border;
+}
+
 .app-sidebar .exit-item {
-    -fx-text-fill: #e08a72;
+    -fx-text-fill: -fx-danger;
 }
+
 .app-sidebar .exit-item:hover {
-    -fx-background-color: rgba(224,138,114,0.12);
+    -fx-background-color: rgba(255,85,85,0.12);
 }
 
-
+/* ===== Innehållsyta ===== */
 
 .app-content {
     -fx-background-color: -fx-content-bg;
 }
 
+.app-content .label {
+    -fx-text-fill: -fx-text-light;
+}
+
+/* ===== Tabell ===== */
+
 .table-view {
-    -fx-background-color: white;
+    -fx-background-color: -fx-content-bg;
+    -fx-control-inner-background: -fx-content-bg;
 }
+
 .table-view .column-header-background {
-    -fx-background-color: -fx-sidebar-bg;
+    -fx-background-color: -fx-card-bg;
 }
+
+/* ===== Inmatningsfält ===== */
 
 .text-field {
     -fx-background-color: -fx-content-bg;
-    -fx-text-fill: -fx-content-bg;
+    -fx-text-fill: -fx-text-light;
     -fx-prompt-text-fill: -fx-text-muted;
-    -fx-border-color: #d8d3ca;
+    -fx-border-color: -fx-border;
     -fx-border-radius: 6;
     -fx-background-radius: 6;
     -fx-padding: 6 10 6 10;
     -fx-font-size: 13px;
 }
+
 .text-field:focused {
     -fx-border-color: -fx-accent;
 }
+
+/* ===== Knappar ===== */
+
 .button {
     -fx-background-color: -fx-sidebar-bg;
-    -fx-text-fill: white;
+    -fx-text-fill: -fx-text-light;
     -fx-font-weight: bold;
     -fx-background-radius: 6;
     -fx-padding: 8 16 8 16;
     -fx-cursor: hand;
 }
+
 .button:hover {
     -fx-background-color: derive(-fx-sidebar-bg, 30%);
 }
+
+/* Måste ligga EFTER .button, annars vinner .button */
 .nav-item-active {
     -fx-background-color: -fx-accent-soft;
     -fx-text-fill: -fx-accent-text;
     -fx-font-weight: bold;
 }
 
+/* ===== Listor och scroll ===== */
+
 .scroll-pane .viewport {
     -fx-background-color: transparent;
 }
-.category-label {
-    -fx-text-fill: -fx-accent-text;
-    -fx-font-weight: bold;
-    -fx-font-size: 13px;
-}
+
 .list-view {
-    -fx-background-color: -fx-sidebar-bg;
-    -fx-control-inner-background: -fx-sidebar-bg;
+    -fx-background-color: -fx-card-bg;
+    -fx-control-inner-background: -fx-card-bg;
 }
+
 .list-cell {
     -fx-text-fill: -fx-text-light;
+}
+/* ===== Kort (Dashboard m.fl.) ===== */
+.card {
+    -fx-background-color: -fx-card-bg;  /* ljusare ruta än bakgrunden */
+    -fx-border-color: -fx-border; /* tunn ram runt kortet */
+    -fx-background-radius: 10; /* rundar hörnen på bakgrunden */
+    -fx-border-radius: 10; /* rundar hörnen på ramen (måste matcha!) */
+    -fx-padding: 16 18 16 18; /* luft inuti: topp höger botten vänster */
+}
+.card .stat-title {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-secondary;
+}
+.card .stat-value {
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-light;
+}
+
+.card .stat-subtitle {
+    -fx-font-size: 12px;
+    -fx-text-fill: -fx-text-muted;
 }

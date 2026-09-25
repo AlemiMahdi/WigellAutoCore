@@ -304,17 +304,8 @@ public class AutoCoreApp extends Application {
     }
 
     private void showWelcomePage() {
-
-        Label welcome = new Label(
-                "Welcome to Wigell AutoCore"
-        );
-
-        welcome.setStyle(
-                "-fx-font-size: 24px;" +
-                        "-fx-font-weight: bold;"
-        );
-
-        contentPane.getChildren().setAll(welcome);
+        //--- Visar dashboarden ---
+        contentPane.getChildren().setAll(new DashboardView());
     }
 
     private void showPage(String pageName) {
