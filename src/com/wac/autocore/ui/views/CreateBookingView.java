@@ -12,6 +12,7 @@ import javafx.scene.layout.VBox;
 
 import java.time.LocalDate;
 import javafx.scene.control.DatePicker;
+import com.wac.autocore.model.Mechanic;
 
 public class CreateBookingView {
 
@@ -47,6 +48,15 @@ public class CreateBookingView {
         Label dateLabel = new Label("Date: ");
 
         DatePicker datePicker = new DatePicker();
+
+        Label mechanicLabel = new Label("Mechanic:");
+
+        ComboBox<Mechanic> mechanicCombo = new ComboBox<>(
+                FXCollections.observableArrayList(Database.getMechanics())
+        );
+
+        mechanicCombo.setPromptText("Select mechanic");
+        mechanicCombo.setMaxWidth(Double.MAX_VALUE);
 
         Label descriptionLabel = new Label("Description:");
 
@@ -123,7 +133,9 @@ public class CreateBookingView {
                 descriptionLabel,
                 descriptionField,
                 createButton,
-                messageLabel
+                messageLabel,
+                mechanicLabel,
+                mechanicCombo
         );
 
         return view;
