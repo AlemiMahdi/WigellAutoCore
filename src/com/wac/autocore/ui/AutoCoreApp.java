@@ -33,11 +33,20 @@ import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.model.Mechanic;
 import com.wac.autocore.repository.ServiceItemRepository;
 import com.wac.autocore.repository.MechanicRepository;
+import com.wac.autocore.ui.language.LanguageManager;
+import javafx.scene.layout.HBox;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.RadioMenuItem;
+import javafx.scene.control.ToggleGroup;
+import javafx.scene.layout.HBox;
 
 
 public class AutoCoreApp extends Application {
 
     private StackPane contentPane;
+
+    private final LanguageManager language =
+            LanguageManager.getInstance();
 
     @Override
     public void start(Stage primaryStage) {
@@ -225,17 +234,58 @@ public class AutoCoreApp extends Application {
     }
 
     private VBox createHeader() {
-
         Label title = new Label("WIGELL AUTOCORE");
         title.setStyle(
                 "-fx-font-size: 26px;" +
                         "-fx-font-weight: bold;"
         );
 
-        Label subtitle = new Label("A Wigell Group Company");
+        Label subtitle = new Label();
+        subtitle.textProperty().bind(language.text("header.subtitle"));
 
-        VBox header = new VBox(5, title, subtitle);
+        MenuButton languageMenu = new MenuButton();
+        languageMenu.textProperty().bind(language.text("language.current"));
+        languageMenu.accessibleTextProperty().bind(
+                language.text("language.label")
+        );
 
+        RadioMenuItem swedish = new RadioMenuItem("Svenska");
+        RadioMenuItem english = new RadioMenuItem("English");
+
+        ToggleGroup languageGroup = new ToggleGroup();
+        swedish.setToggleGroup(languageGroup);
+        english.setToggleGroup(languageGroup);
+
+        // Markeringen följer språket som visas.
+        Runnable updateSelection = () -> {
+            boolean isSwedish =
+                    "Svenska".equals(languageMenu.getText());
+
+            swedish.setSelected(isSwedish);
+            english.setSelected(!isSwedish);
+        };
+
+        languageMenu.textProperty().addListener(
+                (observable, oldText, newText) -> updateSelection.run()
+        );
+
+        swedish.setOnAction(event -> {
+            language.setLanguage("sv");
+            updateSelection.run();
+        });
+
+        english.setOnAction(event -> {
+            language.setLanguage("en");
+            updateSelection.run();
+        });
+
+        languageMenu.getItems().addAll(swedish, english);
+        updateSelection.run();
+
+        HBox languageRow = new HBox(languageMenu);
+        languageRow.setAlignment(Pos.CENTER_RIGHT);
+
+        VBox header = new VBox(5, languageRow, title, subtitle);
         header.setAlignment(Pos.CENTER);
         header.setPadding(new Insets(20));
 
@@ -300,6 +350,23 @@ public class AutoCoreApp extends Application {
         Button exit =
                 createMenuButton("Exit");
 
+        showCustomers.textProperty().bind(language.text("menu.customers"));
+        createCustomer.textProperty().bind(language.text("menu.createCustomer"));
+        showVehicles.textProperty().bind(language.text("menu.vehicles"));
+        createVehicle.textProperty().bind(language.text("menu.createVehicle"));
+        showBookings.textProperty().bind(language.text("menu.bookings"));
+        createBooking.textProperty().bind(language.text("menu.createBooking"));
+        showServices.textProperty().bind(language.text("menu.services"));
+        showMechanics.textProperty().bind(language.text("menu.mechanics"));
+        showWorkOrders.textProperty().bind(language.text("menu.workOrders"));
+        createWorkOrder.textProperty().bind(language.text("menu.createWorkOrder"));
+        startWorkOrder.textProperty().bind(language.text("menu.startWorkOrder"));
+        completeWorkOrder.textProperty().bind(language.text("menu.completeWorkOrder"));
+        showInvoices.textProperty().bind(language.text("menu.invoices"));
+        createInvoice.textProperty().bind(language.text("menu.createInvoice"));
+        showPayments.textProperty().bind(language.text("menu.payments"));
+        processPayment.textProperty().bind(language.text("menu.processPayment"));
+        exit.textProperty().bind(language.text("menu.exit"));
 
         menuBox.getChildren().addAll(
                 showCustomers,
