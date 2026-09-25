@@ -3,27 +3,28 @@ package com.wac.autocore.ui;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.Labeled;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
 import com.wac.autocore.ui.views.ShowBookingsView;
 import com.wac.autocore.ui.views.ShowPaymentsView;
-
 import com.wac.autocore.ui.views.ShowWorkOrdersView;
 import com.wac.autocore.ui.views.CreateBookingView;
 import com.wac.autocore.ui.views.ProcessPaymentView;
 
 
-
 public class AutoCoreApp extends Application {
 
     private StackPane contentPane;
+    private HBox categoryArea;
+    private Label categoryLabel;
+    private Labeled activeButton;
 
     @Override
     public void start(Stage primaryStage) {
@@ -35,6 +36,7 @@ public class AutoCoreApp extends Application {
 
         // Område där våra olika sidor ska visas
         contentPane = new StackPane();
+        contentPane.getStyleClass().add("app-content");
         contentPane.setPadding(new Insets(30));
 
         root.setTop(header);
@@ -44,6 +46,7 @@ public class AutoCoreApp extends Application {
         showWelcomePage();
 
         Scene scene = new Scene(root, 1100, 700);
+        scene.getStylesheets().add(getClass().getResource("styles.css").toExternalForm());
 
         primaryStage.setTitle("Wigell AutoCore");
         primaryStage.setScene(scene);
@@ -53,16 +56,26 @@ public class AutoCoreApp extends Application {
     private VBox createHeader() {
 
         Label title = new Label("WIGELL AUTOCORE");
-        title.setStyle(
-                "-fx-font-size: 26px;" +
-                "-fx-font-weight: bold;"
-        );
+        title.getStyleClass().add("app-title");
+        title.setStyle("-fx-font-size: 26px; -fx-font-weight: bold;");
 
-        Label subtitle = new Label("A Wigell Group Company");
+        Label subtible = new Label("A Wigell Group Company");
+        subtible.getStyleClass().add("app-subtitle");
 
-        VBox header = new VBox(5, title, subtitle);
+        categoryLabel = new Label();
+        categoryLabel.getStyleClass().add("category-label");
 
-        header.setAlignment(Pos.CENTER);
+        VBox nameBlock = new VBox(5, title, subtible);
+
+        categoryArea = new HBox(10);
+        categoryArea.setAlignment(Pos.CENTER);
+
+        HBox topRow = new HBox(30, nameBlock, categoryLabel , categoryArea);
+        topRow.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(categoryArea, Priority.ALWAYS);
+
+        VBox header = new VBox(topRow);
+        header.getStyleClass().add("app-header");
         header.setPadding(new Insets(20));
 
         return header;
@@ -70,7 +83,8 @@ public class AutoCoreApp extends Application {
 
     private ScrollPane createMenu() {
 
-        VBox menuBox = new VBox(5);
+        VBox menuBox = new VBox(15);
+        menuBox.getStyleClass().add("app-sidebar");
 
         menuBox.setPadding(new Insets(15));
         menuBox.setPrefWidth(220);
@@ -125,118 +139,126 @@ public class AutoCoreApp extends Application {
 
         Button exit =
                 createMenuButton("Exit");
+        exit.getStyleClass().add("exit-item");
+
+        Region divider = new Region();
+        divider.setPrefHeight(1);
+        divider.setStyle("-fx-background-color: #333c4c");
+        divider.setMaxWidth(Double.MAX_VALUE);
+        VBox.setMargin(divider, new Insets(6, 8, 6, 8));
+
+        Label dashboard = new Label("DASHBOARD");
+        dashboard.getStyleClass().add("nav-section-label");
+        dashboard.setCursor(Cursor.HAND);
+
+        dashboard.setOnMouseClicked(mouseEvent -> {
+            categoryArea.getChildren().clear();
+            categoryLabel.setText("");
+            showWelcomePage();
+            setActiveButton(dashboard);
+        });
 
 
         menuBox.getChildren().addAll(
-                showCustomers,
-                createCustomer,
-                showVehicles,
-                createVehicle,
-                showBookings,
-                createBooking,
-                showServices,
-                showMechanics,
-                showWorkOrders,
-                createWorkOrder,
-                startWorkOrder,
-                completeWorkOrder,
-                showInvoices,
-                createInvoice,
-                showPayments,
-                processPayment,
+                dashboard,
+                createNavSection("CUSTOMERS", showCustomers, createCustomer),
+                createNavSection("VEHICLES", showVehicles, createVehicle),
+                createNavSection("BOOKINGS", showBookings, createBooking),
+                createNavSection("WORKORDERS", showWorkOrders, createWorkOrder, startWorkOrder, completeWorkOrder),
+                createNavSection("SERVICE", showServices, showMechanics),
+                createNavSection("INVOICE", showInvoices, createInvoice, showPayments, processPayment),
+                divider,
                 exit
         );
 
 
         /*
-         * Tillfälliga actions.
-         *
-         * Just nu visar vi bara vilken sida
-         * användaren har valt.
+         * Actions för menyknapparna.
          */
 
-        showCustomers.setOnAction(event ->
-                contentPane.getChildren().setAll(new CustomerView()));
+        showCustomers.setOnAction(event -> {
+            setActiveButton(showCustomers);
+            contentPane.getChildren().setAll(new CustomerView());
+        });
 
-        createCustomer.setOnAction(event ->
-                contentPane.getChildren().setAll(new CreateCustomerView()));
+        createCustomer.setOnAction(event -> {
+            setActiveButton(createCustomer);
+            contentPane.getChildren().setAll(new CreateCustomerView());
+        });
 
-        showVehicles.setOnAction(event ->
-                contentPane.getChildren().setAll(ShowVehicleView.build()));
+        showVehicles.setOnAction(event -> {
+            setActiveButton(showVehicles);
+            contentPane.getChildren().setAll(ShowVehicleView.build());
+        });
 
-        createVehicle.setOnAction(event ->
-                contentPane.getChildren().setAll(CreateVehicleView.build()));
+        createVehicle.setOnAction(event -> {
+            setActiveButton(createVehicle);
+            contentPane.getChildren().setAll(CreateVehicleView.build());
+        });
 
         showBookings.setOnAction(event -> {
-
-            ShowBookingsView bookingsView =
-                    new ShowBookingsView();
-
-            contentPane.getChildren().setAll(
-                    bookingsView.getView()
-            );
+            setActiveButton(showBookings);
+            ShowBookingsView bookingsView = new ShowBookingsView();
+            contentPane.getChildren().setAll(bookingsView.getView());
         });
-
 
         createBooking.setOnAction(event -> {
-
-            CreateBookingView createBookingView =
-                    new CreateBookingView();
-
-            contentPane.getChildren().setAll(
-                    createBookingView.getView()
-            );
+            setActiveButton(createBooking);
+            CreateBookingView createBookingView = new CreateBookingView();
+            contentPane.getChildren().setAll(createBookingView.getView());
         });
 
-        showServices.setOnAction(event ->
-                contentPane.getChildren().setAll(new ServiceView()));
+        showServices.setOnAction(event -> {
+            setActiveButton(showServices);
+            contentPane.getChildren().setAll(new ServiceView());
+        });
 
-        showMechanics.setOnAction(event ->
-                contentPane.getChildren().setAll(new MechanicView()));
+        showMechanics.setOnAction(event -> {
+            setActiveButton(showMechanics);
+            contentPane.getChildren().setAll(new MechanicView());
+        });
 
         showWorkOrders.setOnAction(event -> {
-
-            ShowWorkOrdersView workOrdersView =
-                    new ShowWorkOrdersView();
-
-            contentPane.getChildren().setAll(
-                    workOrdersView.getView()
-            );
+            setActiveButton(showWorkOrders);
+            ShowWorkOrdersView workOrdersView = new ShowWorkOrdersView();
+            contentPane.getChildren().setAll(workOrdersView.getView());
         });
 
-        createWorkOrder.setOnAction(event ->
-                contentPane.getChildren().setAll(new CreateWorkOrderView()));
+        createWorkOrder.setOnAction(event -> {
+            setActiveButton(createWorkOrder);
+            contentPane.getChildren().setAll(new CreateWorkOrderView());
+        });
 
-        startWorkOrder.setOnAction(event ->
-                contentPane.getChildren().setAll(new StartWorkOrderView()));
+        startWorkOrder.setOnAction(event -> {
+            setActiveButton(startWorkOrder);
+            contentPane.getChildren().setAll(new StartWorkOrderView());
+        });
 
-        completeWorkOrder.setOnAction(event ->
-                contentPane.getChildren().setAll(CompleteWorkOrderView.build()));
+        completeWorkOrder.setOnAction(event -> {
+            setActiveButton(completeWorkOrder);
+            contentPane.getChildren().setAll(CompleteWorkOrderView.build());
+        });
 
-        showInvoices.setOnAction(event ->
-                contentPane.getChildren().setAll(ShowInvoiceView.build()));
+        showInvoices.setOnAction(event -> {
+            setActiveButton(showInvoices);
+            contentPane.getChildren().setAll(ShowInvoiceView.build());
+        });
 
-        createInvoice.setOnAction(event ->
-                contentPane.getChildren().setAll(CreateInvoiceView.build()));
+        createInvoice.setOnAction(event -> {
+            setActiveButton(createInvoice);
+            contentPane.getChildren().setAll(CreateInvoiceView.build());
+        });
 
         showPayments.setOnAction(event -> {
-
-            ShowPaymentsView paymentsView =
-                    new ShowPaymentsView();
-
-            contentPane.getChildren().setAll(
-                    paymentsView.getView()
-            );
+            setActiveButton(showPayments);
+            ShowPaymentsView paymentsView = new ShowPaymentsView();
+            contentPane.getChildren().setAll(paymentsView.getView());
         });
 
         processPayment.setOnAction(event -> {
-
-            ProcessPaymentView paymentView =
-                    new ProcessPaymentView();
-
-            contentPane.getChildren().setAll(
-                    paymentView.getView()
-            );
+            setActiveButton(processPayment);
+            ProcessPaymentView paymentView = new ProcessPaymentView();
+            contentPane.getChildren().setAll(paymentView.getView());
         });
 
         exit.setOnAction(event ->
@@ -244,6 +266,7 @@ public class AutoCoreApp extends Application {
 
 
         ScrollPane scrollPane = new ScrollPane(menuBox);
+        scrollPane.getStyleClass().add("app-sidebar");
 
         scrollPane.setFitToWidth(true);
 
@@ -260,18 +283,29 @@ public class AutoCoreApp extends Application {
         return button;
     }
 
+    private VBox createNavSection(String sectionTitle, Button... buttons){
+        Label label = new Label(sectionTitle);
+        label.getStyleClass().add("nav-section-label");
+        label.setCursor(Cursor.HAND);
+
+        label.setOnMouseClicked(mouseEvent -> {
+            categoryArea.getChildren().setAll(buttons);
+            categoryLabel.setText(sectionTitle);
+            setActiveButton(label);
+
+        });
+
+
+
+        VBox section = new VBox(label);
+
+
+        return section;
+    }
+
     private void showWelcomePage() {
-
-        Label welcome = new Label(
-                "Welcome to Wigell AutoCore"
-        );
-
-        welcome.setStyle(
-                "-fx-font-size: 24px;" +
-                "-fx-font-weight: bold;"
-        );
-
-        contentPane.getChildren().setAll(welcome);
+        //--- Visar dashboarden ---
+        contentPane.getChildren().setAll(new DashboardView());
     }
 
     private void showPage(String pageName) {
@@ -280,10 +314,18 @@ public class AutoCoreApp extends Application {
 
         pageTitle.setStyle(
                 "-fx-font-size: 24px;" +
-                "-fx-font-weight: bold;"
+                        "-fx-font-weight: bold;"
         );
 
         contentPane.getChildren().setAll(pageTitle);
+    }
+
+    private void setActiveButton(Labeled item){
+        if (activeButton != null) {
+            activeButton.getStyleClass().remove("nav-item-active");
+        }
+        item.getStyleClass().add("nav-item-active");
+        activeButton = item;
     }
 
     public static void main(String[] args) {
