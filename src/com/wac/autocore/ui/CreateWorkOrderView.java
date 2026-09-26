@@ -5,6 +5,8 @@ import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.Mechanic;
 import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.repository.BookingRepository;
+import com.wac.autocore.repository.WorkOrderRepository;
 import com.wac.autocore.service.GarageSystem;
 import javafx.collections.FXCollections;
 import javafx.scene.control.Button;
@@ -45,6 +47,8 @@ public class CreateWorkOrderView  extends VBox {
         feedbackLabel.setWrapText(true);
 
         GarageSystem garageSystem = new GarageSystem();
+        WorkOrderRepository workOrderRepository = new WorkOrderRepository();
+        BookingRepository bookingRepository = new BookingRepository();
 
         saveButton.setOnAction(event -> {
             Booking booking = bookingComboBox.getValue();
@@ -58,6 +62,9 @@ public class CreateWorkOrderView  extends VBox {
 
             int[] serviceIds = serviceItemListView.getSelectionModel().getSelectedItems().stream().mapToInt(ServiceItem::getId).toArray();
 
+            // Sparar bokningens status ifall vi behöver återställa den.
+            String previousBookingStatus = booking.getStatus();
+
             //GarageSystem avgör om arbetsordern får skapas eller inte.
             WorkOrder workOrder = garageSystem.createWorkOrder(booking.getId(), mechanic.getId(), serviceIds);
 
@@ -68,6 +75,21 @@ public class CreateWorkOrderView  extends VBox {
                 else {
                     feedbackLabel.setText("Work order could not be created. Please try again");
                 }
+                return;
+            }
+
+            try {
+                // Sparar arbetsordern och bokningens nya status i MySQL.
+                workOrderRepository.save(workOrder);
+                bookingRepository.save(booking);
+            } catch (RuntimeException exception) {
+                // Tar bort arbetsordern ur minnet och återställer bokningen
+                // om databassparandet misslyckas.
+                Database.getWorkOrders().remove(workOrder);
+                booking.setStatus(previousBookingStatus);
+
+                feedbackLabel.setText("Work order could not be saved. Please try again.");
+                exception.printStackTrace();
                 return;
             }
 
