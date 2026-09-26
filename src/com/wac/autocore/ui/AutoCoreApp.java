@@ -34,6 +34,11 @@ import com.wac.autocore.model.Mechanic;
 import com.wac.autocore.repository.ServiceItemRepository;
 import com.wac.autocore.repository.MechanicRepository;
 
+import com.wac.autocore.model.Invoice;
+import com.wac.autocore.model.Payment;
+import com.wac.autocore.repository.InvoiceRepository;
+import com.wac.autocore.repository.PaymentRepository;
+
 
 public class AutoCoreApp extends Application {
 
@@ -41,26 +46,28 @@ public class AutoCoreApp extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        try {
-            loadCustomers();
-            loadVehicles();
-            loadServiceItems();
-            loadMechanics();
+                try {
+                loadCustomers();
+                loadVehicles();
+                loadServiceItems();
+                loadMechanics();
+                loadInvoices();
+                loadPayments();
 
-        } catch (RuntimeException exception) {
-            exception.printStackTrace();
+                } catch (RuntimeException exception) {
+                exception.printStackTrace();
 
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Database error");
-            alert.setHeaderText("Could not load data from the database.");
-            alert.setContentText(
-                    "Check the database connection and restart the application."
-            );
-            alert.showAndWait();
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Database error");
+                alert.setHeaderText("Could not load data from the database.");
+                alert.setContentText(
+                        "Check the database connection and restart the application."
+                );
+                alert.showAndWait();
 
-            javafx.application.Platform.exit();
-            return;
-        }
+                javafx.application.Platform.exit();
+                return;
+                }
 
         BorderPane root = new BorderPane();
 
@@ -82,36 +89,35 @@ public class AutoCoreApp extends Application {
         primaryStage.setTitle("Wigell AutoCore");
         primaryStage.setScene(scene);
         primaryStage.show();
-    }
-
-    private void loadCustomers() {
-        CustomerRepository repository = new CustomerRepository();
-        List<Customer> savedCustomers = repository.findAllCustomers();
-
-        if (savedCustomers.isEmpty()) {
-            // Sparar originalets exempelkunder vid första starten.
-            for (Customer customer : Database.getCustomers()) {
-                repository.save(customer);
-            }
-            return;
         }
 
-        // Kontrollerar ID-ordningen eftersom originalet använder kundlistans storlek + 1 för att skapa nästa ID.
-        for (int i = 0; i < savedCustomers.size(); i++) {
-            if (savedCustomers.get(i).getId() != i + 1) {
-                throw new IllegalStateException(
-                        "Customer IDs must be consecutive, starting at 1."
-                );
-            }
+        private void loadCustomers() {
+                CustomerRepository repository = new CustomerRepository();
+                List<Customer> savedCustomers = repository.findAllCustomers();
+
+                if (savedCustomers.isEmpty()) {
+                // Sparar originalets exempelkunder vid första starten.
+                for (Customer customer : Database.getCustomers()) {
+                        repository.save(customer);
+                }
+                return;
+                }
+
+                // Kontrollerar ID-ordningen eftersom originalet använder kundlistans storlek + 1 för att skapa nästa ID.
+                for (int i = 0; i < savedCustomers.size(); i++) {
+                if (savedCustomers.get(i).getId() != i + 1) {
+                        throw new IllegalStateException(
+                                "Customer IDs must be consecutive, starting at 1."
+                        );
+                }
+                }
+
+                // Ersätter kunderna i minnet med de sparade kunderna.
+                Database.getCustomers().clear();
+                Database.getCustomers().addAll(savedCustomers);
         }
-
-        // Ersätter kunderna i minnet med de sparade kunderna.
-        Database.getCustomers().clear();
-        Database.getCustomers().addAll(savedCustomers);
-    }
-
     // Läser in fordon efter att kunderna har laddats.
-    private void loadVehicles() {
+        private void loadVehicles() {
                 VehicleRepository repository = new VehicleRepository();
                 List<Vehicle> savedVehicles = repository.findAllVehicles();
 
@@ -155,40 +161,39 @@ public class AutoCoreApp extends Application {
                 }
         }
 
-    private void loadServiceItems() {
+        private void loadServiceItems() {
 
-    ServiceItemRepository repository =
-            new ServiceItemRepository();
+        ServiceItemRepository repository =
+                new ServiceItemRepository();
 
-    List<ServiceItem> savedServiceItems =
-            repository.findAllServiceItems();
+        List<ServiceItem> savedServiceItems =
+                repository.findAllServiceItems();
 
-    if (savedServiceItems.isEmpty()) {
+        if (savedServiceItems.isEmpty()) {
 
-        // Första starten: sparar originalets exempeldata.
-        for (ServiceItem serviceItem : Database.getServiceItems()) {
-            repository.save(serviceItem);
+                // Första starten: sparar originalets exempeldata.
+                for (ServiceItem serviceItem : Database.getServiceItems()) {
+                repository.save(serviceItem);
+                }
+
+                return;
         }
 
-        return;
-    }
-
-    // Kontrollerar att ID:n följer originalets struktur.
-    for (int i = 0; i < savedServiceItems.size(); i++) {
-        if (savedServiceItems.get(i).getId() != i + 1) {
-            throw new IllegalStateException(
-                    "Service item IDs must be consecutive, starting at 1."
-            );
+        // Kontrollerar att ID:n följer originalets struktur.
+        for (int i = 0; i < savedServiceItems.size(); i++) {
+                if (savedServiceItems.get(i).getId() != i + 1) {
+                throw new IllegalStateException(
+                        "Service item IDs must be consecutive, starting at 1."
+                );
+                }
         }
-    }
 
-    // Ersätter minnesdatan med datan från databasen.
-    Database.getServiceItems().clear();
-    Database.getServiceItems().addAll(savedServiceItems);
-}
+        // Ersätter minnesdatan med datan från databasen.
+        Database.getServiceItems().clear();
+        Database.getServiceItems().addAll(savedServiceItems);
+        }
 
-
-    private void loadMechanics() {
+        private void loadMechanics() {
 
         MechanicRepository repository =
                 new MechanicRepository();
@@ -219,7 +224,85 @@ public class AutoCoreApp extends Application {
         Database.getMechanics().clear();
         Database.getMechanics().addAll(savedMechanics);
         }
-    @Override
+        
+        private void loadInvoices() {
+
+        InvoiceRepository repository =
+                new InvoiceRepository();
+
+        List<Invoice> savedInvoices =
+                repository.findAllInvoices();
+
+        if (savedInvoices.isEmpty()) {
+
+                // Sparar eventuell befintlig data första gången.
+                for (Invoice invoice : Database.getInvoices()) {
+                repository.save(invoice);
+                }
+
+                return;
+        }
+
+        // Originalsystemet använder listans storlek + 1 för nästa ID.
+        for (int i = 0; i < savedInvoices.size(); i++) {
+                if (savedInvoices.get(i).getId() != i + 1) {
+                throw new IllegalStateException(
+                        "Invoice IDs must be consecutive, starting at 1."
+                );
+                }
+        }
+
+        Database.getInvoices().clear();
+        Database.getInvoices().addAll(savedInvoices);
+        }
+        
+        private void loadPayments() {
+
+        PaymentRepository repository =
+                new PaymentRepository();
+
+        List<Payment> savedPayments =
+                repository.findAllPayments();
+
+        if (savedPayments.isEmpty()) {
+
+                // Sparar eventuell befintlig data första gången.
+                for (Payment payment : Database.getPayments()) {
+                repository.save(payment);
+                }
+
+                return;
+        }
+
+        // Originalsystemet använder listans storlek + 1 för nästa ID.
+        for (int i = 0; i < savedPayments.size(); i++) {
+
+                Payment payment = savedPayments.get(i);
+
+                if (payment.getId() != i + 1) {
+                throw new IllegalStateException(
+                        "Payment IDs must be consecutive, starting at 1."
+                );
+                }
+
+                // En betalning måste höra till en befintlig faktura.
+                boolean invoiceExists =
+                        Database.getInvoices().stream()
+                                .anyMatch(invoice ->
+                                        invoice.getId() == payment.getInvoiceId());
+
+                if (!invoiceExists) {
+                throw new IllegalStateException(
+                        "Invoice missing for payment " + payment.getId()
+                );
+                }
+        }
+
+        Database.getPayments().clear();
+        Database.getPayments().addAll(savedPayments);
+        }
+
+        @Override
     public void stop() {
         HibernateUtil.shutDown();
     }
