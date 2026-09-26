@@ -81,7 +81,17 @@ public class CreateBookingView {
                 );
 
                 LocalDate date = datePicker.getValue();
+                if (date == null) {
+                    messageLabel.setText("Please select a date.");
+                    return;
+                }
 
+                Mechanic mechanic = mechanicCombo.getValue();
+
+                if (mechanic == null) {
+                    messageLabel.setText("Please select a mechanic.");
+                    return;
+                }
                 String description =
                         descriptionField.getText();
 
@@ -98,7 +108,7 @@ public class CreateBookingView {
 
                     try {
                         // Sparar bokningen i MySQL innan vi visar en bekräftelse.
-                        bookingRepository.save(booking);
+                        bookingRepository.save(booking, mechanic.getId());
                     } catch (RuntimeException exception) {
                         // Tar bort bokningen ur minnet om databassparandet misslyckades.
                         Database.getBookings().remove(booking);
@@ -117,6 +127,8 @@ public class CreateBookingView {
                     vehicleIdField.clear();
                     datePicker.setValue(null);
                     descriptionField.clear();
+                    mechanicCombo.getSelectionModel().clearSelection();
+                    mechanicCombo.setValue(null);
 
                 } else {
 
@@ -147,12 +159,13 @@ public class CreateBookingView {
                 vehicleIdField,
                 dateLabel,
                 datePicker,
+                mechanicLabel,
+                mechanicCombo,
                 descriptionLabel,
                 descriptionField,
                 createButton,
-                messageLabel,
-                mechanicLabel,
-                mechanicCombo
+                messageLabel
+
         );
 
         return view;

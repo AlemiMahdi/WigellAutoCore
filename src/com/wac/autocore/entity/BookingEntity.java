@@ -26,6 +26,9 @@ public class BookingEntity {
     @Column(name = "status")
     private String status;
 
+    @Column(name = "mechanic_id")
+    private Integer mechanicId;
+
     public BookingEntity() {}
 
     public int getId(){ return id; }
@@ -47,6 +50,14 @@ public class BookingEntity {
     public String getStatus(){ return status; }
 
     public void setStatus (String status){ this.status = status;}
+
+    public Integer getMechanicId() {
+        return mechanicId;
+    }
+
+    public void setMechanicId(Integer mechanicId) {
+        this.mechanicId = mechanicId;
+    }
 
 
 
