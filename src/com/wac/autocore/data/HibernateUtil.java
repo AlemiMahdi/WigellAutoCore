@@ -13,7 +13,7 @@ public class HibernateUtil {
             return new Configuration().configure().buildSessionFactory();
         }catch (Throwable ex) {
             System.err.println("Could not create SessionFactory: " + ex);
-            throw new ExceptionInInitializerError(ex);
+            throw new IllegalStateException("Could not connect to database.", ex);
         }
     }
 
