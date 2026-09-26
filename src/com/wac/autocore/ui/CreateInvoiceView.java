@@ -9,6 +9,8 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
+import com.wac.autocore.data.Database;
+import com.wac.autocore.repository.InvoiceRepository;
 
 
 
@@ -16,6 +18,8 @@ public class CreateInvoiceView {
 
     public static VBox build(){
         GarageSystem garageSystem = new GarageSystem();
+
+        InvoiceRepository invoiceRepository = new InvoiceRepository();
 
         GridPane form = new GridPane();
         form.setHgap(10);
@@ -49,12 +53,33 @@ public class CreateInvoiceView {
 
             Invoice invoice = garageSystem.createInvoice(workOrderId, discountCode);
 
-            if(invoice == null) {
-                statusLabel.setText("Could not create invoice. Check work order ID");
+            if (invoice == null) {
+
+                statusLabel.setText(
+                        "Could not create invoice. Check work order ID."
+                );
+
             } else {
-                statusLabel.setText("Invoice created.");
-                workOrderIdField.clear();
-                discoutField.clear();
+
+                try {
+
+                    invoiceRepository.save(invoice);
+
+                    statusLabel.setText(
+                            "Invoice created and saved."
+                    );
+
+                    workOrderIdField.clear();
+                    discoutField.clear();
+
+                } catch (RuntimeException exception) {
+
+                    Database.getInvoices().remove(invoice);
+                    statusLabel.setText(
+                            "Invoice could not be saved to the database."
+                    );
+                    exception.printStackTrace();
+                }
             }
 
 

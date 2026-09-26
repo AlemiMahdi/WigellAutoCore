@@ -14,9 +14,12 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 
+import com.wac.autocore.repository.PaymentRepository;
+
 public class ProcessPaymentView {
 
     private final GarageSystem garageSystem = new GarageSystem();
+    private final PaymentRepository paymentRepository = new PaymentRepository();
 
     public VBox getView() {
 
@@ -105,12 +108,15 @@ public class ProcessPaymentView {
                 return;
             }
 
+        Invoice invoice = Database.getInvoices().stream()
+                .filter(existingInvoice ->
+                        existingInvoice.getId() == invoiceId)
+                .findFirst()
+                .orElse(null);
 
-            Payment payment =
-                    garageSystem.processPayment(
-                            invoiceId,
-                            paymentType
-                    );
+        boolean previousPaidStatus = invoice != null && invoice.isPaid();
+
+        Payment payment = garageSystem.processPayment( invoiceId, paymentType );
 
 
             if (payment == null) {
@@ -123,8 +129,31 @@ public class ProcessPaymentView {
                 return;
             }
 
+        try {
 
-            if (payment.isSuccessful()) {
+        paymentRepository.savePaymentAndInvoice(
+                payment,
+                invoice
+        );
+
+        } catch (RuntimeException exception) {
+
+        // Återställ ändringarna som GarageSystem gjorde i minnet.
+        Database.getPayments().remove(payment);
+        invoice.setPaid(previousPaidStatus);
+
+        invoiceList.refresh();
+
+        messageLabel.setText(
+                "Payment could not be saved to the database."
+        );
+
+        exception.printStackTrace();
+
+        return;
+        }
+
+        if (payment.isSuccessful()) {
 
                 messageLabel.setText(
                         "Payment completed successfully."
@@ -133,15 +162,13 @@ public class ProcessPaymentView {
                 invoiceIdField.clear();
                 paymentTypeBox.setValue(null);
 
-                // Uppdatera listan så Paid-status syns direkt
                 invoiceList.refresh();
 
-            } else {
-
+        } else {
                 messageLabel.setText(
                         "Payment failed."
                 );
-            }
+        }
         });
 
 
