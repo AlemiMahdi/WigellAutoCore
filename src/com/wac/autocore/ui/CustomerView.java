@@ -9,12 +9,15 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import com.wac.autocore.ui.language.LanguageManager;
 
 //befintliga kunder
 public class CustomerView extends VBox {
 
     public CustomerView() {
         setSpacing(15);
+
+        LanguageManager language = LanguageManager.getInstance();
 
 
         Label title = new Label("Customers");
@@ -43,8 +46,16 @@ public class CustomerView extends VBox {
 
         TableColumn<Customer, String> vipColumn = new TableColumn<>("VIP");
         vipColumn.setCellValueFactory(cell ->
-                new ReadOnlyStringWrapper(
-                        cell.getValue().isVip() ? "Yes" : "No"));
+                language.text(
+                        cell.getValue().isVip() ? "common.yes" : "common.no"
+                )
+        );
+        title.textProperty().bind(language.text("customers.title"));
+        idColumn.textProperty().bind(language.text("customers.id"));
+        nameColumn.textProperty().bind(language.text("customers.name"));
+        phoneColumn.textProperty().bind(language.text("customers.phone"));
+        emailColumn.textProperty().bind(language.text("customers.email"));
+        vipColumn.textProperty().bind(language.text("customers.vip"));
 
         table.getColumns().add(idColumn);
         table.getColumns().add(nameColumn);
@@ -53,7 +64,9 @@ public class CustomerView extends VBox {
         table.getColumns().add(vipColumn);
 
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        table.setPlaceholder(new Label("No customers found."));
+        Label emptyLabel = new Label();
+        emptyLabel.textProperty().bind(language.text("customers.empty"));
+        table.setPlaceholder(emptyLabel);
 
         //hämtar kundlistan när vyn skapas.
         table.setItems(
