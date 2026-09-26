@@ -1,6 +1,11 @@
 package com.wac.autocore.ui;
 import com.wac.autocore.data.Database;
+import com.wac.autocore.model.Booking;
+import com.wac.autocore.model.Mechanic;
 import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.repository.BookingRepository;
+import com.wac.autocore.repository.MechanicRepository;
+import com.wac.autocore.repository.WorkOrderRepository;
 import com.wac.autocore.service.GarageSystem;
 import javafx.collections.FXCollections;
 import javafx.scene.control.Button;
@@ -30,6 +35,9 @@ public class StartWorkOrderView extends VBox {
         feedbackLabel.setWrapText(true);
 
         GarageSystem garageSystem = new GarageSystem();
+        WorkOrderRepository workOrderRepository = new WorkOrderRepository();
+        BookingRepository bookingRepository = new BookingRepository();
+        MechanicRepository mechanicRepository = new MechanicRepository();
 
         if (workOrderComboBox.getItems().isEmpty()) {
             feedbackLabel.setText("No Work Order has been found. Please create a work order first.");
@@ -50,8 +58,36 @@ public class StartWorkOrderView extends VBox {
 
             if ("CREATED".equals(previousStatus)
                     && "IN_PROGRESS".equals(workorder.getStatus())) {
-                feedbackLabel.setText(
-                        "Work order " + workorder.getId() + " has been started.");
+                // Hämtar bokningen och mekanikern som startWorkOrder har ändrat.
+                Booking booking = Database.getBookings().stream()
+                        .filter(b -> b.getId() == workorder.getBookingId())
+                        .findFirst()
+                        .orElse(null);
+
+                Mechanic mechanic = Database.getMechanics().stream()
+                        .filter(m -> m.getId() == workorder.getMechanicId())
+                        .findFirst()
+                        .orElse(null);
+
+                try {
+                    // Sparar arbetsorderns, bokningens och mekanikerns nya status.
+                    workOrderRepository.save(workorder);
+
+                    if (booking != null) {
+                        bookingRepository.save(booking);
+                    }
+
+                    if (mechanic != null) {
+                        mechanicRepository.save(mechanic);
+                    }
+
+                    feedbackLabel.setText(
+                            "Work order " + workorder.getId() + " has been started.");
+                } catch (RuntimeException exception) {
+                    feedbackLabel.setText(
+                            "Work order was started but could not be saved.");
+                    exception.printStackTrace();
+                }
 
             } else  {
                 feedbackLabel.setText("Work order cannot be started.");
