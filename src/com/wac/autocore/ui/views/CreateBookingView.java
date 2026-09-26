@@ -3,6 +3,7 @@ package com.wac.autocore.ui.views;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.Vehicle;
+import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.service.GarageSystem;
 
 import javafx.collections.FXCollections;
@@ -68,6 +69,8 @@ public class CreateBookingView {
 
         Button createButton = new Button("Create booking");
 
+        BookingRepository bookingRepository = new BookingRepository();
+
 
         createButton.setOnAction(event -> {
 
@@ -92,6 +95,20 @@ public class CreateBookingView {
 
 
                 if (booking != null) {
+
+                    try {
+                        // Sparar bokningen i MySQL innan vi visar en bekräftelse.
+                        bookingRepository.save(booking);
+                    } catch (RuntimeException exception) {
+                        // Tar bort bokningen ur minnet om databassparandet misslyckades.
+                        Database.getBookings().remove(booking);
+
+                        messageLabel.setText(
+                                "Booking could not be saved. Please try again."
+                        );
+                        exception.printStackTrace();
+                        return;
+                    }
 
                     messageLabel.setText(
                             "Booking created successfully."

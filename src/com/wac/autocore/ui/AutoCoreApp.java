@@ -1,5 +1,8 @@
 package com.wac.autocore.ui;
 
+
+import com.wac.autocore.model.*;
+import com.wac.autocore.repository.*;
 import javafx.application.Platform;
 import com.wac.autocore.data.HibernateUtil;
 import javafx.application.Application;
@@ -21,18 +24,9 @@ import com.wac.autocore.ui.views.ShowWorkOrdersView;
 import com.wac.autocore.ui.views.CreateBookingView;
 import com.wac.autocore.ui.views.ProcessPaymentView;
 import com.wac.autocore.data.Database;
-import com.wac.autocore.model.Customer;
-import com.wac.autocore.repository.CustomerRepository;
 import javafx.scene.control.Alert;
 
 import java.util.List;
-
-import com.wac.autocore.model.Vehicle;
-import com.wac.autocore.repository.VehicleRepository;
-import com.wac.autocore.model.ServiceItem;
-import com.wac.autocore.model.Mechanic;
-import com.wac.autocore.repository.ServiceItemRepository;
-import com.wac.autocore.repository.MechanicRepository;
 
 
 public class AutoCoreApp extends Application {
@@ -46,6 +40,7 @@ public class AutoCoreApp extends Application {
             loadVehicles();
             loadServiceItems();
             loadMechanics();
+            loadBookings();
 
         } catch (RuntimeException exception) {
             exception.printStackTrace();
@@ -153,7 +148,7 @@ public class AutoCoreApp extends Application {
                 Database.getVehicles().clear();
                 Database.getVehicles().addAll(savedVehicles);
                 }
-        }
+    }
 
     private void loadServiceItems() {
 
@@ -219,6 +214,55 @@ public class AutoCoreApp extends Application {
         Database.getMechanics().clear();
         Database.getMechanics().addAll(savedMechanics);
         }
+
+    // Läser in bokningar efter att fordonen har laddats,
+    // eftersom varje bokning måste peka på ett befintligt fordon.
+    private void loadBookings() {
+        BookingRepository repository = new BookingRepository();
+        List<Booking> savedBookings = repository.findAllBookings();
+
+        // Tom tabell betyder att appen startas för första gången.
+        boolean firstRun = savedBookings.isEmpty();
+
+        // Första gången kontrolleras originalets exempeldata,
+        // annars de bokningar som hämtats från databasen.
+        List<Booking> bookings = firstRun ? Database.getBookings() : savedBookings;
+
+        for (int i = 0; i < bookings.size(); i++) {
+            Booking booking = bookings.get(i);
+
+            // Originalet räknar ut nästa ID som listans storlek + 1,
+            // så ID:na måste vara 1, 2, 3... utan luckor.
+            if (booking.getId() != i + 1) {
+                throw new IllegalStateException(
+                        "Booking IDs must be consecutive, starting at 1."
+                );
+            }
+
+            // Kontrollerar att bokningens fordon finns.
+            boolean vehicleExists = Database.getVehicles().stream()
+                    .anyMatch(vehicle ->
+                            vehicle.getId() == booking.getVehicleId());
+
+            if (!vehicleExists) {
+                throw new IllegalStateException(
+                        "Vehicle missing for booking " + booking.getId()
+                );
+            }
+        }
+
+        if (firstRun) {
+            // Sparar originalets exempelbokningar när tabellen är tom.
+            for (Booking booking : bookings) {
+                repository.save(booking);
+            }
+        } else {
+            // Ersätter exempelbokningarna i minnet med de sparade bokningarna.
+            Database.getBookings().clear();
+            Database.getBookings().addAll(savedBookings);
+        }
+    }
+
     @Override
     public void stop() {
         HibernateUtil.shutDown();
