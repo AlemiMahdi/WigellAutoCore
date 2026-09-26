@@ -28,17 +28,62 @@ public class BookingRepository {
         }
     }
 
+    // Sparar bokningen och behåller eventuell befintlig mekaniker.
     public void save(Booking booking) {
+        saveBooking(booking, null, false);
+    }
 
-        BookingEntity entity = new BookingEntity();
+    // Sparar bokningen tillsammans med vald mekaniker.
+    public void save(Booking booking, int mechanicId) {
+        saveBooking(booking, mechanicId, true);
+    }
 
-        entity.setId(booking.getId());
-        entity.setVehicleId(booking.getVehicleId());
-        entity.setDate(booking.getDate());
-        entity.setDescription(booking.getDescription());
-        entity.setStatus(booking.getStatus());
+    private void saveBooking(
+            Booking booking,
+            Integer mechanicId,
+            boolean updateMechanic
+    ) {
+        try (Session session =
+                     HibernateUtil.getSessionFactory().openSession()) {
 
-        save(entity);
+            Transaction transaction = session.beginTransaction();
+
+            try {
+                // Hämtar befintlig entity så extra uppgifter bevaras.
+                BookingEntity entity =
+                        session.get(BookingEntity.class, booking.getId());
+
+                boolean isNew = entity == null;
+
+                if (isNew) {
+                    entity = new BookingEntity();
+                    entity.setId(booking.getId());
+                }
+
+                entity.setVehicleId(booking.getVehicleId());
+                entity.setDate(booking.getDate());
+                entity.setDescription(booking.getDescription());
+                entity.setStatus(booking.getStatus());
+
+                // Ändrar mekanikern bara när ett nytt val skickas in.
+                if (updateMechanic) {
+                    entity.setMechanicId(mechanicId);
+                }
+
+                if (isNew) {
+                    session.save(entity);
+                }
+
+                // Befintliga entities uppdateras automatiskt av Hibernate.
+                transaction.commit();
+
+            } catch (RuntimeException exception) {
+                if (transaction.isActive()) {
+                    transaction.rollback();
+                }
+                throw exception;
+            }
+        }
     }
 
     public List<BookingEntity> findAll() {
