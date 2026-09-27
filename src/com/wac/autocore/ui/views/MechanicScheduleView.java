@@ -3,6 +3,7 @@ package com.wac.autocore.ui.views;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
 
+import com.wac.autocore.model.WorkOrder;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.scene.control.ComboBox;
@@ -110,6 +111,10 @@ public class MechanicScheduleView {
                 if (entity.getMechanicId() != null) {
                     mechanicByBooking.put(entity.getId(), entity.getMechanicId());
                 }
+            }
+
+            for (WorkOrder workOrder : Database.getWorkOrders()) {
+                mechanicByBooking.put(workOrder.getBookingId(), workOrder.getMechanicId());
             }
             return true;
         } catch (RuntimeException e) {
