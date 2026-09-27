@@ -5,6 +5,7 @@ import com.wac.autocore.model.Booking;
 
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
@@ -16,6 +17,7 @@ import java.time.LocalDate;
 import com.wac.autocore.entity.BookingEntity;
 import com.wac.autocore.model.Mechanic;
 import com.wac.autocore.repository.BookingRepository;
+import com.wac.autocore.ui.UiKit;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -30,7 +32,8 @@ public class MechanicScheduleView {
     public VBox getView() {
 
         if (!loadMechanicMap()) {
-            Label errorLabel = new Label(
+            Label errorLabel = UiKit.feedbackLabel();
+            UiKit.showError(errorLabel,
                     "Mechanic schedule could not be loaded. Please reopen this page to try again."
             );
             errorLabel.setWrapText(true);
@@ -41,11 +44,8 @@ public class MechanicScheduleView {
         }
 
         //Titel
-        Label title = new Label("MECHANIC SCHEDULE");
-        title.setStyle(
-                "-fx-font-size: 24px;" +
-                        "-fx-font-weight: bold;"
-        );
+        Node title = UiKit.pageHeader("Mechanic schedule", null);
+
 
         //Steg 2: rullista
         ComboBox<Mechanic> mechanicCombo = new ComboBox<>();
@@ -73,7 +73,9 @@ public class MechanicScheduleView {
         statusCol.setCellValueFactory(new PropertyValueFactory<>("status"));
 
         table.getColumns().addAll(idCol, dateCol, vehicleCol, descCol, statusCol);
-        table.setPlaceholder(new Label("Select a mechanic"));
+        UiKit.styleTable(table);
+        statusCol.setCellFactory(UiKit.badgeCells());
+        table.setPlaceholder(UiKit.emptyText("Select a mechanic"));
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
 
@@ -91,14 +93,14 @@ public class MechanicScheduleView {
 
             table.setItems(FXCollections.observableArrayList(result));
             if (result.isEmpty()) {
-                table.setPlaceholder(new Label("No bookings for this mechanic"));
+                table.setPlaceholder(UiKit.emptyText("No bookings for this mechanic"));
 
             }
             countLabel.setText(result.size() + " bookings");
         });
 
         VBox root = new VBox(10, title, mechanicCombo, table, countLabel);
-        root.setPadding(new Insets(15));
+
         return root;
 
 
