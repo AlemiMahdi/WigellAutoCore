@@ -13,10 +13,42 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
 
 import java.time.LocalDate;
+import com.wac.autocore.entity.BookingEntity;
+import com.wac.autocore.model.Mechanic;
+import com.wac.autocore.repository.BookingRepository;
+import javafx.beans.property.ReadOnlyStringWrapper;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class ShowBookingsView {
 
     public VBox getView() {
+
+        Map<Integer, Integer> mechanicByBooking = new HashMap<>();
+        Map<Integer, String> mechanicNames = new HashMap<>();
+
+        for (Mechanic mechanic : Database.getMechanics()) {
+            mechanicNames.put(mechanic.getId(), mechanic.getName());
+        }
+        try {BookingRepository bookingRepository = new BookingRepository();
+
+            for(BookingEntity booking : bookingRepository.findAll()){
+                mechanicByBooking.put(booking.getId(), booking.getMechanicId());
+            }
+        } catch (RuntimeException e) {
+           e.printStackTrace();
+
+           Label errorLabel = new Label(
+                   "Bookings could not be loaded. Please reopen this page to try again."
+           );
+           errorLabel.setWrapText(true);
+
+           VBox errorView = new VBox(15, errorLabel);
+           errorView.setPadding(new Insets(15));
+           return errorView;
+        }
+
 
         Label title = new Label("BOOKINGS");
 
@@ -62,11 +94,40 @@ public class ShowBookingsView {
                 new PropertyValueFactory<Booking, String>("status")
         );
 
+        TableColumn<Booking, String> mechanicColumn =
+                new TableColumn<>("Mechanic");
+
+        mechanicColumn.setCellValueFactory(cell -> {
+            int bookingId = cell.getValue().getId();
+
+            if (!mechanicByBooking.containsKey(bookingId)) {
+                return new ReadOnlyStringWrapper("Booking not saved");
+            }
+
+            Integer mechanicId = mechanicByBooking.get(bookingId);
+
+            if (mechanicId == null) {
+                return new ReadOnlyStringWrapper("Not assigned");
+            }
+
+            String mechanicName = mechanicNames.get(mechanicId);
+
+            if (mechanicName == null) {
+                return new ReadOnlyStringWrapper(
+                        "Unknown mechanic (ID: " + mechanicId + ")"
+                );
+            }
+
+            return new ReadOnlyStringWrapper(
+                    mechanicName + " (ID: " + mechanicId + ")"
+            );
+        });
 
         table.getColumns().addAll(
                 idColumn,
                 vehicleColumn,
                 dateColumn,
+                mechanicColumn,
                 descriptionColumn,
                 statusColumn
         );
