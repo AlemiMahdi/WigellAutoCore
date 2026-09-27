@@ -1,7 +1,12 @@
 package com.wac.autocore.ui;
 
 import com.wac.autocore.data.Database;
+import com.wac.autocore.model.Booking;
+import com.wac.autocore.model.Mechanic;
 import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.repository.BookingRepository;
+import com.wac.autocore.repository.MechanicRepository;
+import com.wac.autocore.repository.WorkOrderRepository;
 import com.wac.autocore.service.GarageSystem;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -30,6 +35,9 @@ public class CompleteWorkOrderView {
         tableView.setItems(data);
 
         GarageSystem garageSystem = new GarageSystem();
+        WorkOrderRepository workOrderRepository = new WorkOrderRepository();
+        BookingRepository bookingRepository = new BookingRepository();
+        MechanicRepository mechanicRepository = new MechanicRepository();
 
         GridPane form = new GridPane();
         form.setHgap(10);
@@ -67,10 +75,41 @@ public class CompleteWorkOrderView {
             } else if(!foundOrder.getStatus().equals("IN_PROGRESS")) {
                 statusLabel.setText("Cannot complete work order. Has to be on status: IN_PROGRESS.");
             } else {
-                garageSystem.completeWorkOrder(workOderId);
+            garageSystem.completeWorkOrder(workOderId);
+
+            WorkOrder completedOrder = foundOrder;
+
+            // Hämtar bokningen och mekanikern som completeWorkOrder har ändrat.
+            Booking booking = Database.getBookings().stream()
+                    .filter(b -> b.getId() == completedOrder.getBookingId())
+                    .findFirst()
+                    .orElse(null);
+
+            Mechanic mechanic = Database.getMechanics().stream()
+                    .filter(m -> m.getId() == completedOrder.getMechanicId())
+                    .findFirst()
+                    .orElse(null);
+
+            try {
+                // Sparar arbetsorderns, bokningens och mekanikerns nya status.
+                workOrderRepository.save(completedOrder);
+
+                if (booking != null) {
+                    bookingRepository.save(booking);
+                }
+
+                if (mechanic != null) {
+                    mechanicRepository.save(mechanic);
+                }
+
                 statusLabel.setText("Work order completed");
                 workOrderField.clear();
+            } catch (RuntimeException exception) {
+                statusLabel.setText(
+                        "Work order was completed but could not be saved.");
+                exception.printStackTrace();
             }
+        }
 
 
         });

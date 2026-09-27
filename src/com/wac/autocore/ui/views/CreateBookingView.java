@@ -3,6 +3,7 @@ package com.wac.autocore.ui.views;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.Vehicle;
+import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.service.GarageSystem;
 
 import javafx.collections.FXCollections;
@@ -12,6 +13,7 @@ import javafx.scene.layout.VBox;
 
 import java.time.LocalDate;
 import javafx.scene.control.DatePicker;
+import com.wac.autocore.model.Mechanic;
 
 public class CreateBookingView {
 
@@ -48,6 +50,15 @@ public class CreateBookingView {
 
         DatePicker datePicker = new DatePicker();
 
+        Label mechanicLabel = new Label("Mechanic:");
+
+        ComboBox<Mechanic> mechanicCombo = new ComboBox<>(
+                FXCollections.observableArrayList(Database.getMechanics())
+        );
+
+        mechanicCombo.setPromptText("Select mechanic");
+        mechanicCombo.setMaxWidth(Double.MAX_VALUE);
+
         Label descriptionLabel = new Label("Description:");
 
         TextArea descriptionField = new TextArea();
@@ -57,6 +68,8 @@ public class CreateBookingView {
         Label messageLabel = new Label();
 
         Button createButton = new Button("Create booking");
+
+        BookingRepository bookingRepository = new BookingRepository();
 
 
         createButton.setOnAction(event -> {
@@ -68,7 +81,17 @@ public class CreateBookingView {
                 );
 
                 LocalDate date = datePicker.getValue();
+                if (date == null) {
+                    messageLabel.setText("Please select a date.");
+                    return;
+                }
 
+                Mechanic mechanic = mechanicCombo.getValue();
+
+                if (mechanic == null) {
+                    messageLabel.setText("Please select a mechanic.");
+                    return;
+                }
                 String description =
                         descriptionField.getText();
 
@@ -83,6 +106,20 @@ public class CreateBookingView {
 
                 if (booking != null) {
 
+                    try {
+                        // Sparar bokningen i MySQL innan vi visar en bekräftelse.
+                        bookingRepository.save(booking, mechanic.getId());
+                    } catch (RuntimeException exception) {
+                        // Tar bort bokningen ur minnet om databassparandet misslyckades.
+                        Database.getBookings().remove(booking);
+
+                        messageLabel.setText(
+                                "Booking could not be saved. Please try again."
+                        );
+                        exception.printStackTrace();
+                        return;
+                    }
+
                     messageLabel.setText(
                             "Booking created successfully."
                     );
@@ -90,6 +127,8 @@ public class CreateBookingView {
                     vehicleIdField.clear();
                     datePicker.setValue(null);
                     descriptionField.clear();
+                    mechanicCombo.getSelectionModel().clearSelection();
+                    mechanicCombo.setValue(null);
 
                 } else {
 
@@ -120,10 +159,13 @@ public class CreateBookingView {
                 vehicleIdField,
                 dateLabel,
                 datePicker,
+                mechanicLabel,
+                mechanicCombo,
                 descriptionLabel,
                 descriptionField,
                 createButton,
                 messageLabel
+
         );
 
         return view;

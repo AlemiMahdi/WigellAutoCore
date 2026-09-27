@@ -1,5 +1,8 @@
 package com.wac.autocore.ui;
 
+
+import com.wac.autocore.model.*;
+import com.wac.autocore.repository.*;
 import javafx.application.Platform;
 import com.wac.autocore.data.HibernateUtil;
 import javafx.application.Application;
@@ -20,6 +23,8 @@ import com.wac.autocore.ui.views.ShowPaymentsView;
 import com.wac.autocore.ui.views.ShowWorkOrdersView;
 import com.wac.autocore.ui.views.CreateBookingView;
 import com.wac.autocore.ui.views.ProcessPaymentView;
+import com.wac.autocore.ui.views.MechanicScheduleView;
+
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Customer;
 import com.wac.autocore.repository.CustomerRepository;
@@ -39,6 +44,10 @@ import javafx.scene.control.MenuButton;
 import javafx.scene.control.RadioMenuItem;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.HBox;
+import com.wac.autocore.model.Invoice;
+import com.wac.autocore.model.Payment;
+import com.wac.autocore.repository.InvoiceRepository;
+import com.wac.autocore.repository.PaymentRepository;
 
 
 public class AutoCoreApp extends Application {
@@ -55,6 +64,10 @@ public class AutoCoreApp extends Application {
             loadVehicles();
             loadServiceItems();
             loadMechanics();
+            loadBookings();
+            loadWorkOrders();
+            loadInvoices();
+            loadPayments();
 
         } catch (RuntimeException exception) {
             exception.printStackTrace();
@@ -228,12 +241,201 @@ public class AutoCoreApp extends Application {
         Database.getMechanics().clear();
         Database.getMechanics().addAll(savedMechanics);
         }
+
+        private void loadInvoices() {
+
+        InvoiceRepository repository =
+                new InvoiceRepository();
+
+        List<Invoice> savedInvoices =
+                repository.findAllInvoices();
+
+        if (savedInvoices.isEmpty()) {
+
+                // Sparar eventuell befintlig data första gången.
+                for (Invoice invoice : Database.getInvoices()) {
+                repository.save(invoice);
+                }
+
+                return;
+        }
+
+        // Originalsystemet använder listans storlek + 1 för nästa ID.
+        for (int i = 0; i < savedInvoices.size(); i++) {
+                if (savedInvoices.get(i).getId() != i + 1) {
+                throw new IllegalStateException(
+                        "Invoice IDs must be consecutive, starting at 1."
+                );
+                }
+        }
+
+        Database.getInvoices().clear();
+        Database.getInvoices().addAll(savedInvoices);
+        }
+
+        private void loadPayments() {
+
+        PaymentRepository repository =
+                new PaymentRepository();
+
+        List<Payment> savedPayments =
+                repository.findAllPayments();
+
+        if (savedPayments.isEmpty()) {
+
+                // Sparar eventuell befintlig data första gången.
+                for (Payment payment : Database.getPayments()) {
+                repository.save(payment);
+                }
+
+                return;
+        }
+
+        // Originalsystemet använder listans storlek + 1 för nästa ID.
+        for (int i = 0; i < savedPayments.size(); i++) {
+
+                Payment payment = savedPayments.get(i);
+
+                if (payment.getId() != i + 1) {
+                throw new IllegalStateException(
+                        "Payment IDs must be consecutive, starting at 1."
+                );
+                }
+
+                // En betalning måste höra till en befintlig faktura.
+                boolean invoiceExists =
+                        Database.getInvoices().stream()
+                                .anyMatch(invoice ->
+                                        invoice.getId() == payment.getInvoiceId());
+
+                if (!invoiceExists) {
+                throw new IllegalStateException(
+                        "Invoice missing for payment " + payment.getId()
+                );
+                }
+        }
+
+        Database.getPayments().clear();
+        Database.getPayments().addAll(savedPayments);
+        }
+
+    // Läser in bokningar efter att fordonen har laddats,
+    // eftersom varje bokning måste peka på ett befintligt fordon.
+    private void loadBookings() {
+        BookingRepository repository = new BookingRepository();
+        List<Booking> savedBookings = repository.findAllBookings();
+
+        // Tom tabell betyder att appen startas för första gången.
+        boolean firstRun = savedBookings.isEmpty();
+
+        // Första gången kontrolleras originalets exempeldata,
+        // annars de bokningar som hämtats från databasen.
+        List<Booking> bookings = firstRun ? Database.getBookings() : savedBookings;
+
+        for (int i = 0; i < bookings.size(); i++) {
+            Booking booking = bookings.get(i);
+
+            // Originalet räknar ut nästa ID som listans storlek + 1,
+            // så ID:na måste vara 1, 2, 3... utan luckor.
+            if (booking.getId() != i + 1) {
+                throw new IllegalStateException(
+                        "Booking IDs must be consecutive, starting at 1."
+                );
+            }
+
+            // Kontrollerar att bokningens fordon finns.
+            boolean vehicleExists = Database.getVehicles().stream()
+                    .anyMatch(vehicle ->
+                            vehicle.getId() == booking.getVehicleId());
+
+            if (!vehicleExists) {
+                throw new IllegalStateException(
+                        "Vehicle missing for booking " + booking.getId()
+                );
+            }
+        }
+
+        if (firstRun) {
+            // Sparar originalets exempelbokningar när tabellen är tom.
+            for (Booking booking : bookings) {
+                repository.save(booking);
+            }
+        } else {
+            // Ersätter exempelbokningarna i minnet med de sparade bokningarna.
+            Database.getBookings().clear();
+            Database.getBookings().addAll(savedBookings);
+        }
+    }
+
+    // Läser in arbetsordrar sist, eftersom de pekar på
+    // bokningar, mekaniker och tjänster som måste vara laddade först.
+    private void loadWorkOrders() {
+
+        WorkOrderRepository repository = new WorkOrderRepository();
+        List<WorkOrder> savedWorkOrders = repository.findAllWorkOrders();
+
+        // Originalet har inga exempelarbetsordrar,
+        // så en tom tabell betyder att det inte finns något att läsa in.
+        if (savedWorkOrders.isEmpty()) {
+            return;
+        }
+
+        for (int i = 0; i < savedWorkOrders.size(); i++) {
+            WorkOrder workOrder = savedWorkOrders.get(i);
+
+            // Originalet räknar ut nästa ID som listans storlek + 1,
+            // så ID:na måste vara 1, 2, 3... utan luckor.
+            if (workOrder.getId() != i+1) {
+                throw new IllegalStateException(
+                        "Work order IDs must be consecutive, starting at 1."
+                );
+            }
+            // Kontrollerar att arbetsorderns bokning finns.
+            boolean bookingExists = Database.getBookings().stream()
+                    .anyMatch(booking ->
+                            booking.getId() == workOrder.getBookingId());
+
+            if (!bookingExists) {
+                throw new IllegalStateException(
+                        "Booking missing for work order " + workOrder.getId()
+                );
+            }
+            // Kontrollerar att arbetsorderns mekaniker finns.
+            boolean mechanicsExist = Database.getMechanics().stream()
+                    .anyMatch(mechanic ->
+                            mechanic.getId() == workOrder.getMechanicId());
+
+            if (!mechanicsExist) {
+                throw new IllegalStateException(
+                        "Mechanic missing for work order " + workOrder.getId()
+                );
+            }
+            // Kontrollerar att alla arbetsorderns tjänster finns.
+            for (int serviceItemId : workOrder.getServiceItemIds()) {
+                boolean serviceItemExists = Database.getServiceItems().stream().
+                        anyMatch(serviceItem ->
+                                serviceItem.getId() == serviceItemId);
+
+                if (!serviceItemExists) {
+                    throw new IllegalStateException(
+                            "Service item missing for work order " + workOrder.getId()
+                    );
+                }
+            }
+        }
+        // Ersätter arbetsordrarna i minnet med de sparade arbetsordrarna.
+        Database.getWorkOrders().clear();
+        Database.getWorkOrders().addAll(savedWorkOrders);
+
+    }
+
     @Override
     public void stop() {
         HibernateUtil.shutDown();
     }
 
     private VBox createHeader() {
+
         Label title = new Label("WIGELL AUTOCORE");
         title.setStyle(
                 "-fx-font-size: 26px;" +
@@ -347,6 +549,9 @@ public class AutoCoreApp extends Application {
         Button processPayment =
                 createMenuButton("Process payment");
 
+        Button scheduleButton =
+                createMenuButton("Mechanic schedule");
+
         Button exit =
                 createMenuButton("Exit");
 
@@ -385,6 +590,7 @@ public class AutoCoreApp extends Application {
                 createInvoice,
                 showPayments,
                 processPayment,
+                scheduleButton,
                 exit
         );
 
@@ -477,6 +683,14 @@ public class AutoCoreApp extends Application {
 
             contentPane.getChildren().setAll(
                     paymentView.getView()
+            );
+        });
+
+        scheduleButton.setOnAction(actionEvent -> {
+            MechanicScheduleView scheduleView = new MechanicScheduleView();
+
+            contentPane.getChildren().setAll(
+                    scheduleView.getView()
             );
         });
 
