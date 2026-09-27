@@ -15,9 +15,12 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
+import com.wac.autocore.ui.language.LanguageManager;
 
 public class CompleteWorkOrderView {
     public static VBox build(){
+
+        LanguageManager language = LanguageManager.getInstance();
 
         TableView<WorkOrder> tableView = new TableView<>();
 
@@ -27,7 +30,9 @@ public class CompleteWorkOrderView {
         idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
 
         TableColumn<WorkOrder, String> statusCol = new TableColumn<>("Status");
-        statusCol.setCellValueFactory(new PropertyValueFactory<>("status"));
+        statusCol.setCellValueFactory(cell ->
+                language.text("workOrder.status." + cell.getValue().getStatus())
+        );
 
         tableView.getColumns().addAll(idCol, statusCol);
 
@@ -52,13 +57,31 @@ public class CompleteWorkOrderView {
         Button completeButton = new Button("Complete Work order");
         Label statusLabel = new Label();
 
+        statusLabel.setWrapText(true);
+
+// Uppdaterar texterna direkt när användaren byter språk.
+        idCol.textProperty().bind(language.text("completeWorkOrder.id"));
+        statusCol.textProperty().bind(language.text("completeWorkOrder.status"));
+        workOrderIdLabel.textProperty().bind(
+                language.text("completeWorkOrder.idLabel")
+        );
+        completeButton.textProperty().bind(
+                language.text("completeWorkOrder.button")
+        );
+
+        Label emptyLabel = new Label();
+        emptyLabel.textProperty().bind(language.text("completeWorkOrder.empty"));
+        tableView.setPlaceholder(emptyLabel);
+
         completeButton.setOnAction(actionEvent -> {
             int workOderId;
 
             try {
                 workOderId = Integer.parseInt(workOrderField.getText());
             } catch (NumberFormatException e) {
-                statusLabel.setText("Work order ID has to be a number.");
+                statusLabel.textProperty().bind(
+                        language.text("completeWorkOrder.invalidId")
+                );
                 return;
             }
 
@@ -71,9 +94,13 @@ public class CompleteWorkOrderView {
                 }
             }
             if(foundOrder == null) {
-                statusLabel.setText("Work order does not exist");
+                statusLabel.textProperty().bind(
+                        language.text("completeWorkOrder.notFound")
+                );
             } else if(!foundOrder.getStatus().equals("IN_PROGRESS")) {
-                statusLabel.setText("Cannot complete work order. Has to be on status: IN_PROGRESS.");
+                statusLabel.textProperty().bind(
+                        language.text("completeWorkOrder.invalidStatus")
+                );
             } else {
             garageSystem.completeWorkOrder(workOderId);
 
@@ -102,11 +129,16 @@ public class CompleteWorkOrderView {
                     mechanicRepository.save(mechanic);
                 }
 
-                statusLabel.setText("Work order completed");
+                statusLabel.textProperty().bind(
+                        language.text("completeWorkOrder.success")
+                );
+                tableView.refresh();
                 workOrderField.clear();
             } catch (RuntimeException exception) {
-                statusLabel.setText(
-                        "Work order was completed but could not be saved.");
+                statusLabel.textProperty().bind(
+                        language.text("completeWorkOrder.error")
+                );
+                tableView.refresh();
                 exception.printStackTrace();
             }
         }

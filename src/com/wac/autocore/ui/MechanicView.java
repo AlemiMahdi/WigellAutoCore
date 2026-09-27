@@ -9,12 +9,15 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import com.wac.autocore.ui.language.LanguageManager;
 
 //visar systemets befintliga mekaniker i en tabell
 public class MechanicView extends VBox {
 
     public MechanicView() {
         setSpacing(15);
+
+        LanguageManager language = LanguageManager.getInstance();
 
         //skapar sidans rubrik
         Label title = new Label("Mechanics");
@@ -50,8 +53,20 @@ public class MechanicView extends VBox {
         TableColumn<Mechanic, String> availableColumn =
                 new TableColumn<>("Available");
         availableColumn.setCellValueFactory(cell ->
-                new ReadOnlyStringWrapper(
-                        cell.getValue().isAvailable() ? "Yes" : "No"));
+                language.text(
+                        cell.getValue().isAvailable() ? "common.yes" : "common.no"
+                )
+        );
+
+        // Binder texterna så att de uppdateras direkt vid språkbyte.
+        title.textProperty().bind(language.text("mechanics.title"));
+        idColumn.textProperty().bind(language.text("mechanics.id"));
+        nameColumn.textProperty().bind(language.text("mechanics.name"));
+        phoneColumn.textProperty().bind(language.text("mechanics.phone"));
+        specializationColumn.textProperty().bind(
+                language.text("mechanics.specialization")
+        );
+        availableColumn.textProperty().bind(language.text("mechanics.available"));
 
         table.getColumns().add(idColumn);
         table.getColumns().add(nameColumn);
@@ -60,7 +75,9 @@ public class MechanicView extends VBox {
         table.getColumns().add(availableColumn);
 
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        table.setPlaceholder(new Label("No mechanics found."));
+        Label emptyLabel = new Label();
+        emptyLabel.textProperty().bind(language.text("mechanics.empty"));
+        table.setPlaceholder(emptyLabel);
 
         //hämtar aktuella mekaniker när vyn öppnas
         table.setItems(

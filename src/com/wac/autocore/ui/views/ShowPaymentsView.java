@@ -14,10 +14,13 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
 
 import java.time.LocalDateTime;
+import com.wac.autocore.ui.language.LanguageManager;
 
 public class ShowPaymentsView {
 
     public VBox getView() {
+
+        LanguageManager language = LanguageManager.getInstance();
 
         Label title = new Label("PAYMENTS");
 
@@ -60,10 +63,9 @@ public class ShowPaymentsView {
         TableColumn<Payment, String> paymentTypeColumn =
                 new TableColumn<>("Payment type");
 
-        paymentTypeColumn.setCellValueFactory(
-                new PropertyValueFactory<Payment, String>("paymentType")
+        paymentTypeColumn.setCellValueFactory(cell ->
+                language.text("payment.type." + cell.getValue().getPaymentType())
         );
-
 
         // Payment date
         TableColumn<Payment, LocalDateTime> paymentDateColumn =
@@ -78,14 +80,19 @@ public class ShowPaymentsView {
         TableColumn<Payment, String> successfulColumn =
                 new TableColumn<>("Successful");
 
-        successfulColumn.setCellValueFactory(cellData ->
-                new SimpleStringProperty(
-                        cellData.getValue().isSuccessful()
-                                ? "Yes"
-                                : "No"
+        successfulColumn.setCellValueFactory(cell ->
+                language.text(
+                        cell.getValue().isSuccessful() ? "common.yes" : "common.no"
                 )
         );
 
+        title.textProperty().bind(language.text("payments.title"));
+        idColumn.textProperty().bind(language.text("payments.id"));
+        invoiceIdColumn.textProperty().bind(language.text("payments.invoiceId"));
+        amountColumn.textProperty().bind(language.text("payments.amount"));
+        paymentTypeColumn.textProperty().bind(language.text("payments.type"));
+        paymentDateColumn.textProperty().bind(language.text("payments.date"));
+        successfulColumn.textProperty().bind(language.text("payments.successful"));
 
         table.getColumns().addAll(
                 idColumn,
@@ -104,9 +111,9 @@ public class ShowPaymentsView {
 
         table.setItems(payments);
 
-        table.setPlaceholder(
-                new Label("No payments found.")
-        );
+        Label emptyLabel = new Label();
+        emptyLabel.textProperty().bind(language.text("payments.empty"));
+        table.setPlaceholder(emptyLabel);
 
         table.setColumnResizePolicy(
                 TableView.CONSTRAINED_RESIZE_POLICY

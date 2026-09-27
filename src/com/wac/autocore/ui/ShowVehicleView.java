@@ -7,15 +7,21 @@ import javafx.collections.ObservableList;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
+import com.wac.autocore.ui.language.LanguageManager;
+import javafx.scene.control.Label;
 
 
 public class ShowVehicleView {
+
 
     /**
      * Bygger upp en tabell som visar alla fordon i systemet.
      * Returnerar en TableView som kan visas i contentPane i AutoCoreApp.
      */
     public static TableView<Vehicle> build() {
+
+        LanguageManager language = LanguageManager.getInstance();
+
         TableView<Vehicle> table = new TableView<>();
 
         // Varje TableColumn kopplas till en kolumnrubrik (visas för användaren)
@@ -39,6 +45,18 @@ public class ShowVehicleView {
 
         TableColumn<Vehicle, Integer> customerCol = new TableColumn<>("Kund-Id");
         customerCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
+
+
+        idCol.textProperty().bind(language.text("vehicles.id"));
+        regCol.textProperty().bind(language.text("vehicles.registration"));
+        brandCol.textProperty().bind(language.text("vehicles.brand"));
+        modelCol.textProperty().bind(language.text("vehicles.model"));
+        yearCol.textProperty().bind(language.text("vehicles.year"));
+        customerCol.textProperty().bind(language.text("vehicles.customerId"));
+
+        Label emptyLabel = new Label();
+        emptyLabel.textProperty().bind(language.text("vehicles.empty"));
+        table.setPlaceholder(emptyLabel);
 
         // Lägg till kolumnerna i tabellen, i den ordning de ska visas.
         table.getColumns().addAll(idCol, regCol, brandCol, modelCol, yearCol, customerCol);

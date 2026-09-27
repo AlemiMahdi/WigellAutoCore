@@ -73,11 +73,11 @@ public class AutoCoreApp extends Application {
             exception.printStackTrace();
 
             Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Database error");
-            alert.setHeaderText("Could not load data from the database.");
-            alert.setContentText(
-                    "Check the database connection and restart the application."
-            );
+
+            alert.titleProperty().bind(language.text("database.error.title"));
+            alert.headerTextProperty().bind(language.text("database.error.header"));
+            alert.contentTextProperty().bind(language.text("database.error.message"));
+
             alert.showAndWait();
 
             javafx.application.Platform.exit();
@@ -571,6 +571,7 @@ public class AutoCoreApp extends Application {
         createInvoice.textProperty().bind(language.text("menu.createInvoice"));
         showPayments.textProperty().bind(language.text("menu.payments"));
         processPayment.textProperty().bind(language.text("menu.processPayment"));
+        scheduleButton.textProperty().bind(language.text("menu.schedule"));
         exit.textProperty().bind(language.text("menu.exit"));
 
         menuBox.getChildren().addAll(
@@ -717,9 +718,8 @@ public class AutoCoreApp extends Application {
 
     private void showWelcomePage() {
 
-        Label welcome = new Label(
-                "Welcome to Wigell AutoCore"
-        );
+        Label welcome = new Label();
+        welcome.textProperty().bind(language.text("welcome"));
 
         welcome.setStyle(
                 "-fx-font-size: 24px;" +

@@ -9,11 +9,15 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 
 import java.time.LocalDate;
+import com.wac.autocore.ui.language.LanguageManager;
+import javafx.scene.control.Label;
 
 
 public class ShowInvoiceView {
 
     public static TableView<Invoice> build(){
+
+        LanguageManager language = LanguageManager.getInstance();
 
         TableView<Invoice> table = new TableView<>();
 
@@ -37,8 +41,23 @@ public class ShowInvoiceView {
         TableColumn<Invoice, Double> totalAmountCol = new TableColumn<>("Total amount");
         totalAmountCol.setCellValueFactory(new PropertyValueFactory<>("totalAmount"));
 
-        TableColumn<Invoice, Boolean> paidCol = new TableColumn<>("Paid");
-        paidCol.setCellValueFactory(new PropertyValueFactory<>("paid"));
+        TableColumn<Invoice, String> paidCol = new TableColumn<>("Paid");
+        paidCol.setCellValueFactory(cell ->
+                language.text(cell.getValue().isPaid() ? "common.yes" : "common.no")
+        );
+
+        // Uppdaterar rubrikerna direkt vid språkbyte.
+        idCol.textProperty().bind(language.text("invoices.id"));
+        workOrderCol.textProperty().bind(language.text("invoices.workOrderId"));
+        invoiceDateCol.textProperty().bind(language.text("invoices.date"));
+        amountCol.textProperty().bind(language.text("invoices.amount"));
+        discountCol.textProperty().bind(language.text("invoices.discount"));
+        totalAmountCol.textProperty().bind(language.text("invoices.total"));
+        paidCol.textProperty().bind(language.text("invoices.paid"));
+
+        Label emptyLabel = new Label();
+        emptyLabel.textProperty().bind(language.text("invoices.empty"));
+        table.setPlaceholder(emptyLabel);
 
         table.getColumns().addAll(idCol, workOrderCol, invoiceDateCol, amountCol, discountCol, totalAmountCol, paidCol);
 
