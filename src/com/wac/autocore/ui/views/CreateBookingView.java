@@ -12,7 +12,9 @@ import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 
 import java.time.LocalDate;
-import javafx.scene.control.DatePicker;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
+
 import com.wac.autocore.model.Mechanic;
 
 public class CreateBookingView {
@@ -50,6 +52,17 @@ public class CreateBookingView {
 
         DatePicker datePicker = new DatePicker();
 
+        Label startTimeLabel = new Label("Start time:");
+
+        TextField startTimeField = new TextField();
+        startTimeField.setPromptText("HH:mm");
+
+
+        Label durationLabel = new Label("Duration (minutes):");
+
+        TextField durationField = new TextField();
+        durationField.setPromptText("Example: 60");
+
         Label mechanicLabel = new Label("Mechanic:");
 
         ComboBox<Mechanic> mechanicCombo = new ComboBox<>(
@@ -86,12 +99,62 @@ public class CreateBookingView {
                     return;
                 }
 
+                LocalTime startTime;
+
+                try {
+                startTime = LocalTime.parse(
+                        startTimeField.getText().trim()
+                );
+                } catch (DateTimeParseException exception) {
+                messageLabel.setText(
+                        "Please enter start time as HH:mm."
+                );
+                return;
+                }
+
+
+                int durationMinutes;
+
+                try {
+                durationMinutes = Integer.parseInt(
+                        durationField.getText().trim()
+                );
+                } catch (NumberFormatException exception) {
+                messageLabel.setText(
+                        "Please enter a valid duration."
+                );
+                return;
+                }
+
+                if (durationMinutes <= 0) {
+                messageLabel.setText(
+                        "Duration must be greater than 0."
+                );
+                return;
+                }
+
                 Mechanic mechanic = mechanicCombo.getValue();
 
                 if (mechanic == null) {
                     messageLabel.setText("Please select a mechanic.");
                     return;
                 }
+
+                boolean overlapping =
+                        bookingRepository.hasOverlappingBooking(
+                                mechanic.getId(),
+                                date,
+                                startTime,
+                                durationMinutes
+                        );
+
+                if (overlapping) {      
+                messageLabel.setText(
+                        "The mechanic already has a booking during this time."
+                );
+                return;
+                }
+
                 String description =
                         descriptionField.getText();
 
@@ -102,9 +165,10 @@ public class CreateBookingView {
                                 date,
                                 description
                         );
-
-
+                
                 if (booking != null) {
+                booking.setStartTime(startTime);
+                booking.setDurationMinutes(durationMinutes);
 
                     try {
                         // Sparar bokningen i MySQL innan vi visar en bekräftelse.
@@ -127,6 +191,8 @@ public class CreateBookingView {
                     vehicleIdField.clear();
                     datePicker.setValue(null);
                     descriptionField.clear();
+                    startTimeField.clear();
+                    durationField.clear();
                     mechanicCombo.getSelectionModel().clearSelection();
                     mechanicCombo.setValue(null);
 
@@ -159,13 +225,16 @@ public class CreateBookingView {
                 vehicleIdField,
                 dateLabel,
                 datePicker,
+                startTimeLabel,
+                startTimeField,
+                durationLabel,
+                durationField,
                 mechanicLabel,
                 mechanicCombo,
                 descriptionLabel,
                 descriptionField,
                 createButton,
                 messageLabel
-
         );
 
         return view;
