@@ -7,6 +7,9 @@ import com.wac.autocore.model.Booking;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -64,6 +67,8 @@ public class BookingRepository {
                 entity.setDate(booking.getDate());
                 entity.setDescription(booking.getDescription());
                 entity.setStatus(booking.getStatus());
+                entity.setStartTime(booking.getStartTime());
+                entity.setDurationMinutes(booking.getDurationMinutes());
 
                 // Ändrar mekanikern bara när ett nytt val skickas in.
                 if (updateMechanic) {
@@ -114,10 +119,17 @@ public class BookingRepository {
 
         for (BookingEntity entity : findAll()) {
 
+            int durationMinutes =
+            entity.getDurationMinutes() == null
+                    ? 0
+                    : entity.getDurationMinutes();
+
             Booking booking = new Booking(
                     entity.getId(),
                     entity.getVehicleId(),
                     entity.getDate(),
+                    entity.getStartTime(),
+                    durationMinutes,
                     entity.getDescription()
             );
 
@@ -126,4 +138,56 @@ public class BookingRepository {
         }
         return bookings;
     }
+
+    public boolean hasOverlappingBooking(
+        int mechanicId,
+        LocalDate date,
+        LocalTime startTime,
+        int durationMinutes) {
+
+    LocalDateTime newStart =
+            LocalDateTime.of(date, startTime);
+
+    LocalDateTime newEnd =
+            newStart.plusMinutes(durationMinutes);
+
+    for (BookingEntity entity : findAll()) {
+
+        // Bokningen måste tillhöra samma mekaniker.
+        if (entity.getMechanicId() == null ||
+                entity.getMechanicId() != mechanicId) {
+            continue;
+        }
+
+        // Äldre bokningar kan sakna tid/längd.
+        if (entity.getDate() == null ||
+        entity.getStartTime() == null ||
+        entity.getDurationMinutes() == null ||
+        entity.getDurationMinutes() <= 0) {
+            continue;
+        }
+
+        LocalDateTime existingStart =
+                LocalDateTime.of(
+                        entity.getDate(),
+                        entity.getStartTime()
+                );
+
+        LocalDateTime existingEnd =
+                existingStart.plusMinutes(
+                        entity.getDurationMinutes()
+                );
+
+        boolean overlaps =
+                newStart.isBefore(existingEnd)
+                        &&
+                newEnd.isAfter(existingStart);
+
+        if (overlaps) {
+            return true;
+        }
+    }
+
+    return false;
+}
 }

@@ -1,6 +1,7 @@
 package com.wac.autocore.model;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 public class Booking {
 
@@ -9,11 +10,24 @@ public class Booking {
     private LocalDate date;
     private String description;
     private String status;
+    private LocalTime startTime;
+    private int durationMinutes;
 
     public Booking(int id, int vehicleId, LocalDate date, String description) {
         this.id = id;
         this.vehicleId = vehicleId;
         this.date = date;
+        this.description = description;
+        this.status = "BOOKED";
+    }
+
+    public Booking(int id, int vehicleId, LocalDate date, LocalTime startTime, int durationMinutes, String description) {
+
+        this.id = id;
+        this.vehicleId = vehicleId;
+        this.date = date;
+        this.startTime = startTime;
+        this.durationMinutes = durationMinutes;
         this.description = description;
         this.status = "BOOKED";
     }
@@ -58,10 +72,28 @@ public class Booking {
         this.status = status;
     }
 
+    public LocalTime getStartTime() {
+    return startTime;
+    }
+
+    public void setStartTime(LocalTime startTime) {
+        this.startTime = startTime;
+    }
+
+    public int getDurationMinutes() {
+        return durationMinutes;
+    }
+
+    public void setDurationMinutes(int durationMinutes) {
+        this.durationMinutes = durationMinutes;
+    }
+
     @Override
     public String toString() {
         return id + " - Vehicle ID: " + vehicleId +
                 " | Date: " + date +
+                " | Start: " + startTime +
+                " | Duration: " + durationMinutes + " min" +
                 " | Description: " + description +
                 " | Status: " + status;
     }

@@ -15,10 +15,14 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
+
 
 // Formulär för att boka in ett fordon: välj fordon, datum, mekaniker och skriv en beskrivning.
 public class CreateBookingView {
@@ -38,6 +42,12 @@ public class CreateBookingView {
 
         DatePicker datePicker = new DatePicker();
         datePicker.setPromptText("Select date");
+
+        TextField startTimeField = new TextField();
+        startTimeField.setPromptText("HH:mm");
+
+        TextField durationField = new TextField();
+        durationField.setPromptText("Example: 60");
 
         ComboBox<Mechanic> mechanicCombo = new ComboBox<>(
                 FXCollections.observableArrayList(Database.getMechanics())
@@ -59,10 +69,12 @@ public class CreateBookingView {
 
         createButton.setOnAction(event -> {
 
+
             Vehicle vehicle = vehicleCombo.getValue();
             if (vehicle == null) {
                 UiKit.showError(messageLabel, "Please select a vehicle.");
                 return;
+
             }
             int vehicleId = vehicle.getId();
 
@@ -72,9 +84,38 @@ public class CreateBookingView {
                 return;
             }
 
+            LocalTime startTime;
+            try {
+                startTime = LocalTime.parse(startTimeField.getText().trim());
+            } catch (DateTimeParseException exception) {
+                UiKit.showError(messageLabel, "Please enter start time as HH:mm.");
+                return;
+            }
+
+            int durationMinutes;
+            try {
+                durationMinutes = Integer.parseInt(durationField.getText().trim());
+            } catch (NumberFormatException exception) {
+                UiKit.showError(messageLabel, "Please enter a valid duration.");
+                return;
+            }
+
+            if (durationMinutes <= 0) {
+                UiKit.showError(messageLabel, "Duration must be greater than 0.");
+                return;
+            }
+
             Mechanic mechanic = mechanicCombo.getValue();
             if (mechanic == null) {
                 UiKit.showError(messageLabel, "Please select a mechanic.");
+                return;
+            }
+
+            boolean overlapping = bookingRepository.hasOverlappingBooking(
+                    mechanic.getId(), date, startTime, durationMinutes
+            );
+            if (overlapping) {
+                UiKit.showError(messageLabel, "The mechanic already has a booking during this time.");
                 return;
             }
 
@@ -87,6 +128,8 @@ public class CreateBookingView {
                 UiKit.showError(messageLabel, "Booking could not be created.");
                 return;
             }
+            booking.setStartTime(startTime);
+            booking.setDurationMinutes(durationMinutes);
 
             try {
                 // Sparar bokningen i MySQL innan vi visar en bekräftelse.
@@ -106,6 +149,8 @@ public class CreateBookingView {
             vehicleCombo.getSelectionModel().clearSelection();
             vehicleCombo.setValue(null);
             datePicker.setValue(null);
+            startTimeField.clear();
+            durationField.clear();
             descriptionField.clear();
             mechanicCombo.getSelectionModel().clearSelection();
             mechanicCombo.setValue(null);
@@ -116,6 +161,10 @@ public class CreateBookingView {
                 UiKit.formField("Vehicle", vehicleCombo),
                 UiKit.formRow(
                         UiKit.formField("Date", datePicker),
+                        UiKit.formField("Start time", startTimeField)
+                ),
+                UiKit.formRow(
+                        UiKit.formField("Duration (minutes)", durationField),
                         UiKit.formField("Mechanic", mechanicCombo)
                 ),
                 UiKit.formField("Description", descriptionField),

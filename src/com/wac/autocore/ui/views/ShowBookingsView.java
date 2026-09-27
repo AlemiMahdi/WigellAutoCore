@@ -21,6 +21,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -58,12 +60,28 @@ public class ShowBookingsView {
                 new ReadOnlyStringWrapper(vehicleText(cell.getValue().getVehicleId()))
         );
 
+
         TableColumn<Booking, String> dateColumn = new TableColumn<>("Date");
         dateColumn.setCellValueFactory(cell -> {
             LocalDate date = cell.getValue().getDate();
             return new ReadOnlyStringWrapper(date == null ? "—" : date.toString());
         });
         dateColumn.getStyleClass().add("cell-muted");
+
+        TableColumn<Booking, String> startTimeColumn = new TableColumn<>("Start time");
+        startTimeColumn.setCellValueFactory(cell -> {
+            LocalTime startTime = cell.getValue().getStartTime();
+            return new ReadOnlyStringWrapper(startTime == null ? "—" : startTime.toString());
+        });
+        startTimeColumn.getStyleClass().add("cell-muted");
+
+        TableColumn<Booking, String> durationColumn = new TableColumn<>("Duration");
+        durationColumn.setCellValueFactory(cell -> {
+            Integer duration = cell.getValue().getDurationMinutes();
+            return new ReadOnlyStringWrapper(duration == null || duration <= 0 ? "—" : duration + " min");
+        });
+        durationColumn.getStyleClass().add("cell-muted");
+
 
         TableColumn<Booking, String> mechanicColumn = new TableColumn<>("Mechanic");
         mechanicColumn.setCellValueFactory(cell -> {
@@ -91,9 +109,11 @@ public class ShowBookingsView {
         });
         mechanicColumn.getStyleClass().add("cell-muted");
 
+
         TableColumn<Booking, String> descriptionColumn = new TableColumn<>("Description");
         descriptionColumn.setCellValueFactory(
                 new PropertyValueFactory<Booking, String>("description")
+
         );
         descriptionColumn.getStyleClass().add("cell-muted");
 
@@ -106,16 +126,20 @@ public class ShowBookingsView {
 
         table.getColumns().add(vehicleColumn);
         table.getColumns().add(dateColumn);
+        table.getColumns().add(startTimeColumn);
+        table.getColumns().add(durationColumn);
         table.getColumns().add(mechanicColumn);
         table.getColumns().add(descriptionColumn);
         table.getColumns().add(statusColumn);
 
         // Beskrivningen får mest plats, status minst
-        vehicleColumn.setMaxWidth(1f * Integer.MAX_VALUE * 26);
-        dateColumn.setMaxWidth(1f * Integer.MAX_VALUE * 15);
-        mechanicColumn.setMaxWidth(1f * Integer.MAX_VALUE * 18);
-        descriptionColumn.setMaxWidth(1f * Integer.MAX_VALUE * 27);
-        statusColumn.setMaxWidth(1f * Integer.MAX_VALUE * 14);
+        vehicleColumn.setMaxWidth(1f * Integer.MAX_VALUE * 20);
+        dateColumn.setMaxWidth(1f * Integer.MAX_VALUE * 12);
+        startTimeColumn.setMaxWidth(1f * Integer.MAX_VALUE * 9);
+        durationColumn.setMaxWidth(1f * Integer.MAX_VALUE * 9);
+        mechanicColumn.setMaxWidth(1f * Integer.MAX_VALUE * 15);
+        descriptionColumn.setMaxWidth(1f * Integer.MAX_VALUE * 22);
+        statusColumn.setMaxWidth(1f * Integer.MAX_VALUE * 13);
 
         ObservableList<Booking> bookings =
                 FXCollections.observableArrayList(Database.getBookings());
