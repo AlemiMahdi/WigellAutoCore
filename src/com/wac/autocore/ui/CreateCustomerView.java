@@ -61,8 +61,9 @@ public class CreateCustomerView extends VBox {
                 // Tar bort kunden ur minnet om databassparandet misslyckas.
                 Database.getCustomers().remove(customer);
 
-                confirmation.setText(
-                        "Customer could not be saved. Please try again."
+                confirmation.textProperty().unbind();
+                confirmation.textProperty().bind(
+                        language.text("customer.create.error")
                 );
                 exception.printStackTrace();
                 return;
