@@ -25,14 +25,20 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
+
 import java.util.HashMap;
+
+import com.wac.autocore.ui.views.MechanicScheduleView;
+
 import java.util.List;
 import java.util.Map;
+
 
 /**
  * Huvudfönstret. Variant A: sidomenyn visar alla sektioner och alla knappar
  * direkt (som i designen i PDF:en). Appen startar alltid på Dashboard.
  */
+
 public class AutoCoreApp extends Application {
 
     private StackPane contentPane;
@@ -104,6 +110,9 @@ public class AutoCoreApp extends Application {
             loadMechanics();
             loadBookings();
             loadWorkOrders();
+            loadInvoices();
+            loadPayments();
+
         } catch (RuntimeException exception) {
             exception.printStackTrace();
             offlineMode = true;
@@ -135,8 +144,8 @@ public class AutoCoreApp extends Application {
         Database.getCustomers().clear();
         Database.getCustomers().addAll(savedCustomers);
     }
-
     // Läser in fordon efter att kunderna har laddats.
+
     private void loadVehicles() {
         VehicleRepository repository = new VehicleRepository();
         List<Vehicle> savedVehicles = repository.findAllVehicles();
@@ -191,28 +200,32 @@ public class AutoCoreApp extends Application {
 
         if (savedServiceItems.isEmpty()) {
 
+
             // Första starten: sparar originalets exempeldata.
             for (ServiceItem serviceItem : Database.getServiceItems()) {
                 repository.save(serviceItem);
             }
 
             return;
+
         }
 
         // Kontrollerar att ID:n följer originalets struktur.
         for (int i = 0; i < savedServiceItems.size(); i++) {
+
             if (savedServiceItems.get(i).getId() != i + 1) {
                 throw new IllegalStateException(
                         "Service item IDs must be consecutive, starting at 1."
                 );
             }
+
         }
 
         // Ersätter minnesdatan med datan från databasen.
         Database.getServiceItems().clear();
         Database.getServiceItems().addAll(savedServiceItems);
-    }
 
+    }
 
     private void loadMechanics() {
 
@@ -244,7 +257,87 @@ public class AutoCoreApp extends Application {
         // Ersätter minnesdatan med datan från databasen.
         Database.getMechanics().clear();
         Database.getMechanics().addAll(savedMechanics);
+
     }
+
+
+    private void loadInvoices() {
+
+        InvoiceRepository repository =
+                new InvoiceRepository();
+
+        List<Invoice> savedInvoices =
+                repository.findAllInvoices();
+
+        if (savedInvoices.isEmpty()) {
+
+            // Sparar eventuell befintlig data första gången.
+            for (Invoice invoice : Database.getInvoices()) {
+                repository.save(invoice);
+            }
+
+            return;
+        }
+
+        // Originalsystemet använder listans storlek + 1 för nästa ID.
+        for (int i = 0; i < savedInvoices.size(); i++) {
+            if (savedInvoices.get(i).getId() != i + 1) {
+                throw new IllegalStateException(
+                        "Invoice IDs must be consecutive, starting at 1."
+                );
+            }
+        }
+
+        Database.getInvoices().clear();
+        Database.getInvoices().addAll(savedInvoices);
+    }
+
+    private void loadPayments() {
+
+        PaymentRepository repository =
+                new PaymentRepository();
+
+        List<Payment> savedPayments =
+                repository.findAllPayments();
+
+        if (savedPayments.isEmpty()) {
+
+            // Sparar eventuell befintlig data första gången.
+            for (Payment payment : Database.getPayments()) {
+                repository.save(payment);
+            }
+
+            return;
+        }
+
+        // Originalsystemet använder listans storlek + 1 för nästa ID.
+        for (int i = 0; i < savedPayments.size(); i++) {
+
+            Payment payment = savedPayments.get(i);
+
+            if (payment.getId() != i + 1) {
+                throw new IllegalStateException(
+                        "Payment IDs must be consecutive, starting at 1."
+                );
+            }
+
+            // En betalning måste höra till en befintlig faktura.
+            boolean invoiceExists =
+                    Database.getInvoices().stream()
+                            .anyMatch(invoice ->
+                                    invoice.getId() == payment.getInvoiceId());
+
+            if (!invoiceExists) {
+                throw new IllegalStateException(
+                        "Invoice missing for payment " + payment.getId()
+                );
+            }
+        }
+
+        Database.getPayments().clear();
+        Database.getPayments().addAll(savedPayments);
+    }
+
 
     // Läser in bokningar efter att fordonen har laddats,
     // eftersom varje bokning måste peka på ett befintligt fordon.
@@ -312,7 +405,7 @@ public class AutoCoreApp extends Application {
 
             // Originalet räknar ut nästa ID som listans storlek + 1,
             // så ID:na måste vara 1, 2, 3... utan luckor.
-            if (workOrder.getId() != i+1) {
+            if (workOrder.getId() != i + 1) {
                 throw new IllegalStateException(
                         "Work order IDs must be consecutive, starting at 1."
                 );
@@ -421,7 +514,8 @@ public class AutoCoreApp extends Application {
 
         addNavSection(menuBox, "SERVICES & MECHANICS",
                 createNavItem("show-services", "Show services", () -> showView(new ServiceView())),
-                createNavItem("show-mechanics", "Show mechanics", () -> showView(new MechanicView())));
+                createNavItem("show-mechanics", "Show mechanics", () -> showView(new MechanicView())),
+                createNavItem("mechanic-schedule", "Mechanic schedule", () -> showView(new MechanicScheduleView().getView())));
 
         addNavSection(menuBox, "INVOICES & PAYMENTS",
                 createNavItem("show-invoices", "Show invoices", () -> showView(ShowInvoiceView.build())),
@@ -434,10 +528,12 @@ public class AutoCoreApp extends Application {
         divider.getStyleClass().add("nav-divider");
         VBox.setMargin(divider, new Insets(8, 4, 6, 4));
 
+
         Button exit = new Button("Exit");
         exit.getStyleClass().addAll("nav-item", "exit-item");
         exit.setMaxWidth(Double.MAX_VALUE);
         exit.setOnAction(event -> Platform.exit());
+
 
         menuBox.getChildren().addAll(divider, exit);
 
@@ -451,7 +547,9 @@ public class AutoCoreApp extends Application {
         return scrollPane;
     }
 
-    /** Lägger till en sektionsrubrik följd av sektionens knappar. */
+    /**
+     * Lägger till en sektionsrubrik följd av sektionens knappar.
+     */
     private void addNavSection(VBox menuBox, String title, Button... items) {
         Label label = new Label(title);
         label.getStyleClass().add("nav-section-label");
@@ -505,8 +603,8 @@ public class AutoCoreApp extends Application {
      * Lägger innehållsytan i en ScrollPane. Två saker är viktiga:
      * 1) fitToWidth – innehållet blir lika brett som fönstret (ingen sidscroll).
      * 2) minHeight = synlig höjd – korta vyer fyller ändå hela ytan (så att
-     *    t.ex. en tabell med vgrow kan växa), men höga vyer blir högre än
-     *    fönstret och då går det att scrolla.
+     * t.ex. en tabell med vgrow kan växa), men höga vyer blir högre än
+     * fönstret och då går det att scrolla.
      */
     private ScrollPane createContentScroll(StackPane content) {
         ScrollPane scroll = new ScrollPane(content);

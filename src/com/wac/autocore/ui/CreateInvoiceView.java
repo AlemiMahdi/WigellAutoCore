@@ -14,7 +14,11 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
+
 import javafx.util.StringConverter;
+
+import com.wac.autocore.repository.InvoiceRepository;
+
 
 import java.time.LocalDate;
 
@@ -23,6 +27,8 @@ public class CreateInvoiceView {
 
     public static VBox build(){
         GarageSystem garageSystem = new GarageSystem();
+        InvoiceRepository invoiceRepository = new InvoiceRepository();
+
 
         // --- Arbetsorder ---
         // Bara avslutade (COMPLETED) arbetsordrar kan faktureras,
@@ -33,6 +39,8 @@ public class CreateInvoiceView {
             public String toString(WorkOrder workOrder) {
                 return workOrder == null ? "" : describeWorkOrder(workOrder);
             }
+
+
 
             @Override
             public WorkOrder fromString(String text) {
@@ -100,15 +108,37 @@ public class CreateInvoiceView {
 
             Invoice invoice = garageSystem.createInvoice(workOrderId, discountCode);
 
-            if(invoice == null) {
-                UiKit.showError(statusLabel, "Could not create invoice. Check work order ID");
+
+
+            if (invoice == null) {
+
+                UiKit.showError(statusLabel,
+                        "Could not create invoice. Check work order ID."
+                );
+
             } else {
-                // Visa den riktiga totalen (med ev. VIP-/kodrabatt) från fakturan
-                UiKit.showSuccess(statusLabel, "Invoice created for "
-                        + ShowInvoiceView.workOrderCode(workOrderId)
-                        + ". Total: " + ShowInvoiceView.formatSek(invoice.getTotalAmount()));
-                workOrderBox.setValue(null);
-                discoutField.clear();
+
+                try {
+
+                    invoiceRepository.save(invoice);
+
+                    UiKit.showSuccess(statusLabel, "Invoice created for "
+                            + ShowInvoiceView.workOrderCode(workOrderId)
+                            + ". Total: " + ShowInvoiceView.formatSek(invoice.getTotalAmount())
+                    );
+
+                    workOrderBox.setValue(null);
+                    discoutField.clear();
+
+                } catch (RuntimeException exception) {
+
+                    Database.getInvoices().remove(invoice);
+                    UiKit.showError(statusLabel,
+                            "Invoice could not be saved to the database."
+                    );
+                    exception.printStackTrace();
+                }
+
             }
 
 

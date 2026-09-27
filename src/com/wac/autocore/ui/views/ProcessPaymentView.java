@@ -15,9 +15,12 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
+import com.wac.autocore.repository.PaymentRepository;
+
 public class ProcessPaymentView {
 
     private final GarageSystem garageSystem = new GarageSystem();
+    private final PaymentRepository paymentRepository = new PaymentRepository();
 
     public VBox getView() {
 
@@ -128,12 +131,15 @@ public class ProcessPaymentView {
                 return;
             }
 
+            Invoice invoice = Database.getInvoices().stream()
+                    .filter(existingInvoice ->
+                            existingInvoice.getId() == invoiceId)
+                    .findFirst()
+                    .orElse(null);
 
-            Payment payment =
-                    garageSystem.processPayment(
-                            invoiceId,
-                            paymentType
-                    );
+            boolean previousPaidStatus = invoice != null && invoice.isPaid();
+
+            Payment payment = garageSystem.processPayment(invoiceId, paymentType);
 
 
             if (payment == null) {
@@ -146,6 +152,29 @@ public class ProcessPaymentView {
                 return;
             }
 
+            try {
+
+                paymentRepository.savePaymentAndInvoice(
+                        payment,
+                        invoice
+                );
+
+            } catch (RuntimeException exception) {
+
+                // Återställ ändringarna som GarageSystem gjorde i minnet.
+                Database.getPayments().remove(payment);
+                invoice.setPaid(previousPaidStatus);
+
+                refreshInvoiceTexts(invoiceBox);
+
+                UiKit.showError(messageLabel,
+                        "Payment could not be saved to the database."
+                );
+
+                exception.printStackTrace();
+
+                return;
+            }
 
             if (payment.isSuccessful()) {
 
@@ -156,14 +185,15 @@ public class ProcessPaymentView {
                 invoiceBox.setValue(null);
                 paymentTypeBox.setValue(null);
 
+
                 // Rita om listan så att "paid" syns direkt på fakturan
                 refreshInvoiceTexts(invoiceBox);
 
             } else {
 
-                UiKit.showError(messageLabel,
-                        "Payment failed."
-                );
+                UiKit.showError(messageLabel, "Payment failed.");
+
+
             }
         });
 
@@ -184,7 +214,9 @@ public class ProcessPaymentView {
         return view;
     }
 
-    /** "CARD" -> "Card". Används även i ShowPaymentsView så att betalsätt ser likadana ut. */
+    /**
+     * "CARD" -> "Card". Används även i ShowPaymentsView så att betalsätt ser likadana ut.
+     */
     public static String formatPaymentType(String type) {
         if (type == null || type.trim().isEmpty()) {
             return "—";
