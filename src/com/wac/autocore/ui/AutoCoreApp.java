@@ -23,6 +23,8 @@ import com.wac.autocore.ui.views.ShowPaymentsView;
 import com.wac.autocore.ui.views.ShowWorkOrdersView;
 import com.wac.autocore.ui.views.CreateBookingView;
 import com.wac.autocore.ui.views.ProcessPaymentView;
+import com.wac.autocore.ui.views.MechanicScheduleView;
+
 import com.wac.autocore.data.Database;
 import javafx.scene.control.Alert;
 
@@ -405,6 +407,9 @@ public class AutoCoreApp extends Application {
         Button processPayment =
                 createMenuButton("Process payment");
 
+        Button scheduleButton =
+                createMenuButton("Mechanic schedule");
+
         Button exit =
                 createMenuButton("Exit");
 
@@ -426,6 +431,7 @@ public class AutoCoreApp extends Application {
                 createInvoice,
                 showPayments,
                 processPayment,
+                scheduleButton,
                 exit
         );
 
@@ -518,6 +524,14 @@ public class AutoCoreApp extends Application {
 
             contentPane.getChildren().setAll(
                     paymentView.getView()
+            );
+        });
+
+        scheduleButton.setOnAction(actionEvent -> {
+            MechanicScheduleView scheduleView = new MechanicScheduleView();
+
+            contentPane.getChildren().setAll(
+                    scheduleView.getView()
             );
         });
 
