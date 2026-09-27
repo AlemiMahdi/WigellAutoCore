@@ -2,91 +2,84 @@ package com.wac.autocore.ui;
 
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.ServiceItem;
+import com.wac.autocore.repository.ServiceItemRepository;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import com.wac.autocore.repository.ServiceItemRepository;
-import javafx.scene.control.Button;
-import javafx.scene.control.TextField;
 
-//visar befintliga tjänster i en tabell
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+
+// Visar befintliga tjänster i en tabell och låter användaren ändra tidsåtgången.
 public class ServiceView extends VBox {
 
+    private final TableView<ServiceItem> table = new TableView<ServiceItem>();
+    private final TextField durationField = new TextField();
+    private final Label feedbackLabel = UiKit.feedbackLabel();
+    private final ServiceItemRepository repository = new ServiceItemRepository();
+
     public ServiceView() {
-        setSpacing(15);
+        setSpacing(20);
 
-        //rubrik
-        Label title = new Label("Services");
-        title.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
+        buildTable();
 
-        TableView<ServiceItem> table = new TableView<>();
+        getChildren().addAll(
+                UiKit.pageHeader("Services", null),
+                table,
+                buildEditCard()
+        );
+    }
 
-        // kopplaer kollumerna till tjänstens uppgifter
-        TableColumn<ServiceItem, String> idColumn =
-                new TableColumn<>("ID");
-        idColumn.setCellValueFactory(cell ->
-                new ReadOnlyStringWrapper(
-                        String.valueOf(cell.getValue().getId())));
-
-        TableColumn<ServiceItem, String> nameColumn =
-                new TableColumn<>("Name");
+    // Tabell: Service (fet) / Description (dämpad) / Price / Est. time (högerställda)
+    private void buildTable() {
+        TableColumn<ServiceItem, String> nameColumn = new TableColumn<ServiceItem, String>("Service");
         nameColumn.setCellValueFactory(cell ->
                 new ReadOnlyStringWrapper(cell.getValue().getName()));
+        nameColumn.getStyleClass().add("cell-strong");
 
-        TableColumn<ServiceItem, String> descriptionColumn =
-                new TableColumn<>("Description");
+        TableColumn<ServiceItem, String> descriptionColumn = new TableColumn<ServiceItem, String>("Description");
         descriptionColumn.setCellValueFactory(cell ->
-                new ReadOnlyStringWrapper(
-                        cell.getValue().getDescription()));
+                new ReadOnlyStringWrapper(cell.getValue().getDescription()));
+        descriptionColumn.getStyleClass().add("cell-muted");
 
-        TableColumn<ServiceItem, String> priceColumn =
-                new TableColumn<>("Price (SEK)");
+        TableColumn<ServiceItem, String> priceColumn = new TableColumn<ServiceItem, String>("Price");
         priceColumn.setCellValueFactory(cell ->
-                new ReadOnlyStringWrapper(
-                        String.valueOf(cell.getValue().getPrice())));
+                new ReadOnlyStringWrapper(formatPrice(cell.getValue().getPrice())));
+        priceColumn.getStyleClass().add("cell-right");
 
-        TableColumn<ServiceItem, String> timeColumn =
-                new TableColumn<>("Estimated time (min)");
+        TableColumn<ServiceItem, String> timeColumn = new TableColumn<ServiceItem, String>("Est. time");
         timeColumn.setCellValueFactory(cell ->
-                new ReadOnlyStringWrapper(
-                        String.valueOf(cell.getValue().getEstimatedMinutes())));
+                new ReadOnlyStringWrapper(cell.getValue().getEstimatedMinutes() + " min"));
+        timeColumn.getStyleClass().addAll("cell-right", "cell-muted");
 
+        // Kolumnbredder i procent. CONSTRAINED_RESIZE_POLICY fördelar bredden
+        // i proportion till maxWidth, så stora maxvärden fungerar som "vikter".
+        // Beskrivningen får mest plats så att den inte klipps med "...".
+        setColumnWeight(nameColumn, 24);
+        setColumnWeight(descriptionColumn, 46);
+        setColumnWeight(priceColumn, 16);
+        setColumnWeight(timeColumn, 14);
 
-        idColumn.setPrefWidth(50);
-        nameColumn.setPrefWidth(150);
-        descriptionColumn.setPrefWidth(300);
-        priceColumn.setPrefWidth(110);
-        timeColumn.setPrefWidth(160);
-
-        table.getColumns().add(idColumn);
         table.getColumns().add(nameColumn);
         table.getColumns().add(descriptionColumn);
         table.getColumns().add(priceColumn);
         table.getColumns().add(timeColumn);
 
-
         table.setPlaceholder(new Label("No services found."));
+        UiKit.styleTable(table);
 
-        //hämtar aktuella tjänster varje gång vyn öppnas
-        table.setItems(
-                FXCollections.observableArrayList(Database.getServiceItems())
-        );
+        // Hämtar aktuella tjänster varje gång vyn öppnas
+        table.setItems(FXCollections.observableArrayList(Database.getServiceItems()));
 
-        Label durationLabel = new Label("Estimated time (minutes):");
-        TextField durationField = new TextField();
-        durationField.setPromptText("Select a service and enter minutes");
-
-        Button saveButton = new Button("Save duration");
-        Label feedbackLabel = new Label();
-        feedbackLabel.setWrapText(true);
-
-        ServiceItemRepository repository = new ServiceItemRepository();
-
-// Visar tidsåtgången för tjänsten som användaren väljer.
+        // Visar tidsåtgången för tjänsten som användaren väljer.
         table.getSelectionModel().selectedItemProperty().addListener(
                 (observable, previous, selected) -> {
                     feedbackLabel.setText("");
@@ -94,64 +87,91 @@ public class ServiceView extends VBox {
                     if (selected == null) {
                         durationField.clear();
                     } else {
-                        durationField.setText(
-                                String.valueOf(selected.getEstimatedMinutes())
-                        );
+                        durationField.setText(String.valueOf(selected.getEstimatedMinutes()));
                     }
                 }
         );
+    }
 
-        saveButton.setOnAction(event -> {
-            ServiceItem selected = table.getSelectionModel().getSelectedItem();
+    // Kort under tabellen där man ändrar "Est. time" för vald tjänst.
+    private VBox buildEditCard() {
+        Label heading = new Label("Change estimated time");
+        heading.getStyleClass().add("card-heading");
 
-            if (selected == null) {
-                feedbackLabel.setText("Please select a service.");
-                return;
-            }
+        Label hint = new Label("Select a service in the table and enter the new time in minutes.");
+        hint.getStyleClass().add("detail-text");
+        hint.setWrapText(true);
 
-            int minutes;
+        durationField.setPromptText("Minutes, e.g. 45");
+        durationField.setPrefColumnCount(10);
 
-            try {
-                minutes = Integer.parseInt(durationField.getText().trim());
-            } catch (NumberFormatException exception) {
-                feedbackLabel.setText("Enter a whole number greater than 0.");
-                return;
-            }
+        Button saveButton = UiKit.primaryButton("Save duration");
+        saveButton.setOnAction(event -> saveDuration());
 
-            if (minutes <= 0) {
-                feedbackLabel.setText("The duration must be greater than 0.");
-                return;
-            }
+        HBox inputRow = new HBox(12, durationField, saveButton);
+        inputRow.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(durationField, Priority.NEVER);
 
-            // Behåller det gamla värdet om sparandet misslyckas.
-            int previousMinutes = selected.getEstimatedMinutes();
-            selected.setEstimatedMinutes(minutes);
+        // Tomt meddelande ska inte lämna ett hål längst ner i kortet
+        feedbackLabel.managedProperty().bind(feedbackLabel.textProperty().isNotEmpty());
+        feedbackLabel.visibleProperty().bind(feedbackLabel.textProperty().isNotEmpty());
 
-            try {
-                repository.save(selected);
-            } catch (RuntimeException exception) {
-                selected.setEstimatedMinutes(previousMinutes);
-                table.refresh();
+        VBox card = UiKit.card(heading, hint, inputRow, feedbackLabel);
+        card.getStyleClass().add("detail-card");
+        return card;
+    }
 
-                feedbackLabel.setText(
-                        "The duration could not be saved. Please try again."
-                );
-                exception.printStackTrace();
-                return;
-            }
+    // Samma validering och sparning som tidigare, via ServiceItemRepository.
+    private void saveDuration() {
+        ServiceItem selected = table.getSelectionModel().getSelectedItem();
 
+        if (selected == null) {
+            UiKit.showError(feedbackLabel, "Please select a service.");
+            return;
+        }
+
+        int minutes;
+
+        try {
+            minutes = Integer.parseInt(durationField.getText().trim());
+        } catch (NumberFormatException exception) {
+            UiKit.showError(feedbackLabel, "Enter a whole number greater than 0.");
+            return;
+        }
+
+        if (minutes <= 0) {
+            UiKit.showError(feedbackLabel, "The duration must be greater than 0.");
+            return;
+        }
+
+        // Behåller det gamla värdet om sparandet misslyckas.
+        int previousMinutes = selected.getEstimatedMinutes();
+        selected.setEstimatedMinutes(minutes);
+
+        try {
+            repository.save(selected);
+        } catch (RuntimeException exception) {
+            selected.setEstimatedMinutes(previousMinutes);
             table.refresh();
-            feedbackLabel.setText("Duration saved.");
-        });
 
-        VBox.setVgrow(table, Priority.ALWAYS);
-        getChildren().addAll(
-                title,
-                table,
-                durationLabel,
-                durationField,
-                saveButton,
-                feedbackLabel
-        );
+            UiKit.showError(feedbackLabel, "The duration could not be saved. Please try again.");
+            exception.printStackTrace();
+            return;
+        }
+
+        table.refresh();
+        UiKit.showSuccess(feedbackLabel, "Duration saved.");
+    }
+
+    private void setColumnWeight(TableColumn<ServiceItem, String> column, int percent) {
+        column.setMaxWidth(percent * 100000.0);
+    }
+
+    // 1450.0 -> "1 450 SEK" (mellanslag som tusentalsavgränsare, som i designen)
+    private String formatPrice(double price) {
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+        symbols.setGroupingSeparator(' ');
+        DecimalFormat format = new DecimalFormat("#,##0", symbols);
+        return format.format(price) + " SEK";
     }
 }

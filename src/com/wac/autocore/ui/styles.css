@@ -1,0 +1,1268 @@
+/*
+ * Wigell AutoCore – Dracula-tema (variant B: kategorimeny)
+ *
+ * Alla färger definieras EN gång här i .root som "looked-up colors".
+ * Resten av filen refererar bara till namnen, så vill man byta tema
+ * räcker det att ändra värdena här.
+ *
+ * Tänk på specificitet i JavaFX-CSS: en regel med två klasser
+ * (t.ex. ".app-content .label") slår en regel med en klass (".stat-title").
+ * Därför skriver vi t.ex. ".card .stat-title" och lägger den längre ned.
+ */
+
+.root {
+    -fx-sidebar-bg: #343746;
+    -fx-header-bg: #282a36;
+    -fx-accent: #bd93f9;
+    -fx-accent-soft: rgba(189,147,249,0.14);
+    -fx-accent-text: #d6b8ff;
+    -fx-content-bg: #282a36;
+    -fx-text-light: #f8f8f2;
+    -fx-text-muted: #6272a4;
+    -fx-card-bg: #343746;
+    -fx-border: #44475a;
+    -fx-text-secondary: #a4a9cf;
+    -fx-success: #50fa7b;
+    -fx-warning: #f1fa8c;
+    -fx-danger: #ff5555;
+
+    /* JavaFX standardtema (modena) räknar ut sina färger från dessa.
+       Genom att peka dem mot våra mörka färger blir även kontroller vi
+       inte stylat själva (scrollbars, popups m.m.) mörka automatiskt. */
+    -fx-base: #44475a;
+    -fx-background: #282a36;
+    -fx-control-inner-background: #282a36;
+    -fx-control-inner-background-alt: #2c2e3b;
+    -fx-focus-color: #bd93f9;
+    -fx-faint-focus-color: transparent;
+
+    -fx-font-family: "System";
+    -fx-font-size: 13px;
+    -fx-background-color: -fx-content-bg;
+}
+
+/* ================= Innehållsyta ================= */
+
+.app-content {
+    -fx-background-color: -fx-content-bg;
+}
+
+.app-content .label {
+    -fx-text-fill: -fx-text-light;
+}
+
+/* Sidrubriker i vyerna */
+.app-content .page-title {
+    -fx-text-fill: -fx-text-light;
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+}
+
+/* ScrollPanes i innehållet ska inte få vit bakgrund */
+.scroll-pane,
+.scroll-pane > .viewport {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+/* Scrollbars i mörkt */
+.scroll-bar {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: -fx-border;
+    -fx-background-radius: 4;
+    -fx-background-insets: 2;
+}
+
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.scroll-bar .increment-arrow,
+.scroll-bar .decrement-arrow {
+    -fx-shape: " ";
+    -fx-padding: 0;
+}
+
+/* ================= Knappar ================= */
+
+/* Generisk knapp: neutral, inte lila (så menyer och vanliga knappar
+   inte konkurrerar med primärknapparna) */
+.button {
+    -fx-background-color: -fx-border;
+    -fx-background-insets: 0;
+    -fx-background-radius: 6;
+    -fx-text-fill: -fx-text-light;
+    -fx-font-weight: bold;
+    -fx-padding: 8 16 8 16;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: derive(-fx-border, 20%);
+}
+
+.button:focused {
+    -fx-background-color: -fx-accent, -fx-border;
+    -fx-background-insets: 0, 1;
+}
+
+/* Huvudknapp i ett formulär, t.ex. "Save customer" */
+.button.primary-button {
+    -fx-background-color: -fx-accent;
+    -fx-text-fill: #282a36;
+}
+
+.button.primary-button:hover {
+    -fx-background-color: derive(-fx-accent, 12%);
+}
+
+/* Grön knapp för att slutföra något, t.ex. Complete work order */
+.button.success-button {
+    -fx-background-color: -fx-success;
+    -fx-text-fill: #282a36;
+}
+
+.button.success-button:hover {
+    -fx-background-color: derive(-fx-success, 15%);
+}
+
+/* =====================================================================
+   ===== Navigering: variant B (kategorimeny) =====
+   Header med kategoriknappar + sidomeny med kategorirubriker.
+   Ligger EFTER de generella knappreglerna, så att kategoriknapparna
+   vinner vid lika specificitet (den regel som kommer sist gäller).
+   ===================================================================== */
+
+/* ===== Header ===== */
+
+.app-header {
+    -fx-background-color: -fx-header-bg;
+    -fx-border-color: transparent transparent -fx-border transparent;
+}
+
+.app-title {
+    -fx-text-fill: -fx-text-light;
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+}
+
+.app-subtitle {
+    -fx-text-fill: -fx-text-secondary;
+    -fx-font-size: 12px;
+}
+
+.category-label {
+    -fx-text-fill: -fx-accent-text;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+}
+
+/* Knapparna som visas i headern när en kategori är vald */
+.category-area .button {
+    -fx-background-color: transparent;
+    -fx-border-color: -fx-border;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-text-fill: -fx-text-light;
+    -fx-font-weight: normal;
+    -fx-padding: 8 14 8 14;
+    -fx-cursor: hand;
+}
+
+.category-area .button:hover {
+    -fx-background-color: rgba(248,248,242,0.06);
+}
+
+/* ===== Sidomeny ===== */
+
+.app-sidebar-scroll,
+.app-sidebar-scroll > .viewport {
+    -fx-background-color: -fx-sidebar-bg;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+.app-sidebar-scroll {
+    -fx-border-color: transparent -fx-border transparent transparent;
+}
+
+.app-sidebar {
+    -fx-background-color: -fx-sidebar-bg;
+}
+
+/* Kategorirubrik – ser ut som en rubrik men beter sig som en knapp */
+.nav-category {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-secondary;
+    -fx-padding: 11 14 11 14;
+    -fx-background-radius: 8;
+    /* Osynlig ram i samma bredd som den aktiva, så att rubrikerna
+       inte hoppar en pixel när man byter kategori. */
+    -fx-border-color: transparent;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+}
+
+.nav-category:hover {
+    -fx-background-color: rgba(248,248,242,0.06);
+    -fx-text-fill: -fx-text-light;
+}
+
+.nav-divider {
+    -fx-background-color: -fx-border;
+}
+
+.db-status {
+    -fx-text-fill: -fx-warning;
+    -fx-font-size: 11px;
+    -fx-padding: 0 4 8 4;
+}
+
+.app-sidebar .exit-item,
+.app-sidebar .exit-item:focused {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: -fx-danger;
+    -fx-font-weight: bold;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 10 14 10 14;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+}
+
+.app-sidebar .exit-item:hover {
+    -fx-background-color: rgba(255,85,85,0.12);
+}
+
+/* Kategoriknapparna ska inte få den generella knappens fokusring */
+.category-area .button:focused {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-color: -fx-accent;
+}
+
+/* Aktiv kategori/knapp. Måste ligga EFTER .button och hover-reglerna,
+   annars vinner de (samma specificitet – den som kommer sist gäller). */
+.nav-item-active,
+.nav-category.nav-item-active,
+.category-area .button.nav-item-active {
+    -fx-background-color: -fx-accent-soft;
+    -fx-border-color: -fx-accent-soft;
+    -fx-text-fill: -fx-accent-text;
+    -fx-font-weight: bold;
+}
+
+/* ================= Inmatningsfält ================= */
+
+.text-field,
+.text-area,
+.combo-box,
+.date-picker > .text-field {
+    -fx-background-color: -fx-content-bg;
+    -fx-background-insets: 0;
+    -fx-background-radius: 6;
+    -fx-border-color: -fx-border;
+    -fx-border-radius: 6;
+    -fx-text-fill: -fx-text-light;
+    -fx-prompt-text-fill: -fx-text-muted;
+    -fx-highlight-fill: -fx-accent;
+    -fx-highlight-text-fill: #282a36;
+    -fx-font-size: 13px;
+}
+
+.text-field {
+    -fx-padding: 7 10 7 10;
+}
+
+.text-field:focused,
+.text-area:focused,
+.combo-box:focused {
+    -fx-border-color: -fx-accent;
+}
+
+.text-area .content {
+    -fx-background-color: -fx-content-bg;
+    -fx-background-radius: 6;
+}
+
+.combo-box .list-cell {
+    -fx-text-fill: -fx-text-light;
+    -fx-background-color: transparent;
+}
+
+.combo-box .arrow,
+.date-picker .arrow {
+    -fx-background-color: -fx-text-secondary;
+}
+
+.combo-box .arrow-button,
+.date-picker .arrow-button {
+    -fx-background-color: transparent;
+}
+
+/* DatePicker: ramen sitter på hela kontrollen, så textfält och
+   kalenderknapp ser ut som ett enda fält */
+.date-picker {
+    -fx-background-color: -fx-content-bg;
+    -fx-background-radius: 6;
+    -fx-border-color: -fx-border;
+    -fx-border-radius: 6;
+}
+
+.date-picker:focused {
+    -fx-border-color: -fx-accent;
+}
+
+.date-picker > .text-field,
+.date-picker:focused > .text-field {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+/* Rullgardinen för combo-box */
+.combo-box-popup .list-view {
+    -fx-background-color: -fx-card-bg;
+    -fx-border-color: -fx-border;
+}
+
+.combo-box-popup .list-view .list-cell {
+    -fx-background-color: -fx-card-bg;
+    -fx-text-fill: -fx-text-light;
+    -fx-padding: 6 10 6 10;
+}
+
+.combo-box-popup .list-view .list-cell:hover,
+.combo-box-popup .list-view .list-cell:filled:selected {
+    -fx-background-color: -fx-accent-soft;
+    -fx-text-fill: -fx-accent-text;
+}
+
+.check-box {
+    -fx-text-fill: -fx-text-light;
+}
+
+.check-box .box {
+    -fx-background-color: -fx-content-bg;
+    -fx-border-color: -fx-border;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+}
+
+.check-box:selected .box {
+    -fx-background-color: -fx-accent;
+    -fx-border-color: -fx-accent;
+}
+
+.check-box:selected .mark {
+    -fx-background-color: #282a36;
+}
+
+/* ================= Tabeller och listor ================= */
+
+.table-view,
+.list-view {
+    -fx-background-color: -fx-content-bg;
+    -fx-background-insets: 0;
+    -fx-border-color: -fx-border;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 1;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: -fx-card-bg;
+    -fx-background-radius: 8 8 0 0;
+}
+
+.table-view .column-header,
+.table-view .filler {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent -fx-border transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-size: 36;
+}
+
+.table-view .column-header .label {
+    -fx-text-fill: -fx-text-secondary;
+    -fx-font-weight: bold;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 0 10 0 10;
+}
+
+.table-row-cell {
+    -fx-background-color: -fx-border, -fx-content-bg;
+    -fx-background-insets: 0, 0 0 1 0;
+    -fx-text-fill: -fx-text-light;
+    -fx-cell-size: 36;
+}
+
+.table-row-cell:hover {
+    -fx-background-color: -fx-border, #2f3140;
+}
+
+.table-row-cell:selected {
+    -fx-background-color: -fx-border, -fx-accent-soft;
+}
+
+.table-row-cell:empty {
+    -fx-background-color: transparent;
+}
+
+.table-cell {
+    -fx-text-fill: -fx-text-light;
+    -fx-border-color: transparent;
+    -fx-padding: 0 10 0 10;
+    -fx-alignment: CENTER_LEFT;
+}
+
+.table-row-cell:selected .table-cell {
+    -fx-text-fill: -fx-accent-text;
+}
+
+.table-view .placeholder .label {
+    -fx-text-fill: -fx-text-muted;
+}
+
+.list-cell {
+    -fx-background-color: -fx-content-bg;
+    -fx-text-fill: -fx-text-light;
+    -fx-padding: 7 10 7 10;
+}
+
+.list-cell:filled:hover {
+    -fx-background-color: #2f3140;
+}
+
+.list-cell:filled:selected {
+    -fx-background-color: -fx-accent-soft;
+    -fx-text-fill: -fx-accent-text;
+}
+
+/* ================= Kort (Dashboard) ================= */
+
+.card {
+    -fx-background-color: -fx-card-bg;   /* ljusare ruta än bakgrunden */
+    -fx-border-color: -fx-border;        /* tunn ram runt kortet */
+    -fx-background-radius: 10;           /* rundar hörnen på bakgrunden */
+    -fx-border-radius: 10;               /* rundar ramen – måste matcha! */
+    -fx-padding: 16 18 16 18;            /* topp höger botten vänster */
+}
+
+.card .stat-title {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-secondary;
+}
+
+.card .stat-value {
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-light;
+}
+
+/* Värdet i PENDING APPROVAL-kortet ska sticka ut i lila */
+.card .stat-value-accent {
+    -fx-text-fill: -fx-accent;
+}
+
+.card .stat-subtitle {
+    -fx-font-size: 12px;
+    -fx-text-fill: -fx-text-muted;
+}
+
+.card .card-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-light;
+}
+
+.card .card-hint {
+    -fx-font-size: 11px;
+    -fx-text-fill: -fx-text-muted;
+}
+
+.card .empty-text {
+    -fx-font-size: 12px;
+    -fx-text-fill: -fx-text-muted;
+}
+
+/* ================= Stapeldiagram ================= */
+
+.card .chart-bar {
+    -fx-background-color: -fx-accent;
+    -fx-background-radius: 5 5 0 0;   /* bara topphörnen rundade */
+}
+
+.card .chart-day {
+    -fx-font-size: 11px;
+    -fx-text-fill: -fx-text-muted;
+}
+
+.card .chart-value {
+    -fx-font-size: 11px;
+    -fx-text-fill: -fx-text-secondary;
+}
+
+/* ================= Senaste arbetsordrar ================= */
+
+.recent-row {
+    -fx-border-color: transparent transparent -fx-border transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 8 0 8 0;
+}
+
+.card .row-title {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-light;
+}
+
+.card .row-subtitle {
+    -fx-font-size: 12px;
+    -fx-text-fill: -fx-text-secondary;
+}
+
+/* Status-"piller": genomskinlig bakgrund, färgad ram och text */
+.card .badge {
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-padding: 3 9 3 9;
+    -fx-background-radius: 20;
+    -fx-border-radius: 20;
+    -fx-border-width: 1;
+}
+
+.card .badge-created {
+    -fx-text-fill: -fx-text-secondary;
+    -fx-border-color: -fx-text-secondary;
+    -fx-background-color: rgba(164,169,207,0.12);
+}
+
+.card .badge-started {
+    -fx-text-fill: -fx-warning;
+    -fx-border-color: -fx-warning;
+    -fx-background-color: rgba(241,250,140,0.12);
+}
+
+.card .badge-completed {
+    -fx-text-fill: -fx-success;
+    -fx-border-color: -fx-success;
+    -fx-background-color: rgba(80,250,123,0.12);
+}
+
+/* ================= Kanban ================= */
+
+.kanban-item {
+    -fx-background-color: -fx-content-bg;   /* mörkare än kolumnkortet */
+    -fx-border-color: -fx-border;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-padding: 9 12 9 12;
+}
+
+.card .kanban-title {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-light;
+}
+
+.card .kanban-customer {
+    -fx-font-size: 12px;
+    -fx-text-fill: -fx-text-secondary;
+}
+
+.card .kanban-vehicle {
+    -fx-font-size: 12px;
+    -fx-text-fill: -fx-text-muted;
+}
+
+/* =====================================================================
+   ===== Innehållsvyer =====
+   Gemensamt utseende för alla sidor i innehållsytan (tabeller, formulär,
+   badges, kort m.m.). Klasserna sätts av UiKit.java – vyerna ska inte
+   sätta färger själva med setStyle(...).
+
+   Specificitet: ".app-content .label" (två klasser) gör all text ljus.
+   Därför skriver vi reglerna här som ".app-content .x" eller med ännu
+   fler klasser – och de ligger sist i filen, så de vinner vid lika.
+   ===================================================================== */
+
+/* ---------- Innehållsytans scroll ---------- */
+
+.content-scroll,
+.content-scroll > .viewport {
+    -fx-background-color: -fx-content-bg;
+}
+
+/* ---------- Sidrubrik ---------- */
+
+.page-header {
+    -fx-padding: 0 0 6 0;
+}
+
+.app-content .page-title {
+    -fx-text-fill: -fx-text-light;
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+}
+
+/* Rubrik inne i ett kort, t.ex. "WO-2 · DEF456 Volkswagen Passat" */
+.app-content .card-heading {
+    -fx-text-fill: -fx-text-light;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+/* Vanlig brödtext i dämpad färg, t.ex. "Mechanic: Johan Karlsson" */
+.app-content .detail-text {
+    -fx-text-fill: -fx-text-secondary;
+    -fx-font-size: 14px;
+}
+
+.app-content .empty-text {
+    -fx-text-fill: -fx-text-muted;
+    -fx-font-size: 13px;
+}
+
+/* ---------- Knappar ---------- */
+
+.app-content .button.primary-button,
+.app-content .button.primary-button:focused {
+    -fx-background-color: -fx-accent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 8;
+    -fx-text-fill: #282a36;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 10 20 10 20;
+}
+
+.app-content .button.primary-button:hover {
+    -fx-background-color: derive(-fx-accent, 15%);
+}
+
+.app-content .button.primary-button:pressed {
+    -fx-background-color: derive(-fx-accent, -10%);
+}
+
+.app-content .button.success-button,
+.app-content .button.success-button:focused {
+    -fx-background-color: -fx-success;
+    -fx-background-insets: 0;
+    -fx-background-radius: 8;
+    -fx-text-fill: #282a36;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 10 20 10 20;
+}
+
+.app-content .button.success-button:hover {
+    -fx-background-color: derive(-fx-success, 25%);
+}
+
+.app-content .button.success-button:pressed {
+    -fx-background-color: derive(-fx-success, -10%);
+}
+
+/* Avstängd knapp (t.ex. när listan är tom): tydligt "inte klickbar" */
+.app-content .button:disabled {
+    -fx-opacity: 0.45;
+}
+
+/* ---------- Badges ---------- */
+
+/* Grund: liten rundad "pille" med fet text. Färgen kommer från varianten. */
+.app-content .badge {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 2 9 2 9;
+    -fx-background-radius: 999;
+    -fx-border-radius: 999;
+    -fx-border-width: 1;
+}
+
+.app-content .badge.badge-purple {
+    -fx-text-fill: -fx-accent-text;
+    -fx-border-color: -fx-accent;
+    -fx-background-color: rgba(189,147,249,0.16);
+}
+
+.app-content .badge.badge-grey {
+    -fx-text-fill: -fx-text-secondary;
+    -fx-border-color: -fx-text-secondary;
+    -fx-background-color: rgba(164,169,207,0.12);
+}
+
+.app-content .badge.badge-yellow {
+    -fx-text-fill: -fx-warning;
+    -fx-border-color: -fx-warning;
+    -fx-background-color: rgba(241,250,140,0.12);
+}
+
+.app-content .badge.badge-green {
+    -fx-text-fill: -fx-success;
+    -fx-border-color: -fx-success;
+    -fx-background-color: rgba(80,250,123,0.12);
+}
+
+.app-content .badge.badge-red {
+    -fx-text-fill: -fx-danger;
+    -fx-border-color: -fx-danger;
+    -fx-background-color: rgba(255,85,85,0.12);
+}
+
+/* ---------- Prickar (kanban-rubriker, mekaniker) ---------- */
+
+.app-content .dot {
+    -fx-min-width: 10;
+    -fx-min-height: 10;
+    -fx-pref-width: 10;
+    -fx-pref-height: 10;
+    -fx-max-width: 10;
+    -fx-max-height: 10;
+    -fx-background-radius: 5;
+}
+
+.app-content .dot-purple { -fx-background-color: -fx-accent; }
+.app-content .dot-grey   { -fx-background-color: -fx-text-secondary; }
+.app-content .dot-yellow { -fx-background-color: -fx-warning; }
+.app-content .dot-green  { -fx-background-color: -fx-success; }
+.app-content .dot-red    { -fx-background-color: -fx-danger; }
+
+/* ---------- Formulär ---------- */
+
+/* Designens formulär: smal kolumn, centrerad (bredden sätts i UiKit) */
+.form-container {
+    -fx-padding: 4 0 20 0;
+}
+
+.app-content .form-label {
+    -fx-text-fill: -fx-text-secondary;
+    -fx-font-size: 13px;
+}
+
+/* Lite högre fält än standard, som i designen */
+.app-content .text-field {
+    /* 10 px upp/ned ger 40 px höjd – samma som combo-box och date-picker */
+    -fx-padding: 10 12 10 12;
+    -fx-font-size: 14px;
+}
+
+.app-content .combo-box,
+.app-content .date-picker {
+    -fx-pref-height: 40;
+    -fx-font-size: 14px;
+}
+
+.app-content .combo-box .list-cell {
+    /* samma textindrag som i textfälten */
+    -fx-padding: 0 0 0 13;
+    -fx-font-size: 14px;
+}
+
+/* Prompt-texten ("Select vehicle") i en tom combo-box */
+.app-content .combo-box .list-cell:empty {
+    -fx-text-fill: -fx-text-muted;
+}
+
+.app-content .combo-box:hover,
+.app-content .date-picker:hover,
+.app-content .text-field:hover,
+.app-content .text-area:hover {
+    -fx-border-color: derive(-fx-border, 25%);
+}
+
+.app-content .combo-box:focused,
+.app-content .date-picker:focused,
+.app-content .text-field:focused,
+.app-content .text-area:focused {
+    -fx-border-color: -fx-accent;
+}
+
+/* DatePicker: ramen sitter på kontrollen, inte på textfältet inuti */
+.app-content .date-picker > .text-field,
+.app-content .date-picker > .text-field:hover,
+.app-content .date-picker > .text-field:focused {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    /* 1 px mindre än vanliga fält, eftersom date-pickerns ram ligger utanför */
+    -fx-padding: 9 12 9 12;
+}
+
+.app-content .date-picker .arrow-button {
+    -fx-padding: 0 12 0 8;
+}
+
+/* Kalender-ikonen i date-picker ritas som en liten ruta i dämpad färg */
+.date-picker .arrow-button .arrow {
+    -fx-background-color: -fx-text-secondary;
+}
+
+/* Text area (t.ex. Description) */
+.app-content .text-area {
+    -fx-font-size: 14px;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+}
+
+.app-content .text-area .content {
+    -fx-background-color: -fx-content-bg;
+    -fx-padding: 6 8 6 8;
+}
+
+.app-content .text-area .scroll-pane,
+.app-content .text-area .scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+/* Check-box: mörk ruta, lila när den är ikryssad */
+.app-content .check-box {
+    -fx-text-fill: -fx-text-light;
+    -fx-font-size: 14px;
+    -fx-label-padding: 0 0 0 8;
+}
+
+.app-content .check-box .box {
+    -fx-background-color: -fx-content-bg;
+    -fx-background-insets: 0;
+    -fx-border-color: derive(-fx-border, 25%);
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-padding: 3;
+}
+
+.app-content .check-box:hover .box {
+    -fx-border-color: -fx-accent;
+}
+
+.app-content .check-box:selected .box {
+    -fx-background-color: -fx-accent;
+    -fx-border-color: -fx-accent;
+}
+
+.app-content .check-box:selected .mark {
+    -fx-background-color: #282a36;
+}
+
+.app-content .check-box:disabled {
+    -fx-opacity: 0.5;
+}
+
+/* Inramad lista med check-boxar (tjänster) */
+.app-content .checklist-box {
+    -fx-background-color: transparent;
+    -fx-border-color: -fx-border;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 16 18 16 18;
+}
+
+/* Total-rutan i "Create invoice" */
+.app-content .total-box {
+    -fx-background-color: -fx-card-bg;
+    -fx-border-color: -fx-border;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 14 18 14 18;
+}
+
+.app-content .total-label {
+    -fx-text-fill: -fx-text-secondary;
+    -fx-font-size: 14px;
+}
+
+.app-content .total-value {
+    -fx-text-fill: -fx-text-light;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+/* ---------- Meddelanden (fel / lyckat / info) ---------- */
+
+.app-content .feedback-text {
+    -fx-font-size: 13px;
+}
+
+.app-content .error-text {
+    -fx-text-fill: -fx-danger;
+}
+
+.app-content .success-text {
+    -fx-text-fill: -fx-success;
+}
+
+.app-content .info-text {
+    -fx-text-fill: -fx-text-secondary;
+}
+
+/* ---------- Popup-listor (combo-box) ---------- */
+
+/* Popupen är ett eget fönster utan .app-content, därför egna regler */
+.combo-box-popup .list-view {
+    -fx-background-color: -fx-card-bg;
+    -fx-background-radius: 6;
+    -fx-border-color: -fx-border;
+    -fx-border-radius: 6;
+    -fx-padding: 4;
+}
+
+.combo-box-popup .list-view .list-cell {
+    -fx-background-color: transparent;
+    -fx-background-radius: 4;
+    -fx-text-fill: -fx-text-light;
+    -fx-padding: 7 10 7 10;
+}
+
+.combo-box-popup .list-view .list-cell:filled:hover {
+    -fx-background-color: rgba(248,248,242,0.06);
+}
+
+.combo-box-popup .list-view .list-cell:filled:selected,
+.combo-box-popup .list-view .list-cell:filled:selected:hover {
+    -fx-background-color: -fx-accent-soft;
+    -fx-text-fill: -fx-accent-text;
+}
+
+/* ---------- Kalendern i date-picker ---------- */
+
+.date-picker-popup {
+    -fx-background-color: -fx-card-bg;
+    -fx-background-insets: 0;
+    -fx-background-radius: 8;
+    -fx-border-color: -fx-border;
+    -fx-border-radius: 8;
+    -fx-padding: 6;
+}
+
+.date-picker-popup > .month-year-pane {
+    -fx-background-color: transparent;
+    -fx-padding: 6 6 8 6;
+}
+
+.date-picker-popup > * > .spinner > .label,
+.date-picker-popup .spinner .label {
+    -fx-text-fill: -fx-text-light;
+    -fx-font-weight: bold;
+}
+
+.date-picker-popup .spinner > .button {
+    -fx-background-color: transparent;
+    -fx-padding: 4 8 4 8;
+}
+
+.date-picker-popup .spinner > .button:hover {
+    -fx-background-color: rgba(248,248,242,0.08);
+}
+
+.date-picker-popup .spinner > .button > .left-arrow,
+.date-picker-popup .spinner > .button > .right-arrow {
+    -fx-background-color: -fx-text-secondary;
+}
+
+.date-picker-popup > .calendar-grid {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.date-picker-popup .day-name-cell,
+.date-picker-popup .week-number-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: -fx-text-muted;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+
+.date-picker-popup .date-cell {
+    -fx-background-color: transparent;
+    -fx-background-insets: 1;
+    -fx-background-radius: 5;
+    -fx-border-color: transparent;   /* standardtemat ritar ljusa rutnätslinjer */
+    -fx-text-fill: -fx-text-light;
+    -fx-padding: 6 8 6 8;
+}
+
+.date-picker-popup .date-cell:hover {
+    -fx-background-color: rgba(248,248,242,0.08);
+}
+
+.date-picker-popup .previous-month,
+.date-picker-popup .next-month {
+    -fx-text-fill: -fx-text-muted;
+}
+
+.date-picker-popup .today {
+    -fx-border-color: -fx-accent;
+    -fx-border-radius: 5;
+    -fx-border-insets: 1;
+}
+
+.date-picker-popup .selected,
+.date-picker-popup .selected:hover {
+    -fx-background-color: -fx-accent;
+    -fx-text-fill: #282a36;
+    -fx-font-weight: bold;
+}
+
+/* ---------- Tabeller (klass "data-table", sätts av UiKit.styleTable) ---------- */
+
+.app-content .data-table {
+    -fx-background-color: -fx-content-bg;
+    -fx-background-insets: 0;
+    -fx-background-radius: 10;
+    -fx-border-color: -fx-border;
+    -fx-border-radius: 10;
+    -fx-padding: 1;
+}
+
+/* Ingen blå fokusram när man klickat i tabellen */
+.app-content .data-table:focused {
+    -fx-background-color: -fx-content-bg;
+    -fx-background-insets: 0;
+}
+
+.app-content .data-table .column-header-background {
+    -fx-background-color: -fx-card-bg;
+    -fx-background-radius: 9 9 0 0;
+}
+
+.app-content .data-table .column-header,
+.app-content .data-table .filler {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-size: 40;
+}
+
+.app-content .data-table .column-header .label {
+    -fx-text-fill: -fx-text-secondary;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 0 14 0 14;
+}
+
+/* Sortera-pilen i kolumnhuvudet i dämpad färg */
+.app-content .data-table .column-header .arrow {
+    -fx-background-color: -fx-text-muted;
+}
+
+/* Raderna: mörk bakgrund och en tunn skiljelinje OVANFÖR varje rad.
+   Två lager: ramfärgen underst, radens färg 1 px nedanför toppen.
+   Linjen ligger överst (inte underst) så att sista raden inte får en
+   extra linje precis ovanför tabellens egen ram. Första radens linje
+   blir skiljelinjen mot kolumnhuvudet. */
+.app-content .data-table .table-row-cell {
+    -fx-background-color: -fx-border, -fx-content-bg;
+    -fx-background-insets: 0, 1 0 0 0;
+    -fx-text-fill: -fx-text-light;
+}
+
+.app-content .data-table .table-row-cell:hover {
+    -fx-background-color: -fx-border, #2f3140;
+}
+
+/* Vald rad: svag lila ton i stället för standardens blå */
+.app-content .data-table .table-row-cell:selected,
+.app-content .data-table .table-row-cell:selected:hover,
+.app-content .data-table:focused .table-row-cell:selected {
+    -fx-background-color: -fx-border, -fx-accent-soft;
+}
+
+/* Tomma rader under sista raden: helt osynliga (inga vita fält) */
+.app-content .data-table .table-row-cell:empty,
+.app-content .data-table .table-row-cell:empty:hover {
+    -fx-background-color: transparent;
+}
+
+.app-content .data-table .table-cell {
+    -fx-text-fill: -fx-text-light;
+    -fx-font-size: 14px;
+    -fx-border-color: transparent;
+    -fx-padding: 0 14 0 14;
+    -fx-alignment: CENTER_LEFT;
+}
+
+.app-content .data-table .table-row-cell:selected .table-cell {
+    -fx-text-fill: -fx-accent-text;
+}
+
+/* Kolumnklasser: column.getStyleClass().add("cell-muted") osv. */
+.app-content .data-table .table-cell.cell-muted {
+    -fx-text-fill: -fx-text-secondary;
+}
+
+.app-content .data-table .table-cell.cell-strong {
+    -fx-font-weight: bold;
+}
+
+.app-content .data-table .table-cell.cell-right {
+    -fx-alignment: CENTER_RIGHT;
+}
+
+/* Strecket "—" i badge-kolumner utan värde */
+.app-content .data-table .cell-dash {
+    -fx-text-fill: -fx-text-muted;
+}
+
+/* Tom tabell: ingen rad ritar skiljelinjen, så platshållaren gör det */
+.app-content .data-table .placeholder {
+    -fx-border-color: -fx-border transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+}
+
+.app-content .data-table .placeholder .label {
+    -fx-text-fill: -fx-text-muted;
+    -fx-font-size: 13px;
+}
+
+/* ---------- Kanban (Show work orders) ---------- */
+
+.app-content .kanban-column {
+    -fx-spacing: 12;
+}
+
+.app-content .kanban-header {
+    -fx-text-fill: -fx-text-secondary;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+.app-content .kanban-card {
+    -fx-background-color: -fx-card-bg;
+    -fx-border-color: -fx-border;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-padding: 14 16 14 16;
+    -fx-spacing: 3;
+}
+
+.app-content .kanban-card-title {
+    -fx-text-fill: -fx-text-light;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.app-content .kanban-card-text {
+    -fx-text-fill: -fx-text-light;
+    -fx-font-size: 13px;
+}
+
+.app-content .kanban-card-sub {
+    -fx-text-fill: -fx-text-secondary;
+    -fx-font-size: 13px;
+}
+
+.app-content .kanban-card-hint {
+    -fx-text-fill: -fx-text-muted;
+    -fx-font-size: 12px;
+}
+
+/* ---------- Lista + detalj (Start / Complete work order) ---------- */
+
+.app-content .select-card {
+    -fx-background-color: -fx-content-bg;
+    -fx-border-color: -fx-border;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-padding: 14 16 14 16;
+    -fx-cursor: hand;
+}
+
+.app-content .select-card:hover {
+    -fx-background-color: #2f3140;
+}
+
+.app-content .select-card.select-card-active,
+.app-content .select-card.select-card-active:hover {
+    -fx-background-color: -fx-accent-soft;
+    -fx-border-color: -fx-accent;
+}
+
+.app-content .select-card-title {
+    -fx-text-fill: -fx-text-light;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.app-content .select-card-sub {
+    -fx-text-fill: -fx-text-secondary;
+    -fx-font-size: 13px;
+}
+
+/* Detaljkortet till höger: som .card men med mer luft */
+.app-content .card.detail-card {
+    -fx-padding: 24 28 24 28;
+    -fx-spacing: 14;
+}
+
+/* ---------- Mekanikerkort (Show mechanics) ---------- */
+
+.app-content .mechanic-card {
+    -fx-background-color: -fx-card-bg;
+    -fx-border-color: -fx-border;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-padding: 18 20 18 20;
+    -fx-spacing: 6;
+}
+
+.app-content .mechanic-name {
+    -fx-text-fill: -fx-text-light;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+.app-content .mechanic-role {
+    -fx-text-fill: -fx-text-secondary;
+    -fx-font-size: 14px;
+}
+
+.app-content .mechanic-phone {
+    -fx-text-fill: -fx-text-muted;
+    -fx-font-size: 13px;
+}
+
+.app-content .availability-available {
+    -fx-text-fill: -fx-success;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.app-content .availability-busy {
+    -fx-text-fill: -fx-warning;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.app-content .availability-off {
+    -fx-text-fill: -fx-text-secondary;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+/* ---------- Småregler från vyerna ---------- */
+
+/* Högerställ rubriken över högerställda kolumner (t.ex. Price / Est. time).
+   Kolumnrubriken ärver kolumnens style-klasser, därför fungerar cell-right här. */
+.app-content .data-table .column-header.cell-right > .label {
+    -fx-alignment: CENTER_RIGHT;
+}
+
+/* Prompttext i en combo-box som tömts med setValue(null).
+   JavaFX sätter inte :empty på knappcellen, så vyerna sätter klassen
+   combo-prompt själva – annars blir prompten lika ljus som ett riktigt val. */
+.app-content .combo-box .list-cell.combo-prompt {
+    -fx-text-fill: -fx-text-muted;
+}
+
+/* Låsta fält som bara visar ett uträknat värde (Date/Amount i fakturor och betalning) */
+.app-content .text-field.readonly-field {
+    -fx-text-fill: -fx-text-secondary;
+}

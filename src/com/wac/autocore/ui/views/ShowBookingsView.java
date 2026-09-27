@@ -1,102 +1,71 @@
 package com.wac.autocore.ui.views;
 
 import com.wac.autocore.data.Database;
+import com.wac.autocore.entity.BookingEntity;
 import com.wac.autocore.model.Booking;
+import com.wac.autocore.model.Mechanic;
+import com.wac.autocore.model.Vehicle;
+import com.wac.autocore.repository.BookingRepository;
+import com.wac.autocore.ui.Navigator;
+import com.wac.autocore.ui.UiKit;
 
+import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.geometry.Insets;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 import java.time.LocalDate;
-import com.wac.autocore.entity.BookingEntity;
-import com.wac.autocore.model.Mechanic;
-import com.wac.autocore.repository.BookingRepository;
-import javafx.beans.property.ReadOnlyStringWrapper;
-
 import java.util.HashMap;
 import java.util.Map;
 
+// Visar alla bokningar i en tabell: fordon, datum, mekaniker, beskrivning och status.
 public class ShowBookingsView {
 
     public VBox getView() {
 
+        // Mekanikern sparas bara i databasen (BookingEntity), inte i Booking-modellen.
+        // Därför slår vi upp den via repositoryt och kopplar ihop med bokningens ID.
         Map<Integer, Integer> mechanicByBooking = new HashMap<>();
         Map<Integer, String> mechanicNames = new HashMap<>();
 
         for (Mechanic mechanic : Database.getMechanics()) {
             mechanicNames.put(mechanic.getId(), mechanic.getName());
         }
-        try {BookingRepository bookingRepository = new BookingRepository();
+        try {
+            BookingRepository bookingRepository = new BookingRepository();
 
-            for(BookingEntity booking : bookingRepository.findAll()){
+            for (BookingEntity booking : bookingRepository.findAll()) {
                 mechanicByBooking.put(booking.getId(), booking.getMechanicId());
             }
         } catch (RuntimeException e) {
-           e.printStackTrace();
-
-           Label errorLabel = new Label(
-                   "Bookings could not be loaded. Please reopen this page to try again."
-           );
-           errorLabel.setWrapText(true);
-
-           VBox errorView = new VBox(15, errorLabel);
-           errorView.setPadding(new Insets(15));
-           return errorView;
+            e.printStackTrace();
+            return buildErrorView(
+                    "Bookings could not be loaded. Please reopen this page to try again."
+            );
         }
-
-
-        Label title = new Label("BOOKINGS");
-
-        title.setStyle(
-                "-fx-font-size: 24px;" +
-                        "-fx-font-weight: bold;"
-        );
 
         TableView<Booking> table = new TableView<>();
 
-        TableColumn<Booking, Integer> idColumn =
-                new TableColumn<>("ID");
-
-        idColumn.setCellValueFactory(
-                new PropertyValueFactory<Booking, Integer>("id")
+        // Vehicle: "ABC123 · Volvo V70" i stället för bara ett ID
+        TableColumn<Booking, String> vehicleColumn = new TableColumn<>("Vehicle");
+        vehicleColumn.setCellValueFactory(cell ->
+                new ReadOnlyStringWrapper(vehicleText(cell.getValue().getVehicleId()))
         );
 
-        TableColumn<Booking, Integer> vehicleColumn =
-                new TableColumn<>("Vehicle ID");
+        TableColumn<Booking, String> dateColumn = new TableColumn<>("Date");
+        dateColumn.setCellValueFactory(cell -> {
+            LocalDate date = cell.getValue().getDate();
+            return new ReadOnlyStringWrapper(date == null ? "—" : date.toString());
+        });
+        dateColumn.getStyleClass().add("cell-muted");
 
-        vehicleColumn.setCellValueFactory(
-                new PropertyValueFactory<Booking, Integer>("vehicleId")
-        );
-
-        TableColumn<Booking, LocalDate> dateColumn =
-                new TableColumn<>("Date");
-
-        dateColumn.setCellValueFactory(
-                new PropertyValueFactory<Booking, LocalDate>("date")
-        );
-
-        TableColumn<Booking, String> descriptionColumn =
-                new TableColumn<>("Description");
-
-        descriptionColumn.setCellValueFactory(
-                new PropertyValueFactory<Booking, String>("description")
-        );
-
-        TableColumn<Booking, String> statusColumn =
-                new TableColumn<>("Status");
-
-        statusColumn.setCellValueFactory(
-                new PropertyValueFactory<Booking, String>("status")
-        );
-
-        TableColumn<Booking, String> mechanicColumn =
-                new TableColumn<>("Mechanic");
-
+        TableColumn<Booking, String> mechanicColumn = new TableColumn<>("Mechanic");
         mechanicColumn.setCellValueFactory(cell -> {
             int bookingId = cell.getValue().getId();
 
@@ -118,46 +87,69 @@ public class ShowBookingsView {
                 );
             }
 
-            return new ReadOnlyStringWrapper(
-                    mechanicName + " (ID: " + mechanicId + ")"
-            );
+            return new ReadOnlyStringWrapper(mechanicName);
         });
+        mechanicColumn.getStyleClass().add("cell-muted");
 
-        table.getColumns().addAll(
-                idColumn,
-                vehicleColumn,
-                dateColumn,
-                mechanicColumn,
-                descriptionColumn,
-                statusColumn
+        TableColumn<Booking, String> descriptionColumn = new TableColumn<>("Description");
+        descriptionColumn.setCellValueFactory(
+                new PropertyValueFactory<Booking, String>("description")
         );
+        descriptionColumn.getStyleClass().add("cell-muted");
 
+        // Status visas som en färgad badge (BOOKED lila, STARTED gul osv.)
+        TableColumn<Booking, String> statusColumn = new TableColumn<>("Status");
+        statusColumn.setCellValueFactory(
+                new PropertyValueFactory<Booking, String>("status")
+        );
+        statusColumn.setCellFactory(UiKit.<Booking>badgeCells());
+
+        table.getColumns().add(vehicleColumn);
+        table.getColumns().add(dateColumn);
+        table.getColumns().add(mechanicColumn);
+        table.getColumns().add(descriptionColumn);
+        table.getColumns().add(statusColumn);
+
+        // Beskrivningen får mest plats, status minst
+        vehicleColumn.setMaxWidth(1f * Integer.MAX_VALUE * 26);
+        dateColumn.setMaxWidth(1f * Integer.MAX_VALUE * 15);
+        mechanicColumn.setMaxWidth(1f * Integer.MAX_VALUE * 18);
+        descriptionColumn.setMaxWidth(1f * Integer.MAX_VALUE * 27);
+        statusColumn.setMaxWidth(1f * Integer.MAX_VALUE * 14);
 
         ObservableList<Booking> bookings =
-                FXCollections.observableArrayList(
-                        Database.getBookings()
-                );
+                FXCollections.observableArrayList(Database.getBookings());
 
         table.setItems(bookings);
+        table.setPlaceholder(new Label("No bookings found."));
+        UiKit.styleTable(table);
 
-        table.setPlaceholder(
-                new Label("No bookings found.")
-        );
+        return new VBox(20, buildHeader(), table);
+    }
 
-        table.setColumnResizePolicy(
-                TableView.CONSTRAINED_RESIZE_POLICY
-        );
+    // Rubrik med "+ New booking" till höger som hoppar till formuläret
+    private HBox buildHeader() {
+        Button newBookingButton = UiKit.primaryButton("+ New booking");
+        newBookingButton.setOnAction(event -> Navigator.goTo("create-booking"));
+        return UiKit.pageHeader("Bookings", newBookingButton);
+    }
 
+    // Visas om bokningarna inte gick att läsa från databasen
+    private VBox buildErrorView(String message) {
+        Label errorLabel = UiKit.feedbackLabel();
+        UiKit.showError(errorLabel, message);
+        return new VBox(20, buildHeader(), UiKit.card(errorLabel));
+    }
 
-        VBox view = new VBox(15);
-
-        view.setPadding(new Insets(10));
-
-        view.getChildren().addAll(
-                title,
-                table
-        );
-
-        return view;
+    // Gör om ett fordons-ID till "regnr · märke modell" för tabellen
+    private String vehicleText(int vehicleId) {
+        for (Vehicle vehicle : Database.getVehicles()) {
+            if (vehicle.getId() == vehicleId) {
+                return vehicle.getRegistrationNumber() + " · "
+                        + vehicle.getBrand() + " " + vehicle.getModel();
+            }
+        }
+        // Fordonet finns inte längre – visa åtminstone ID:t
+        return "Vehicle ID " + vehicleId;
     }
 }

@@ -4,15 +4,16 @@ import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Invoice;
 import com.wac.autocore.model.Payment;
 import com.wac.autocore.service.GarageSystem;
+import com.wac.autocore.ui.ShowInvoiceView;
+import com.wac.autocore.ui.UiKit;
 
-import javafx.collections.FXCollections;
-import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
+import javafx.util.StringConverter;
 
 public class ProcessPaymentView {
 
@@ -20,37 +21,47 @@ public class ProcessPaymentView {
 
     public VBox getView() {
 
-        Label title = new Label("PROCESS PAYMENT");
+        // --- Faktura ---
+        // Visar alla fakturor (som konsolversionen), med belopp och om den är betald
+        ComboBox<Invoice> invoiceBox = new ComboBox<>();
+        invoiceBox.setConverter(new StringConverter<Invoice>() {
+            @Override
+            public String toString(Invoice invoice) {
+                return invoice == null ? "" : describeInvoice(invoice);
+            }
 
-        title.setStyle(
-                "-fx-font-size: 24px;" +
-                        "-fx-font-weight: bold;"
+            @Override
+            public Invoice fromString(String text) {
+                return null; // Används inte – listan går inte att skriva i
+            }
+        });
+        invoiceBox.getItems().addAll(Database.getInvoices());
+        invoiceBox.setPromptText(
+                invoiceBox.getItems().isEmpty() ? "No invoices yet" : "Select invoice"
         );
+        UiKit.keepPromptWhenCleared(invoiceBox);
 
 
-        // Visar invoices precis som konsolversionen
-        Label invoicesLabel = new Label("Available invoices:");
+        // --- Belopp ---
+        // GarageSystem drar alltid fakturans totalbelopp,
+        // därför visar fältet bara det och går inte att ändra.
+        TextField amountField = new TextField();
+        amountField.setEditable(false);
+        amountField.setPromptText("Select an invoice");
+        amountField.getStyleClass().add("readonly-field");
 
-        ListView<Invoice> invoiceList = new ListView<>(
-                FXCollections.observableArrayList(
-                        Database.getInvoices()
-                )
-        );
-
-        invoiceList.setPrefHeight(180);
-
-
-        // Invoice ID
-        Label invoiceIdLabel = new Label("Invoice ID:");
-
-        TextField invoiceIdField = new TextField();
-
-        invoiceIdField.setPromptText("Enter invoice ID");
+        invoiceBox.valueProperty().addListener((observable, oldValue, selected) -> {
+            if (selected == null) {
+                amountField.clear();
+            } else {
+                amountField.setText(ShowInvoiceView.formatSek(selected.getTotalAmount()));
+            }
+        });
 
 
-        // Payment type
-        Label paymentTypeLabel = new Label("Payment type:");
-
+        // --- Betalsätt ---
+        // Värdena skickas vidare till GarageSystem exakt som förut (CARD/SWISH/CASH),
+        // converter:n ändrar bara hur de visas ("Card").
         ComboBox<String> paymentTypeBox =
                 new ComboBox<>();
 
@@ -63,34 +74,46 @@ public class ProcessPaymentView {
         paymentTypeBox.setPromptText(
                 "Select payment type"
         );
+        paymentTypeBox.setConverter(new StringConverter<String>() {
+            @Override
+            public String toString(String type) {
+                return type == null ? "" : formatPaymentType(type);
+            }
+
+            @Override
+            public String fromString(String text) {
+                return text;
+            }
+        });
+        UiKit.keepPromptWhenCleared(paymentTypeBox);
 
 
         // Meddelande till användaren
-        Label messageLabel = new Label();
+        Label messageLabel = UiKit.feedbackLabel();
+
+        if (invoiceBox.getItems().isEmpty()) {
+            UiKit.showInfo(messageLabel, "There are no invoices to pay yet.");
+        }
 
 
         Button processButton =
-                new Button("Process payment");
+                UiKit.successButton("Process payment");
 
 
         processButton.setOnAction(event -> {
 
-            int invoiceId;
+            Invoice selectedInvoice = invoiceBox.getValue();
 
-            try {
+            if (selectedInvoice == null) {
 
-                invoiceId = Integer.parseInt(
-                        invoiceIdField.getText()
-                );
-
-            } catch (NumberFormatException e) {
-
-                messageLabel.setText(
-                        "Please enter a valid invoice ID."
+                UiKit.showError(messageLabel,
+                        "Please select an invoice."
                 );
 
                 return;
             }
+
+            int invoiceId = selectedInvoice.getId();
 
 
             String paymentType =
@@ -98,7 +121,7 @@ public class ProcessPaymentView {
 
             if (paymentType == null) {
 
-                messageLabel.setText(
+                UiKit.showError(messageLabel,
                         "Please select a payment type."
                 );
 
@@ -115,7 +138,7 @@ public class ProcessPaymentView {
 
             if (payment == null) {
 
-                messageLabel.setText(
+                UiKit.showError(messageLabel,
                         "Payment could not be processed. " +
                                 "Check invoice ID or if the invoice is already paid."
                 );
@@ -126,41 +149,61 @@ public class ProcessPaymentView {
 
             if (payment.isSuccessful()) {
 
-                messageLabel.setText(
+                UiKit.showSuccess(messageLabel,
                         "Payment completed successfully."
                 );
 
-                invoiceIdField.clear();
+                invoiceBox.setValue(null);
                 paymentTypeBox.setValue(null);
 
-                // Uppdatera listan så Paid-status syns direkt
-                invoiceList.refresh();
+                // Rita om listan så att "paid" syns direkt på fakturan
+                refreshInvoiceTexts(invoiceBox);
 
             } else {
 
-                messageLabel.setText(
+                UiKit.showError(messageLabel,
                         "Payment failed."
                 );
             }
         });
 
 
-        VBox view = new VBox(10);
-
-        view.setPadding(new Insets(10));
-
-        view.getChildren().addAll(
-                title,
-                invoicesLabel,
-                invoiceList,
-                invoiceIdLabel,
-                invoiceIdField,
-                paymentTypeLabel,
-                paymentTypeBox,
+        VBox form = UiKit.formContainer(
+                UiKit.pageHeader("Process payment", null),
+                UiKit.formField("Invoice", invoiceBox),
+                UiKit.formField("Amount", amountField),
+                UiKit.formField("Payment type", paymentTypeBox),
                 processButton,
                 messageLabel
         );
 
+        // Formulärkolumnen ska ligga centrerad i innehållsytan
+        VBox view = new VBox(form);
+        view.setAlignment(Pos.TOP_CENTER);
+
         return view;
     }
+
+    /** "CARD" -> "Card". Används även i ShowPaymentsView så att betalsätt ser likadana ut. */
+    public static String formatPaymentType(String type) {
+        if (type == null || type.trim().isEmpty()) {
+            return "—";
+        }
+        String lower = type.trim().toLowerCase();
+        return Character.toUpperCase(lower.charAt(0)) + lower.substring(1);
+    }
+
+    // "WO-1 invoice · 3 495 SEK unpaid"
+    private static String describeInvoice(Invoice invoice) {
+        return ShowInvoiceView.workOrderCode(invoice.getWorkOrderId()) + " invoice · "
+                + ShowInvoiceView.formatSek(invoice.getTotalAmount())
+                + (invoice.isPaid() ? " paid" : " unpaid");
+    }
+
+    // En ComboBox ritar inte om texterna av sig själv när ett objekt ändras
+    // (här: paid blev true). Genom att lägga in samma objekt igen uppdateras de.
+    private static void refreshInvoiceTexts(ComboBox<Invoice> invoiceBox) {
+        invoiceBox.getItems().setAll(Database.getInvoices());
+    }
+
 }
