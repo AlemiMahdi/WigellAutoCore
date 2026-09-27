@@ -6,6 +6,7 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Entity
 @Table(name = "bookings")
@@ -28,6 +29,12 @@ public class BookingEntity {
 
     @Column(name = "mechanic_id")
     private Integer mechanicId;
+
+    @Column( name = "start_time")
+    private LocalTime startTime;
+
+    @Column (name = "duration_minutes")
+    private int durationMinutes;
 
     public BookingEntity() {}
 
@@ -58,6 +65,14 @@ public class BookingEntity {
     public void setMechanicId(Integer mechanicId) {
         this.mechanicId = mechanicId;
     }
+
+    public LocalTime getStartTime() { return startTime; }
+    public void setStartTime (LocalTime starTime) { this.startTime = starTime; }
+
+    public int getDurationMinutes () { return durationMinutes; }
+    public void setDurationMinutes (int duration_minutes ) { this.durationMinutes = duration_minutes; }
+
+    
 
 
 

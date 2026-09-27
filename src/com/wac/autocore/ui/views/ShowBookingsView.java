@@ -13,6 +13,8 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
+
 import com.wac.autocore.entity.BookingEntity;
 import com.wac.autocore.model.Mechanic;
 import com.wac.autocore.repository.BookingRepository;
@@ -80,6 +82,20 @@ public class ShowBookingsView {
                 new PropertyValueFactory<Booking, LocalDate>("date")
         );
 
+        TableColumn<Booking, LocalTime> startTimeColumn =
+        new TableColumn<>("Start time");
+
+        startTimeColumn.setCellValueFactory(
+                new PropertyValueFactory<Booking, LocalTime>("startTime")
+        );
+
+        TableColumn<Booking, Integer> durationColumn =
+                new TableColumn<>("Duration");
+
+        durationColumn.setCellValueFactory(
+                new PropertyValueFactory<Booking, Integer>("durationMinutes")
+        );
+
         TableColumn<Booking, String> descriptionColumn =
                 new TableColumn<>("Description");
 
@@ -127,6 +143,8 @@ public class ShowBookingsView {
                 idColumn,
                 vehicleColumn,
                 dateColumn,
+                startTimeColumn,
+                durationColumn,
                 mechanicColumn,
                 descriptionColumn,
                 statusColumn

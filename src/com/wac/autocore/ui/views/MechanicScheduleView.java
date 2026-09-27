@@ -13,6 +13,8 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
+
 import com.wac.autocore.entity.BookingEntity;
 import com.wac.autocore.model.Mechanic;
 import com.wac.autocore.repository.BookingRepository;
@@ -63,6 +65,20 @@ public class MechanicScheduleView {
         TableColumn<Booking, LocalDate> dateCol = new TableColumn<>("Date");
         dateCol.setCellValueFactory(new PropertyValueFactory<>("date"));
 
+        TableColumn<Booking, LocalTime> startTimeCol =
+        new TableColumn<>("Start time");
+
+        startTimeCol.setCellValueFactory(
+                new PropertyValueFactory<>("startTime")
+        );
+
+        TableColumn<Booking, Integer> durationCol =
+                new TableColumn<>("Duration");
+
+        durationCol.setCellValueFactory(
+                new PropertyValueFactory<>("durationMinutes")
+        );
+
         TableColumn<Booking, Integer> vehicleCol = new TableColumn<>("Vehicle");
         vehicleCol.setCellValueFactory(new PropertyValueFactory<>("vehicleId"));
 
@@ -72,7 +88,15 @@ public class MechanicScheduleView {
         TableColumn<Booking, String> statusCol = new TableColumn<>("Status");
         statusCol.setCellValueFactory(new PropertyValueFactory<>("status"));
 
-        table.getColumns().addAll(idCol, dateCol, vehicleCol, descCol, statusCol);
+        table.getColumns().addAll(
+                idCol,
+                dateCol,
+                startTimeCol,
+                durationCol,
+                vehicleCol,
+                descCol,
+                statusCol
+        );
         table.setPlaceholder(new Label("Select a mechanic"));
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
@@ -86,7 +110,14 @@ public class MechanicScheduleView {
 
             List<Booking> result = Database.getBookings().stream()
                     .filter(booking -> selectedId.equals(mechanicByBooking.get(booking.getId())))
-                    .sorted(Comparator.comparing(Booking::getDate))
+                    .sorted(
+                        Comparator.comparing(Booking::getDate)
+                                .thenComparing(
+                                        booking -> booking.getStartTime() == null
+                                                ? LocalTime.MIN
+                                                : booking.getStartTime()
+                                )
+                    )
                     .collect(Collectors.toList());
 
             table.setItems(FXCollections.observableArrayList(result));
