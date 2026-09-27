@@ -4,47 +4,47 @@ import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.Mechanic;
 import com.wac.autocore.model.ServiceItem;
+import com.wac.autocore.model.Vehicle;
 import com.wac.autocore.model.WorkOrder;
 import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.repository.WorkOrderRepository;
 import com.wac.autocore.service.GarageSystem;
 import javafx.collections.FXCollections;
+import javafx.geometry.Pos;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.SelectionMode;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.util.StringConverter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 //Formulär för att skapa arbetsordrar.
 public class CreateWorkOrderView  extends VBox {
 
+    // En CheckBox per tjänst. Tjänsten sparas i CheckBoxens userData
+    // så att vi vet vilket ID som hör till en ikryssad ruta.
+    private final List<CheckBox> serviceCheckBoxes = new ArrayList<>();
+
     public CreateWorkOrderView() {
-        setSpacing(10);
-        Label titleLabel = new Label("Create Work Order");
-        titleLabel.setStyle("-fx-font-size: 20");
+        // Centrerar formulärkolumnen i innehållsytan
+        setAlignment(Pos.TOP_CENTER);
 
         ComboBox<Booking> bookingComboBox = new ComboBox<>(FXCollections.observableArrayList(Database.getBookings()));
-        bookingComboBox.setPromptText("Select a Booking to Create");
-        bookingComboBox.setMaxWidth(Double.MAX_VALUE);
+        bookingComboBox.setPromptText("Select booking");
+        bookingComboBox.setConverter(bookingConverter());
+        UiKit.keepPromptWhenCleared(bookingComboBox);
 
         ComboBox<Mechanic> mechanicComboBox = new ComboBox<>(FXCollections.observableArrayList(Database.getMechanics()));
+        mechanicComboBox.setPromptText("Select mechanic");
+        mechanicComboBox.setConverter(mechanicConverter());
+        UiKit.keepPromptWhenCleared(mechanicComboBox);
 
-        mechanicComboBox.setPromptText("Select a Mechanic");
-        mechanicComboBox.setMaxWidth(Double.MAX_VALUE);
-        ListView<ServiceItem> serviceItemListView = new ListView<>(FXCollections.observableArrayList(Database.getServiceItems()));
+        Button saveButton = UiKit.primaryButton("Create work order");
 
-        serviceItemListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        serviceItemListView.setPlaceholder(new Label("No items found."));
-
-        Label help = new Label("Select services. To select multiple hold Command (Mac) or Ctrl (Windows)");
-        help.setWrapText(true);
-
-        Button saveButton = new Button("Save");
-
-        Label feedbackLabel = new Label();
-        feedbackLabel.setWrapText(true);
+        Label feedbackLabel = UiKit.feedbackLabel();
 
         GarageSystem garageSystem = new GarageSystem();
         WorkOrderRepository workOrderRepository = new WorkOrderRepository();
@@ -55,12 +55,12 @@ public class CreateWorkOrderView  extends VBox {
             Mechanic mechanic = mechanicComboBox.getValue();
 
             if (booking == null || mechanic == null){
-                feedbackLabel.setText("Please select a Booking and a Mechanic");
+                UiKit.showError(feedbackLabel, "Please select a Booking and a Mechanic");
 
                 return;
             }
 
-            int[] serviceIds = serviceItemListView.getSelectionModel().getSelectedItems().stream().mapToInt(ServiceItem::getId).toArray();
+            int[] serviceIds = selectedServiceIds();
 
             // Sparar bokningens status ifall vi behöver återställa den.
             String previousBookingStatus = booking.getStatus();
@@ -70,10 +70,10 @@ public class CreateWorkOrderView  extends VBox {
 
             if(workOrder == null){
                 if (!mechanic.isAvailable()){
-                    feedbackLabel.setText("Mechanic is not available");
+                    UiKit.showError(feedbackLabel, "Mechanic is not available");
                 }
                 else {
-                    feedbackLabel.setText("Work order could not be created. Please try again");
+                    UiKit.showError(feedbackLabel, "Work order could not be created. Please try again");
                 }
                 return;
             }
@@ -88,39 +88,116 @@ public class CreateWorkOrderView  extends VBox {
                 Database.getWorkOrders().remove(workOrder);
                 booking.setStatus(previousBookingStatus);
 
-                feedbackLabel.setText("Work order could not be saved. Please try again.");
+                UiKit.showError(feedbackLabel, "Work order could not be saved. Please try again.");
                 exception.printStackTrace();
                 return;
             }
 
-            feedbackLabel.setText("Work order has been created");
+            UiKit.showSuccess(feedbackLabel, "Work order has been created");
 
             //Jag tömmer valen efter registreringen har lyckats.
             bookingComboBox.getSelectionModel().clearSelection();
             bookingComboBox.setValue(null);
             mechanicComboBox.getSelectionModel().clearSelection();
             mechanicComboBox.setValue(null);
-            serviceItemListView.getSelectionModel().clearSelection();
+            for (CheckBox checkBox : serviceCheckBoxes) {
+                checkBox.setSelected(false);
+            }
 
         });
 
-        VBox.setVgrow(serviceItemListView, Priority.ALWAYS);
-        getChildren().addAll(
-                titleLabel,
-                new Label("Booking:"),
-                bookingComboBox,
-                new Label("Mechanic"),
-                mechanicComboBox,
-                new Label("Services"),
-                help,
-                serviceItemListView,
-                feedbackLabel,
-                saveButton
+        getChildren().add(UiKit.formContainer(
+                UiKit.pageHeader("Create work order", null),
+                UiKit.formField("Booking", bookingComboBox),
+                UiKit.formField("Mechanic", mechanicComboBox),
+                UiKit.formField("Services", buildServiceChecklist()),
+                saveButton,
+                feedbackLabel
+        ));
+    }
 
-        );
+    // Inramad ruta med en CheckBox per tjänst, t.ex. "Tire rotation — 249 SEK".
+    // Checkboxar är enklare än en flervals-lista där man måste hålla Ctrl.
+    private VBox buildServiceChecklist() {
+        for (ServiceItem serviceItem : Database.getServiceItems()) {
+            CheckBox checkBox = new CheckBox(serviceItem.getName() + " — " + formatPrice(serviceItem.getPrice()));
+            checkBox.setUserData(serviceItem);
+            serviceCheckBoxes.add(checkBox);
+        }
 
+        VBox checklist = UiKit.checklistBox(serviceCheckBoxes.toArray(new CheckBox[0]));
+        if (serviceCheckBoxes.isEmpty()) {
+            checklist.getChildren().add(UiKit.emptyText("No items found."));
+        }
+        return checklist;
+    }
 
+    // Samlar ID:na för alla ikryssade tjänster, i samma form som GarageSystem vill ha (int[])
+    private int[] selectedServiceIds() {
+        List<Integer> ids = new ArrayList<>();
+        for (CheckBox checkBox : serviceCheckBoxes) {
+            if (checkBox.isSelected()) {
+                ServiceItem serviceItem = (ServiceItem) checkBox.getUserData();
+                ids.add(serviceItem.getId());
+            }
+        }
 
+        int[] result = new int[ids.size()];
+        for (int i = 0; i < ids.size(); i++) {
+            result[i] = ids.get(i);
+        }
+        return result;
+    }
+
+    // 249.0 visas som "249 SEK", 249.5 som "249.50 SEK"
+    private String formatPrice(double price) {
+        if (price == Math.rint(price)) {
+            return String.format("%.0f SEK", price);
+        }
+        return String.format("%.2f SEK", price);
+    }
+
+    // Visar bokningen som "#3 · GHI321 · Tire change"
+    private StringConverter<Booking> bookingConverter() {
+        return new StringConverter<Booking>() {
+            @Override
+            public String toString(Booking booking) {
+                if (booking == null) {
+                    return "";
+                }
+                return "#" + booking.getId() + " · "
+                        + registrationNumber(booking.getVehicleId()) + " · "
+                        + booking.getDescription();
+            }
+
+            @Override
+            public Booking fromString(String text) {
+                // Används inte – combo-boxen går inte att skriva i
+                return null;
+            }
+        };
+    }
+
+    private StringConverter<Mechanic> mechanicConverter() {
+        return new StringConverter<Mechanic>() {
+            @Override
+            public String toString(Mechanic mechanic) {
+                return mechanic == null ? "" : mechanic.getName();
+            }
+
+            @Override
+            public Mechanic fromString(String text) {
+                return null;
+            }
+        };
+    }
+
+    private String registrationNumber(int vehicleId) {
+        for (Vehicle vehicle : Database.getVehicles()) {
+            if (vehicle.getId() == vehicleId) {
+                return vehicle.getRegistrationNumber();
+            }
+        }
+        return "Vehicle ID " + vehicleId;
     }
 }
-

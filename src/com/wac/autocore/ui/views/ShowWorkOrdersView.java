@@ -1,115 +1,124 @@
 package com.wac.autocore.ui.views;
 
 import com.wac.autocore.data.Database;
+import com.wac.autocore.model.Booking;
+import com.wac.autocore.model.Mechanic;
+import com.wac.autocore.model.ServiceItem;
+import com.wac.autocore.model.Vehicle;
 import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.ui.UiKit;
 
-import javafx.beans.property.SimpleStringProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
+import java.util.ArrayList;
+import java.util.List;
+
+// Visar arbetsordrarna som en kanban-tavla: CREATED, STARTED och COMPLETED.
 public class ShowWorkOrdersView {
 
     public VBox getView() {
 
-        Label title = new Label("WORK ORDERS");
+        VBox createdColumn = UiKit.kanbanColumn("Created", "grey");
+        VBox startedColumn = UiKit.kanbanColumn("Started", "yellow");
+        VBox completedColumn = UiKit.kanbanColumn("Completed", "green");
 
-        title.setStyle(
-                "-fx-font-size: 24px;" +
-                        "-fx-font-weight: bold;"
-        );
+        // Sorterar varje arbetsorder till rätt kolumn utifrån dess status
+        for (WorkOrder workOrder : Database.getWorkOrders()) {
+            String status = workOrder.getStatus() == null ? "" : workOrder.getStatus().toUpperCase();
 
-        TableView<WorkOrder> table = new TableView<>();
+            if (status.equals("IN_PROGRESS")) {
+                startedColumn.getChildren().add(buildCard(workOrder));
+            } else if (status.equals("COMPLETED")) {
+                completedColumn.getChildren().add(buildCard(workOrder));
+            } else {
+                // CREATED (och okända statusar) hamnar i första kolumnen så inget försvinner
+                createdColumn.getChildren().add(buildCard(workOrder));
+            }
+        }
 
+        addEmptyTextIfNoCards(createdColumn);
+        addEmptyTextIfNoCards(startedColumn);
+        addEmptyTextIfNoCards(completedColumn);
 
-        // ID
-        TableColumn<WorkOrder, Integer> idColumn =
-                new TableColumn<>("ID");
+        HBox board = new HBox(24, createdColumn, startedColumn, completedColumn);
+        board.setAlignment(Pos.TOP_LEFT);
 
-        idColumn.setCellValueFactory(
-                new PropertyValueFactory<WorkOrder, Integer>("id")
-        );
+        return new VBox(20, UiKit.pageHeader("Work orders", null), board);
+    }
 
+    // Ett kort per arbetsorder: WO-id, fordon, mekaniker och tjänster
+    private VBox buildCard(WorkOrder workOrder) {
+        Label idLabel = new Label("WO-" + workOrder.getId());
+        idLabel.getStyleClass().add("kanban-card-title");
 
-        // Booking ID
-        TableColumn<WorkOrder, Integer> bookingIdColumn =
-                new TableColumn<>("Booking ID");
+        Label vehicleLabel = new Label(vehicleText(workOrder.getBookingId()));
+        vehicleLabel.getStyleClass().add("kanban-card-text");
 
-        bookingIdColumn.setCellValueFactory(
-                new PropertyValueFactory<WorkOrder, Integer>("bookingId")
-        );
+        Label mechanicLabel = new Label(mechanicName(workOrder.getMechanicId()));
+        mechanicLabel.getStyleClass().add("kanban-card-sub");
 
+        Label servicesLabel = new Label(servicesText(workOrder.getServiceItemIds()));
+        servicesLabel.getStyleClass().add("kanban-card-hint");
+        servicesLabel.setWrapText(true);
 
-        // Mechanic ID
-        TableColumn<WorkOrder, Integer> mechanicIdColumn =
-                new TableColumn<>("Mechanic ID");
+        VBox card = new VBox(idLabel, vehicleLabel, mechanicLabel, servicesLabel);
+        card.getStyleClass().add("kanban-card");
+        return card;
+    }
 
-        mechanicIdColumn.setCellValueFactory(
-                new PropertyValueFactory<WorkOrder, Integer>("mechanicId")
-        );
+    // En kolumn med bara rubriken ser trasig ut – visa en dämpad text i stället
+    private void addEmptyTextIfNoCards(VBox column) {
+        // Första barnet är rubriken, så 1 barn betyder "inga kort"
+        if (column.getChildren().size() == 1) {
+            column.getChildren().add(UiKit.emptyText("No work orders"));
+        }
+    }
 
+    // Arbetsordern pekar på en bokning, som i sin tur pekar på fordonet
+    private String vehicleText(int bookingId) {
+        for (Booking booking : Database.getBookings()) {
+            if (booking.getId() == bookingId) {
+                for (Vehicle vehicle : Database.getVehicles()) {
+                    if (vehicle.getId() == booking.getVehicleId()) {
+                        return vehicle.getRegistrationNumber() + " · "
+                                + vehicle.getBrand() + " " + vehicle.getModel();
+                    }
+                }
+                return "Vehicle ID " + booking.getVehicleId();
+            }
+        }
+        return "Booking ID " + bookingId;
+    }
 
-        // Services
-        TableColumn<WorkOrder, String> servicesColumn =
-                new TableColumn<>("Services");
+    private String mechanicName(int mechanicId) {
+        for (Mechanic mechanic : Database.getMechanics()) {
+            if (mechanic.getId() == mechanicId) {
+                return mechanic.getName();
+            }
+        }
+        // Ingen mekaniker med det ID:t (t.ex. 0) = inte tilldelad ännu
+        return "Unassigned";
+    }
 
-        servicesColumn.setCellValueFactory(cellData ->
-                new SimpleStringProperty(
-                        cellData.getValue()
-                                .getServiceItemIds()
-                                .toString()
-                )
-        );
-
-
-        // Status
-        TableColumn<WorkOrder, String> statusColumn =
-                new TableColumn<>("Status");
-
-        statusColumn.setCellValueFactory(
-                new PropertyValueFactory<WorkOrder, String>("status")
-        );
-
-
-        table.getColumns().addAll(
-                idColumn,
-                bookingIdColumn,
-                mechanicIdColumn,
-                servicesColumn,
-                statusColumn
-        );
-
-
-        ObservableList<WorkOrder> workOrders =
-                FXCollections.observableArrayList(
-                        Database.getWorkOrders()
-                );
-
-        table.setItems(workOrders);
-
-        table.setPlaceholder(
-                new Label("No work orders found.")
-        );
-
-        table.setColumnResizePolicy(
-                TableView.CONSTRAINED_RESIZE_POLICY
-        );
-
-
-        VBox view = new VBox(15);
-
-        view.setPadding(new Insets(10));
-
-        view.getChildren().addAll(
-                title,
-                table
-        );
-
-        return view;
+    // Gör om listan med tjänste-ID:n till "Oil change, Brake pads"
+    private String servicesText(List<Integer> serviceItemIds) {
+        List<String> names = new ArrayList<>();
+        if (serviceItemIds == null) {
+            return "No services";
+        }
+        for (Integer serviceItemId : serviceItemIds) {
+            for (ServiceItem serviceItem : Database.getServiceItems()) {
+                if (serviceItem.getId() == serviceItemId) {
+                    names.add(serviceItem.getName());
+                }
+            }
+        }
+        if (names.isEmpty()) {
+            return "No services";
+        }
+        return String.join(", ", names);
     }
 }
