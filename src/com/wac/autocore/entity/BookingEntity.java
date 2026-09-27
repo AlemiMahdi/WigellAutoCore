@@ -34,7 +34,7 @@ public class BookingEntity {
     private LocalTime startTime;
 
     @Column (name = "duration_minutes")
-    private int durationMinutes;
+    private Integer durationMinutes;
 
     public BookingEntity() {}
 
@@ -67,10 +67,10 @@ public class BookingEntity {
     }
 
     public LocalTime getStartTime() { return startTime; }
-    public void setStartTime (LocalTime starTime) { this.startTime = starTime; }
+    public void setStartTime (LocalTime startTime) { this.startTime = startTime; }
 
-    public int getDurationMinutes () { return durationMinutes; }
-    public void setDurationMinutes (int duration_minutes ) { this.durationMinutes = duration_minutes; }
+    public Integer getDurationMinutes () { return durationMinutes; }
+    public void setDurationMinutes (Integer duration_minutes ) { this.durationMinutes = duration_minutes; }
 
     
 

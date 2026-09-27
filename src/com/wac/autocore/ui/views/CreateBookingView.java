@@ -169,9 +169,6 @@ public class CreateBookingView {
                 if (booking != null) {
                 booking.setStartTime(startTime);
                 booking.setDurationMinutes(durationMinutes);
-}
-
-                if (booking != null) {
 
                     try {
                         // Sparar bokningen i MySQL innan vi visar en bekräftelse.

@@ -119,12 +119,17 @@ public class BookingRepository {
 
         for (BookingEntity entity : findAll()) {
 
+            int durationMinutes =
+            entity.getDurationMinutes() == null
+                    ? 0
+                    : entity.getDurationMinutes();
+
             Booking booking = new Booking(
                     entity.getId(),
                     entity.getVehicleId(),
                     entity.getDate(),
                     entity.getStartTime(),
-                    entity.getDurationMinutes(),
+                    durationMinutes,
                     entity.getDescription()
             );
 
@@ -156,8 +161,9 @@ public class BookingRepository {
 
         // Äldre bokningar kan sakna tid/längd.
         if (entity.getDate() == null ||
-                entity.getStartTime() == null ||
-                entity.getDurationMinutes() <= 0) {
+        entity.getStartTime() == null ||
+        entity.getDurationMinutes() == null ||
+        entity.getDurationMinutes() <= 0) {
             continue;
         }
 
