@@ -2,6 +2,7 @@ package com.wac.autocore.ui;
 
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Mechanic;
+import com.wac.autocore.ui.language.LanguageManager;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.layout.ColumnConstraints;
@@ -16,6 +17,7 @@ import java.util.List;
 public class MechanicView extends VBox {
 
     private static final int CARDS_PER_ROW = 2;
+    private final LanguageManager language = LanguageManager.getInstance();
 
     public MechanicView() {
         setSpacing(20);
@@ -24,13 +26,15 @@ public class MechanicView extends VBox {
         List<Mechanic> mechanics = Database.getMechanics();
 
         if (mechanics.isEmpty()) {
+            Label emptyLabel = UiKit.emptyText("");
+            emptyLabel.textProperty().bind(language.text("mechanics.empty"));
             getChildren().addAll(
-                    UiKit.pageHeader("Mechanics", null),
-                    UiKit.emptyText("No mechanics found."));
+                    UiKit.pageHeader(language.text("mechanics.title"), null),
+                    emptyLabel);
             return;
         }
 
-        getChildren().addAll(UiKit.pageHeader("Mechanics", null), buildCardGrid(mechanics));
+        getChildren().addAll(UiKit.pageHeader(language.text("mechanics.title"), null), buildCardGrid(mechanics));
     }
 
     // GridPane med två lika breda kolumner – korten fyller bredden och radbryts jämnt.
@@ -72,7 +76,8 @@ public class MechanicView extends VBox {
         Label phoneLabel = new Label(mechanic.getPhone());
         phoneLabel.getStyleClass().add("mechanic-phone");
 
-        Label availabilityLabel = new Label(available ? "Available" : "Unavailable");
+        Label availabilityLabel = new Label();
+        availabilityLabel.textProperty().bind(language.text(available ? "mechanics.available" : "mechanics.unavailable"));
         availabilityLabel.getStyleClass().add(available ? "availability-available" : "availability-off");
 
         VBox card = new VBox(nameRow, roleLabel, phoneLabel, availabilityLabel);
