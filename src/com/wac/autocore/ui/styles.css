@@ -62,6 +62,29 @@
     -fx-font-size: 13px;
 }
 
+/* Språkväljaren i headern: genomskinlig med ljus ram */
+.app-header .language-menu {
+    -fx-background-color: transparent;
+    -fx-border-color: #E4E9DC;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 4 8 4 8;
+    -fx-cursor: hand;
+}
+
+.app-header .language-menu:hover,
+.app-header .language-menu:showing {
+    -fx-background-color: rgba(255,255,255,0.12);
+}
+
+.app-header .language-menu > .label {
+    -fx-text-fill: #FFFFFF;
+}
+
+.app-header .language-menu > .arrow-button > .arrow {
+    -fx-background-color: #FFFFFF;
+}
+
 /* Visas bara om databasen inte gick att nå vid start */
 .offline-banner {
     -fx-background-color: rgba(201,154,91,0.10);
