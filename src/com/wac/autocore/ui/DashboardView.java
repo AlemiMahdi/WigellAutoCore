@@ -7,6 +7,7 @@ import com.wac.autocore.model.Mechanic;
 import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.model.Vehicle;
 import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.ui.language.LanguageManager;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.layout.ColumnConstraints;
@@ -37,6 +38,8 @@ import java.util.Locale;
  * innehåller de exempeldata – dashboarden fungerar alltså i båda fallen.
  */
 public class DashboardView extends VBox {
+
+    private final LanguageManager language = LanguageManager.getInstance();
 
     // Höjden på själva stapelytan i diagrammet (utan dagnamn)
     private static final double CHART_HEIGHT = 150;
@@ -260,13 +263,13 @@ public class DashboardView extends VBox {
         badge.setMinWidth(Region.USE_PREF_SIZE);
 
         if ("IN_PROGRESS".equals(status)) {
-            badge.setText("STARTED");
+            badge.textProperty().bind(language.text("badge.IN_PROGRESS"));
             badge.getStyleClass().add("badge-started");
         } else if ("COMPLETED".equals(status)) {
-            badge.setText("COMPLETED");
+            badge.textProperty().bind(language.text("badge.COMPLETED"));
             badge.getStyleClass().add("badge-completed");
         } else {
-            badge.setText("CREATED");
+            badge.textProperty().bind(language.text("badge.CREATED"));
             badge.getStyleClass().add("badge-created");
         }
         return badge;
