@@ -21,6 +21,7 @@ import com.wac.autocore.entity.BookingEntity;
 import com.wac.autocore.model.Mechanic;
 import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.ui.UiKit;
+import com.wac.autocore.ui.language.LanguageManager;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -30,6 +31,7 @@ import java.util.stream.Collectors;
 
 public class MechanicScheduleView {
 
+    private final LanguageManager language = LanguageManager.getInstance();
     private final Map<Integer, Integer> mechanicByBooking = new HashMap<>();
 
     public VBox getView() {
@@ -37,7 +39,7 @@ public class MechanicScheduleView {
         if (!loadMechanicMap()) {
             Label errorLabel = UiKit.feedbackLabel();
             UiKit.showError(errorLabel,
-                    "Mechanic schedule could not be loaded. Please reopen this page to try again."
+                    language.text("schedule.loadError").get()
             );
             errorLabel.setWrapText(true);
 
@@ -47,13 +49,13 @@ public class MechanicScheduleView {
         }
 
         //Titel
-        Node title = UiKit.pageHeader("Mechanic schedule", null);
+        Node title = UiKit.pageHeader(language.text("schedule.title"), null);
 
 
         //Steg 2: rullista
         ComboBox<Mechanic> mechanicCombo = new ComboBox<>();
         mechanicCombo.getItems().addAll(Database.getMechanics());
-        mechanicCombo.setPromptText("Select mechanic");
+        mechanicCombo.promptTextProperty().bind(language.text("schedule.select"));
 
         Label countLabel = new Label();
 
@@ -89,6 +91,13 @@ public class MechanicScheduleView {
         TableColumn<Booking, String> statusCol = new TableColumn<>("Status");
         statusCol.setCellValueFactory(new PropertyValueFactory<>("status"));
 
+        idCol.textProperty().bind(language.text("schedule.id"));
+        dateCol.textProperty().bind(language.text("schedule.date"));
+        startTimeCol.textProperty().bind(language.text("schedule.startTime"));
+        durationCol.textProperty().bind(language.text("schedule.duration"));
+        vehicleCol.textProperty().bind(language.text("schedule.vehicle"));
+        descCol.textProperty().bind(language.text("schedule.description"));
+        statusCol.textProperty().bind(language.text("schedule.status"));
 
         table.getColumns().addAll(
                 idCol,
@@ -101,7 +110,9 @@ public class MechanicScheduleView {
         );
         UiKit.styleTable(table);
         statusCol.setCellFactory(UiKit.badgeCells());
-        table.setPlaceholder(UiKit.emptyText("Select a mechanic"));
+        Label selectLabel = UiKit.emptyText("");
+        selectLabel.textProperty().bind(language.text("schedule.select"));
+        table.setPlaceholder(selectLabel);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
 
@@ -126,10 +137,12 @@ public class MechanicScheduleView {
 
             table.setItems(FXCollections.observableArrayList(result));
             if (result.isEmpty()) {
-                table.setPlaceholder(UiKit.emptyText("No bookings for this mechanic"));
+                Label emptyLabel = UiKit.emptyText("");
+                emptyLabel.textProperty().bind(language.text("schedule.empty"));
+                table.setPlaceholder(emptyLabel);
 
             }
-            countLabel.setText(result.size() + " bookings");
+            countLabel.setText(language.text("schedule.count").get() + " " + result.size());
         });
 
         VBox root = new VBox(10, title, mechanicCombo, table, countLabel);
