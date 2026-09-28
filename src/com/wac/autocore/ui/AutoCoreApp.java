@@ -94,6 +94,7 @@ public class AutoCoreApp extends Application {
         primaryStage.setMinWidth(1100);
         primaryStage.setMinHeight(700);
         primaryStage.setScene(scene);
+        primaryStage.setMaximized(true);
         primaryStage.show();
     }
 
