@@ -8,6 +8,7 @@ import com.wac.autocore.model.Vehicle;
 import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.ui.Navigator;
 import com.wac.autocore.ui.UiKit;
+import com.wac.autocore.ui.language.LanguageManager;
 
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
@@ -29,6 +30,8 @@ import java.util.Map;
 // Visar alla bokningar i en tabell: fordon, datum, mekaniker, beskrivning och status.
 public class ShowBookingsView {
 
+    private final LanguageManager language = LanguageManager.getInstance();
+
     public VBox getView() {
 
         // Mekanikern sparas bara i databasen (BookingEntity), inte i Booking-modellen.
@@ -48,7 +51,7 @@ public class ShowBookingsView {
         } catch (RuntimeException e) {
             e.printStackTrace();
             return buildErrorView(
-                    "Bookings could not be loaded. Please reopen this page to try again."
+                    language.text("bookings.loadError").get()
             );
         }
 
@@ -88,20 +91,20 @@ public class ShowBookingsView {
             int bookingId = cell.getValue().getId();
 
             if (!mechanicByBooking.containsKey(bookingId)) {
-                return new ReadOnlyStringWrapper("Booking not saved");
+                return new ReadOnlyStringWrapper(language.text("bookings.notSaved").get());
             }
 
             Integer mechanicId = mechanicByBooking.get(bookingId);
 
             if (mechanicId == null) {
-                return new ReadOnlyStringWrapper("Not assigned");
+                return new ReadOnlyStringWrapper(language.text("bookings.notAssigned").get());
             }
 
             String mechanicName = mechanicNames.get(mechanicId);
 
             if (mechanicName == null) {
                 return new ReadOnlyStringWrapper(
-                        "Unknown mechanic (ID: " + mechanicId + ")"
+                        language.text("bookings.unknownMechanic").get() + " (ID: " + mechanicId + ")"
                 );
             }
 
@@ -124,6 +127,14 @@ public class ShowBookingsView {
         );
         statusColumn.setCellFactory(UiKit.<Booking>badgeCells());
 
+        vehicleColumn.textProperty().bind(language.text("bookings.vehicle"));
+        dateColumn.textProperty().bind(language.text("bookings.date"));
+        startTimeColumn.textProperty().bind(language.text("bookings.startTime"));
+        durationColumn.textProperty().bind(language.text("bookings.duration"));
+        mechanicColumn.textProperty().bind(language.text("bookings.mechanic"));
+        descriptionColumn.textProperty().bind(language.text("bookings.description"));
+        statusColumn.textProperty().bind(language.text("bookings.status"));
+
         table.getColumns().add(vehicleColumn);
         table.getColumns().add(dateColumn);
         table.getColumns().add(startTimeColumn);
@@ -145,7 +156,9 @@ public class ShowBookingsView {
                 FXCollections.observableArrayList(Database.getBookings());
 
         table.setItems(bookings);
-        table.setPlaceholder(new Label("No bookings found."));
+        Label emptyLabel = new Label();
+        emptyLabel.textProperty().bind(language.text("bookings.empty"));
+        table.setPlaceholder(emptyLabel);
         UiKit.styleTable(table);
 
         return new VBox(20, buildHeader(), table);
@@ -154,8 +167,10 @@ public class ShowBookingsView {
     // Rubrik med "+ New booking" till höger som hoppar till formuläret
     private HBox buildHeader() {
         Button newBookingButton = UiKit.primaryButton("+ New booking");
+        newBookingButton.textProperty().bind(language.text("bookings.new"));
         newBookingButton.setOnAction(event -> Navigator.goTo("create-booking"));
-        return UiKit.pageHeader("Bookings", newBookingButton);
+
+        return UiKit.pageHeader(language.text("bookings.title"), newBookingButton);
     }
 
     // Visas om bokningarna inte gick att läsa från databasen
@@ -174,6 +189,6 @@ public class ShowBookingsView {
             }
         }
         // Fordonet finns inte längre – visa åtminstone ID:t
-        return "Vehicle ID " + vehicleId;
+        return language.text("bookings.vehicleId").get() + " " + vehicleId;
     }
 }
