@@ -1,5 +1,5 @@
 /*
- * Wigell AutoCore – Dracula-tema (variant A: sidomeny som i PDF:en)
+ * Wigell AutoCore – ljust jordtonat tema (variant A: sidomeny som i PDF:en)
  *
  * Alla färger definieras EN gång här i .root som "looked-up colors".
  * Resten av filen refererar bara till namnen, så vill man byta tema
@@ -11,29 +11,31 @@
  */
 
 .root {
-    -fx-sidebar-bg: #343746;
-    -fx-header-bg: #282a36;
-    -fx-accent: #bd93f9;
-    -fx-accent-soft: rgba(189,147,249,0.14);
-    -fx-accent-text: #d6b8ff;
-    -fx-content-bg: #282a36;
-    -fx-text-light: #f8f8f2;
-    -fx-text-muted: #6272a4;
-    -fx-card-bg: #343746;
-    -fx-border: #44475a;
-    -fx-text-secondary: #a4a9cf;
-    -fx-success: #50fa7b;
-    -fx-warning: #f1fa8c;
-    -fx-danger: #ff5555;
+    /* Ljust jordtonat tema: Linne, Salvia, Mossa, Skog.
+       OBS: namnen är kvar från det mörka temat. -fx-text-light betyder nu
+       "huvudtextfärg" (mörk), så att vi inte behöver byta namn i hela filen. */
+    -fx-sidebar-bg: #E4E9DC;                  /* Salvia */
+    -fx-header-bg: #56704A;                   /* Mossa mörk */
+    -fx-accent: #56704A;                      /* Mossa mörk: knappar, aktivt menyval, staplar */
+    -fx-accent-soft: rgba(107,138,94,0.16);   /* svag grön ton */
+    -fx-accent-text: #3F5E35;                 /* grön text på svag grön ton */
+    -fx-content-bg: #F3F0E8;                  /* Linne */
+    -fx-text-light: #33402F;                  /* Skog: huvudtext */
+    -fx-text-muted: #6B7566;
+    -fx-card-bg: #FBF9F4;
+    -fx-border: #D8D2C4;
+    -fx-text-secondary: #5E6A58;
+    -fx-success: #4E7A3E;
+    -fx-warning: #7A6120;                     /* mörk ockra, går att läsa på ljust */
+    -fx-danger: #A34E36;                      /* terrakotta */
 
-    /* JavaFX standardtema (modena) räknar ut sina färger från dessa.
-       Genom att peka dem mot våra mörka färger blir även kontroller vi
-       inte stylat själva (scrollbars, popups m.m.) mörka automatiskt. */
-    -fx-base: #44475a;
-    -fx-background: #282a36;
-    -fx-control-inner-background: #282a36;
-    -fx-control-inner-background-alt: #2c2e3b;
-    -fx-focus-color: #bd93f9;
+    /* JavaFX standardtema (modena) räknar ut sina färger från dessa,
+       så kontroller vi inte stylat själva (scrollbars, popups m.m.) blir ljusa. */
+    -fx-base: #E4E9DC;
+    -fx-background: #F3F0E8;
+    -fx-control-inner-background: #FBF9F4;
+    -fx-control-inner-background-alt: #F6F3EC;
+    -fx-focus-color: #56704A;
     -fx-faint-focus-color: transparent;
 
     -fx-font-family: "System";
@@ -50,19 +52,19 @@
 }
 
 .app-header .app-title {
-    -fx-text-fill: -fx-text-light;
+    -fx-text-fill: #FFFFFF;
     -fx-font-size: 26px;
     -fx-font-weight: bold;
 }
 
 .app-header .app-subtitle {
-    -fx-text-fill: -fx-text-secondary;
+    -fx-text-fill: #E4E9DC;
     -fx-font-size: 13px;
 }
 
 /* Visas bara om databasen inte gick att nå vid start */
 .offline-banner {
-    -fx-background-color: rgba(241,250,140,0.10);
+    -fx-background-color: rgba(201,154,91,0.10);
     -fx-border-color: transparent transparent -fx-border transparent;
     -fx-padding: 8 30 8 30;
 }
@@ -111,11 +113,11 @@
 }
 
 .app-sidebar .nav-item:hover {
-    -fx-background-color: rgba(248,248,242,0.06);
+    -fx-background-color: rgba(51,64,47,0.06);
 }
 
-/* Aktivt menyval. Tre bakgrundslager ger en 3px lila kant till vänster:
-   1) lila botten, 2) sidomenyns färg 3px in, 3) den svaga lila tonen ovanpå. */
+/* Aktivt menyval. Tre bakgrundslager ger en 3px grön kant till vänster:
+   1) grön botten, 2) sidomenyns färg 3px in, 3) den svaga gröna tonen ovanpå. */
 .app-sidebar .nav-item-active,
 .app-sidebar .nav-item-active:hover,
 .app-sidebar .nav-item-active:focused {
@@ -140,7 +142,7 @@
 }
 
 .sidebar-scroll .scroll-bar:vertical .thumb {
-    -fx-background-color: rgba(248,248,242,0.18);
+    -fx-background-color: rgba(51,64,47,0.18);
     -fx-background-insets: 0 1 0 1;
     -fx-background-radius: 3;
 }
@@ -158,7 +160,7 @@
 }
 
 .app-sidebar .exit-item:hover {
-    -fx-background-color: rgba(255,85,85,0.12);
+    -fx-background-color: rgba(184,101,74,0.12);
 }
 
 /* ================= Innehållsyta ================= */
@@ -186,7 +188,7 @@
     -fx-padding: 0;
 }
 
-/* Scrollbars i mörkt */
+/* Scrollbars: diskreta, utan pilar */
 .scroll-bar {
     -fx-background-color: transparent;
 }
@@ -211,7 +213,7 @@
 
 /* ================= Knappar ================= */
 
-/* Generisk knapp: neutral, inte lila (så menyer och vanliga knappar
+/* Generisk knapp: neutral, inte grön (så menyer och vanliga knappar
    inte konkurrerar med primärknapparna) */
 .button {
     -fx-background-color: -fx-border;
@@ -235,7 +237,7 @@
 /* Huvudknapp i ett formulär, t.ex. "Save customer" */
 .button.primary-button {
     -fx-background-color: -fx-accent;
-    -fx-text-fill: #282a36;
+    -fx-text-fill: #FFFFFF;
 }
 
 .button.primary-button:hover {
@@ -245,7 +247,7 @@
 /* Grön knapp för att slutföra något, t.ex. Complete work order */
 .button.success-button {
     -fx-background-color: -fx-success;
-    -fx-text-fill: #282a36;
+    -fx-text-fill: #FFFFFF;
 }
 
 .button.success-button:hover {
@@ -266,7 +268,7 @@
     -fx-text-fill: -fx-text-light;
     -fx-prompt-text-fill: -fx-text-muted;
     -fx-highlight-fill: -fx-accent;
-    -fx-highlight-text-fill: #282a36;
+    -fx-highlight-text-fill: #FFFFFF;
     -fx-font-size: 13px;
 }
 
@@ -354,7 +356,7 @@
 }
 
 .check-box:selected .mark {
-    -fx-background-color: #282a36;
+    -fx-background-color: #FFFFFF;
 }
 
 /* ================= Tabeller och listor ================= */
@@ -397,7 +399,7 @@
 }
 
 .table-row-cell:hover {
-    -fx-background-color: -fx-border, #2f3140;
+    -fx-background-color: -fx-border, #EEEAE0;
 }
 
 .table-row-cell:selected {
@@ -430,7 +432,7 @@
 }
 
 .list-cell:filled:hover {
-    -fx-background-color: #2f3140;
+    -fx-background-color: #EEEAE0;
 }
 
 .list-cell:filled:selected {
@@ -460,7 +462,7 @@
     -fx-text-fill: -fx-text-light;
 }
 
-/* Värdet i PENDING APPROVAL-kortet ska sticka ut i lila */
+/* Värdet i PENDING APPROVAL-kortet ska sticka ut i grönt */
 .card .stat-value-accent {
     -fx-text-fill: -fx-accent;
 }
@@ -535,25 +537,25 @@
 .card .badge-created {
     -fx-text-fill: -fx-text-secondary;
     -fx-border-color: -fx-text-secondary;
-    -fx-background-color: rgba(164,169,207,0.12);
+    -fx-background-color: rgba(94,106,88,0.12);
 }
 
 .card .badge-started {
     -fx-text-fill: -fx-warning;
     -fx-border-color: -fx-warning;
-    -fx-background-color: rgba(241,250,140,0.12);
+    -fx-background-color: rgba(201,154,91,0.12);
 }
 
 .card .badge-completed {
     -fx-text-fill: -fx-success;
     -fx-border-color: -fx-success;
-    -fx-background-color: rgba(80,250,123,0.12);
+    -fx-background-color: rgba(107,138,94,0.12);
 }
 
 /* ================= Kanban ================= */
 
 .kanban-item {
-    -fx-background-color: -fx-content-bg;   /* mörkare än kolumnkortet */
+    -fx-background-color: -fx-content-bg;   /* lite mörkare än kolumnkortet */
     -fx-border-color: -fx-border;
     -fx-background-radius: 8;
     -fx-border-radius: 8;
@@ -631,7 +633,7 @@
     -fx-background-color: -fx-accent;
     -fx-background-insets: 0;
     -fx-background-radius: 8;
-    -fx-text-fill: #282a36;
+    -fx-text-fill: #FFFFFF;
     -fx-font-size: 14px;
     -fx-font-weight: bold;
     -fx-padding: 10 20 10 20;
@@ -650,7 +652,7 @@
     -fx-background-color: -fx-success;
     -fx-background-insets: 0;
     -fx-background-radius: 8;
-    -fx-text-fill: #282a36;
+    -fx-text-fill: #FFFFFF;
     -fx-font-size: 14px;
     -fx-font-weight: bold;
     -fx-padding: 10 20 10 20;
@@ -681,34 +683,36 @@
     -fx-border-width: 1;
 }
 
+/* BOKAD: brun "jord"-ton, så den skiljer sig från gröna KLAR.
+   Klassen heter fortfarande badge-purple eftersom UiKit skickar in "purple". */
 .app-content .badge.badge-purple {
-    -fx-text-fill: -fx-accent-text;
-    -fx-border-color: -fx-accent;
-    -fx-background-color: rgba(189,147,249,0.16);
+    -fx-text-fill: #7A5530;
+    -fx-border-color: #B08A5E;
+    -fx-background-color: #EFE0CC;
 }
 
 .app-content .badge.badge-grey {
     -fx-text-fill: -fx-text-secondary;
     -fx-border-color: -fx-text-secondary;
-    -fx-background-color: rgba(164,169,207,0.12);
+    -fx-background-color: rgba(94,106,88,0.12);
 }
 
 .app-content .badge.badge-yellow {
     -fx-text-fill: -fx-warning;
     -fx-border-color: -fx-warning;
-    -fx-background-color: rgba(241,250,140,0.12);
+    -fx-background-color: rgba(201,154,91,0.12);
 }
 
 .app-content .badge.badge-green {
     -fx-text-fill: -fx-success;
     -fx-border-color: -fx-success;
-    -fx-background-color: rgba(80,250,123,0.12);
+    -fx-background-color: rgba(107,138,94,0.12);
 }
 
 .app-content .badge.badge-red {
     -fx-text-fill: -fx-danger;
     -fx-border-color: -fx-danger;
-    -fx-background-color: rgba(255,85,85,0.12);
+    -fx-background-color: rgba(184,101,74,0.12);
 }
 
 /* ---------- Prickar (kanban-rubriker, mekaniker) ---------- */
@@ -815,7 +819,7 @@
     -fx-background-color: transparent;
 }
 
-/* Check-box: mörk ruta, lila när den är ikryssad */
+/* Check-box: ljus ruta, grön när den är ikryssad */
 .app-content .check-box {
     -fx-text-fill: -fx-text-light;
     -fx-font-size: 14px;
@@ -841,7 +845,7 @@
 }
 
 .app-content .check-box:selected .mark {
-    -fx-background-color: #282a36;
+    -fx-background-color: #FFFFFF;
 }
 
 .app-content .check-box:disabled {
@@ -914,7 +918,7 @@
 }
 
 .combo-box-popup .list-view .list-cell:filled:hover {
-    -fx-background-color: rgba(248,248,242,0.06);
+    -fx-background-color: rgba(51,64,47,0.06);
 }
 
 .combo-box-popup .list-view .list-cell:filled:selected,
@@ -951,7 +955,7 @@
 }
 
 .date-picker-popup .spinner > .button:hover {
-    -fx-background-color: rgba(248,248,242,0.08);
+    -fx-background-color: rgba(51,64,47,0.08);
 }
 
 .date-picker-popup .spinner > .button > .left-arrow,
@@ -982,7 +986,7 @@
 }
 
 .date-picker-popup .date-cell:hover {
-    -fx-background-color: rgba(248,248,242,0.08);
+    -fx-background-color: rgba(51,64,47,0.08);
 }
 
 .date-picker-popup .previous-month,
@@ -999,7 +1003,7 @@
 .date-picker-popup .selected,
 .date-picker-popup .selected:hover {
     -fx-background-color: -fx-accent;
-    -fx-text-fill: #282a36;
+    -fx-text-fill: #FFFFFF;
     -fx-font-weight: bold;
 }
 
@@ -1046,7 +1050,7 @@
     -fx-background-color: -fx-text-muted;
 }
 
-/* Raderna: mörk bakgrund och en tunn skiljelinje OVANFÖR varje rad.
+/* Raderna: ljus bakgrund och en tunn skiljelinje OVANFÖR varje rad.
    Två lager: ramfärgen underst, radens färg 1 px nedanför toppen.
    Linjen ligger överst (inte underst) så att sista raden inte får en
    extra linje precis ovanför tabellens egen ram. Första radens linje
@@ -1058,10 +1062,10 @@
 }
 
 .app-content .data-table .table-row-cell:hover {
-    -fx-background-color: -fx-border, #2f3140;
+    -fx-background-color: -fx-border, #EEEAE0;
 }
 
-/* Vald rad: svag lila ton i stället för standardens blå */
+/* Vald rad: svag grön ton i stället för standardens blå */
 .app-content .data-table .table-row-cell:selected,
 .app-content .data-table .table-row-cell:selected:hover,
 .app-content .data-table:focused .table-row-cell:selected {
@@ -1169,7 +1173,7 @@
 }
 
 .app-content .select-card:hover {
-    -fx-background-color: #2f3140;
+    -fx-background-color: #EEEAE0;
 }
 
 .app-content .select-card.select-card-active,
