@@ -300,6 +300,21 @@ public final class UiKit {
     /** "Total"-rutan i fakturaformuläret: text till vänster, värdet (som du uppdaterar själv) till höger. */
     public static HBox totalBox(String labelText, Label valueLabel) {
         Label label = new Label(labelText);
+        return buildTotalBox(label, valueLabel);
+    }
+
+    /**
+     * Samma ruta, men texten till vänster är bunden till en text som kan ändras,
+     * t.ex. language.text("createInvoice.totalLabel"). Byter språk direkt.
+     */
+    public static HBox totalBox(ObservableValue<String> labelText, Label valueLabel) {
+        Label label = new Label();
+        label.textProperty().bind(labelText);
+        return buildTotalBox(label, valueLabel);
+    }
+
+    // Bygger själva rutan. Används av båda totalBox-varianterna ovan.
+    private static HBox buildTotalBox(Label label, Label valueLabel) {
         label.getStyleClass().add("total-label");
         valueLabel.getStyleClass().add("total-value");
 

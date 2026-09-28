@@ -8,6 +8,7 @@ import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.model.Vehicle;
 import com.wac.autocore.model.WorkOrder;
 import com.wac.autocore.service.GarageSystem;
+import com.wac.autocore.ui.language.LanguageManager;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -26,6 +27,7 @@ import java.time.LocalDate;
 public class CreateInvoiceView {
 
     public static VBox build(){
+        LanguageManager language = LanguageManager.getInstance();
         GarageSystem garageSystem = new GarageSystem();
         InvoiceRepository invoiceRepository = new InvoiceRepository();
 
@@ -62,18 +64,19 @@ public class CreateInvoiceView {
         // Här visar vi samma summa i förväg, därför är fältet låst.
         TextField amountField = new TextField();
         amountField.setEditable(false);
-        amountField.setPromptText("Select a work order");
+        amountField.promptTextProperty().bind(language.text("startWorkOrder.prompt"));
         amountField.getStyleClass().add("readonly-field");
 
         // --- Rabatt ---
         // Rabatten anges som en rabattkod (t.ex. WELCOME10 eller SERVICE200)
         TextField discoutField = new TextField();
-        discoutField.setPromptText("Discount code (optional)");
+        discoutField.promptTextProperty().bind(language.text("createInvoice.discountPrompt"));
 
         // --- Total ---
         Label totalValue = new Label(ShowInvoiceView.formatSek(0));
 
         Button createButton = UiKit.primaryButton("Create invoice");
+        createButton.textProperty().bind(language.text("createInvoice.button"));
         Label statusLabel = UiKit.feedbackLabel();
 
         // Uppdatera Amount och Total direkt när man väljer arbetsorder
@@ -90,16 +93,16 @@ public class CreateInvoiceView {
 
         // Tala om varför listan är tom, annars ser det ut som ett fel
         if (workOrderBox.getItems().isEmpty()) {
-            UiKit.showInfo(statusLabel, "There are no completed work orders to invoice yet.");
+            UiKit.showInfo(statusLabel, language.text("createInvoice.noCompleted").get());
         } else {
-            UiKit.showInfo(statusLabel, "VIP and code discounts are applied when the invoice is created.");
+            UiKit.showInfo(statusLabel, language.text("createInvoice.discountInfo").get());
         }
 
         createButton.setOnAction(actionEvent -> {
             WorkOrder selectedWorkOrder = workOrderBox.getValue();
 
             if (selectedWorkOrder == null) {
-                UiKit.showError(statusLabel, "Please select a work order.");
+                UiKit.showError(statusLabel, language.text("startWorkOrder.select").get());
                 return;
             }
             int workOrderId = selectedWorkOrder.getId();
@@ -113,7 +116,7 @@ public class CreateInvoiceView {
             if (invoice == null) {
 
                 UiKit.showError(statusLabel,
-                        "Could not create invoice. Check work order ID."
+                        language.text("createInvoice.createError").get()
                 );
 
             } else {
@@ -122,9 +125,10 @@ public class CreateInvoiceView {
 
                     invoiceRepository.save(invoice);
 
-                    UiKit.showSuccess(statusLabel, "Invoice created for "
+                    UiKit.showSuccess(statusLabel, language.text("createInvoice.successFor").get() + " "
                             + ShowInvoiceView.workOrderCode(workOrderId)
-                            + ". Total: " + ShowInvoiceView.formatSek(invoice.getTotalAmount())
+                            + ". " + language.text("createInvoice.totalLabel").get() + ": "
+                            + ShowInvoiceView.formatSek(invoice.getTotalAmount())
                     );
 
                     workOrderBox.setValue(null);
@@ -134,7 +138,7 @@ public class CreateInvoiceView {
 
                     Database.getInvoices().remove(invoice);
                     UiKit.showError(statusLabel,
-                            "Invoice could not be saved to the database."
+                            language.text("createInvoice.saveError").get()
                     );
                     exception.printStackTrace();
                 }
@@ -145,13 +149,13 @@ public class CreateInvoiceView {
         });
 
         VBox form = UiKit.formContainer(
-                UiKit.pageHeader("Create invoice", null),
-                UiKit.formField("Work order", workOrderBox),
-                UiKit.formField("Date", dateField),
+                UiKit.pageHeader(language.text("createInvoice.button"), null),
+                UiKit.formField(language.text("createInvoice.workOrderLabel"), workOrderBox),
+                UiKit.formField(language.text("invoices.date"), dateField),
                 UiKit.formRow(
-                        UiKit.formField("Amount", amountField),
-                        UiKit.formField("Discount", discoutField)),
-                UiKit.totalBox("Total", totalValue),
+                        UiKit.formField(language.text("invoices.amount"), amountField),
+                        UiKit.formField(language.text("invoices.discount"), discoutField)),
+                UiKit.totalBox(language.text("createInvoice.totalLabel"), totalValue),
                 createButton,
                 statusLabel);
 
@@ -171,9 +175,9 @@ public class CreateInvoiceView {
             }
         }
         if (workOrderBox.getItems().isEmpty()) {
-            workOrderBox.setPromptText("No completed work orders");
+            workOrderBox.promptTextProperty().bind(LanguageManager.getInstance().text("createInvoice.noCompletedPrompt"));
         } else {
-            workOrderBox.setPromptText("Select work order");
+            workOrderBox.promptTextProperty().bind(LanguageManager.getInstance().text("startWorkOrder.prompt"));
         }
     }
 
