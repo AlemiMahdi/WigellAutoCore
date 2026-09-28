@@ -10,6 +10,7 @@ import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.repository.MechanicRepository;
 import com.wac.autocore.repository.WorkOrderRepository;
 import com.wac.autocore.service.GarageSystem;
+import com.wac.autocore.ui.language.LanguageManager;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -23,6 +24,7 @@ import java.util.List;
 // Start work order: lista med arbetsordrar till vänster och detaljer om vald order till höger.
 public class StartWorkOrderView extends VBox {
 
+    private final LanguageManager language = LanguageManager.getInstance();
     private final GarageSystem garageSystem = new GarageSystem();
     private final WorkOrderRepository workOrderRepository = new WorkOrderRepository();
     private final BookingRepository bookingRepository = new BookingRepository();
@@ -54,7 +56,7 @@ public class StartWorkOrderView extends VBox {
         // Spalterna fyller resten av höjden så att detaljkortet når ner till botten (som i designen)
         VBox.setVgrow(columns, Priority.ALWAYS);
 
-        getChildren().addAll(UiKit.pageHeader("Start work order", null), columns);
+        getChildren().addAll(UiKit.pageHeader(language.text("startWorkOrder.title"), null), columns);
 
         // Första ordern väljs direkt när sidan öppnas, så att detaljerna syns
         reloadList(true);
@@ -75,11 +77,11 @@ public class StartWorkOrderView extends VBox {
         }
 
         if (Database.getWorkOrders().isEmpty()) {
-            showEmptyState("No Work Order has been found. Please create a work order first.");
+            showEmptyState("startWorkOrder.empty");
             return;
         }
         if (startable.isEmpty()) {
-            showEmptyState("All work orders have already been started. Create a new work order to start one.");
+            showEmptyState("startWorkOrder.allStarted");
             return;
         }
 
@@ -95,11 +97,14 @@ public class StartWorkOrderView extends VBox {
     }
 
     // Visas när det inte finns något att starta – med en genväg till "Create work order".
-    private void showEmptyState(String message) {
+    private void showEmptyState(String messageKey) {
         Button newButton = UiKit.primaryButton("+ New work order");
+        newButton.textProperty().bind(language.text("startWorkOrder.newButton"));
         newButton.setOnAction(event -> Navigator.goTo("create-work-order"));
 
-        VBox emptyCard = UiKit.card(UiKit.emptyText(message), newButton);
+        Label messageLabel = UiKit.emptyText("");
+        messageLabel.textProperty().bind(language.text(messageKey));
+        VBox emptyCard = UiKit.card(messageLabel, newButton);
         emptyCard.getStyleClass().add("detail-card");
         listColumn.getChildren().add(emptyCard);
 
@@ -139,13 +144,14 @@ public class StartWorkOrderView extends VBox {
     // Fyller högerspalten: detaljkort för vald order, eller en uppmaning att välja.
     private void showDetails() {
         Button startButton = UiKit.primaryButton("Start work order");
+        startButton.textProperty().bind(language.text("startWorkOrder.button"));
         startButton.setOnAction(event -> startSelectedWorkOrder());
 
         VBox detailCard;
         if (selectedWorkOrder == null) {
-            detailCard = UiKit.card(
-                    UiKit.emptyText("Select a work order in the list to see its details."),
-                    startButton);
+            Label hintLabel = UiKit.emptyText("");
+            hintLabel.textProperty().bind(language.text("startWorkOrder.selectHint"));
+            detailCard = UiKit.card(hintLabel, startButton);
         } else {
             Booking booking = findBooking(selectedWorkOrder);
             Mechanic mechanic = findMechanic(selectedWorkOrder);
@@ -155,10 +161,12 @@ public class StartWorkOrderView extends VBox {
             heading.getStyleClass().add("card-heading");
             heading.setWrapText(true);
 
-            Label bookingLabel = detailText("Booking: " + formatBooking(booking));
-            Label mechanicLabel = detailText("Mechanic: "
-                    + (mechanic == null ? "Not assigned" : mechanic.getName()));
-            Label servicesLabel = detailText("Services: " + formatServices(selectedWorkOrder));
+            Label bookingLabel = detailText(language.text("createWorkOrder.booking").get() + " "
+                    + formatBooking(booking));
+            Label mechanicLabel = detailText(language.text("createWorkOrder.mechanic").get() + " "
+                    + (mechanic == null ? language.text("bookings.notAssigned").get() : mechanic.getName()));
+            Label servicesLabel = detailText(language.text("createWorkOrder.services").get() + " "
+                    + formatServices(selectedWorkOrder));
 
             detailCard = UiKit.card(heading, bookingLabel, mechanicLabel, servicesLabel, startButton);
         }
@@ -174,7 +182,7 @@ public class StartWorkOrderView extends VBox {
     private void startSelectedWorkOrder() {
         WorkOrder workorder = selectedWorkOrder;
         if (workorder == null) {
-            UiKit.showError(feedbackLabel, "Please select a Work Order.");
+            UiKit.showError(feedbackLabel, language.text("startWorkOrder.select").get());
             return;
         }
 
@@ -202,15 +210,15 @@ public class StartWorkOrderView extends VBox {
                 }
 
                 UiKit.showSuccess(feedbackLabel,
-                        "Work order " + workorder.getId() + " has been started.");
+                        language.text("startWorkOrder.success").get() + " " + workorder.getId());
             } catch (RuntimeException exception) {
                 UiKit.showError(feedbackLabel,
-                        "Work order was started but could not be saved.");
+                        language.text("startWorkOrder.saveError").get());
                 exception.printStackTrace();
             }
 
         } else {
-            UiKit.showError(feedbackLabel, "Work order cannot be started.");
+            UiKit.showError(feedbackLabel, language.text("startWorkOrder.cannotStart").get());
         }
 
         // Återställer valet och laddar om listan (startad order försvinner ur den).
@@ -268,7 +276,7 @@ public class StartWorkOrderView extends VBox {
     // "DEF456 · Toyota Corolla" i listan, "DEF456 Toyota Corolla" i rubriken
     private String formatVehicle(Vehicle vehicle, String separator) {
         if (vehicle == null) {
-            return "Unknown vehicle";
+            return language.text("common.unknownVehicle").get();
         }
         return vehicle.getRegistrationNumber() + separator
                 + vehicle.getBrand() + " " + vehicle.getModel();
@@ -276,16 +284,17 @@ public class StartWorkOrderView extends VBox {
 
     private String formatBooking(Booking booking) {
         if (booking == null) {
-            return "Unknown booking";
+            return language.text("common.unknownBooking").get();
         }
-        return booking.getDescription() + " · Requested " + booking.getDate();
+        return booking.getDescription() + " · "
+                + language.text("startWorkOrder.requested").get() + " " + booking.getDate();
     }
 
     // Slår upp tjänsternas namn och sätter ihop dem: "Oil change, Brake service"
     private String formatServices(WorkOrder workOrder) {
         StringBuilder names = new StringBuilder();
         if (workOrder.getServiceItemIds() == null) {
-            return "No services added";
+            return language.text("workOrders.noServices").get();
         }
         for (Integer serviceId : workOrder.getServiceItemIds()) {
             for (ServiceItem item : Database.getServiceItems()) {
@@ -297,6 +306,6 @@ public class StartWorkOrderView extends VBox {
                 }
             }
         }
-        return names.length() == 0 ? "No services added" : names.toString();
+        return names.length() == 0 ? language.text("workOrders.noServices").get() : names.toString();
     }
 }
