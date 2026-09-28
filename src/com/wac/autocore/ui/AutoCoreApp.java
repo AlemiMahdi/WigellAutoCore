@@ -527,36 +527,36 @@ public class AutoCoreApp extends Application {
         menuBox.setPrefWidth(250);
 
         // Dashboard överst så man alltid kan komma tillbaka till startsidan
-        Button dashboard = createNavItem("dashboard", "Dashboard", this::showDashboard);
+        Button dashboard = createNavItem("dashboard", "menu.dashboard", this::showDashboard);
         setActiveNavItem(dashboard);
         menuBox.getChildren().add(dashboard);
 
-        addNavSection(menuBox, "CUSTOMERS & VEHICLES",
-                createNavItem("show-customers", "Show customers", () -> showView(new CustomerView())),
-                createNavItem("create-customer", "Create customer", () -> showView(new CreateCustomerView())),
-                createNavItem("show-vehicles", "Show vehicles", () -> showView(ShowVehicleView.build())),
-                createNavItem("create-vehicle", "Create vehicle", () -> showView(CreateVehicleView.build())));
+        addNavSection(menuBox, "menu.section.customersVehicles",
+                createNavItem("show-customers", "menu.customers", () -> showView(new CustomerView())),
+                createNavItem("create-customer", "menu.createCustomer", () -> showView(new CreateCustomerView())),
+                createNavItem("show-vehicles", "menu.vehicles", () -> showView(ShowVehicleView.build())),
+                createNavItem("create-vehicle", "menu.createVehicle", () -> showView(CreateVehicleView.build())));
 
-        addNavSection(menuBox, "BOOKINGS",
-                createNavItem("show-bookings", "Show bookings", () -> showView(new ShowBookingsView().getView())),
-                createNavItem("create-booking", "Create booking", () -> showView(new CreateBookingView().getView())));
+        addNavSection(menuBox, "menu.section.bookings",
+                createNavItem("show-bookings", "menu.bookings", () -> showView(new ShowBookingsView().getView())),
+                createNavItem("create-booking", "menu.createBooking", () -> showView(new CreateBookingView().getView())));
 
-        addNavSection(menuBox, "WORK ORDERS",
-                createNavItem("show-work-orders", "Show work orders", () -> showView(new ShowWorkOrdersView().getView())),
-                createNavItem("create-work-order", "Create work order", () -> showView(new CreateWorkOrderView())),
-                createNavItem("start-work-order", "Start work order", () -> showView(new StartWorkOrderView())),
-                createNavItem("complete-work-order", "Complete work order", () -> showView(CompleteWorkOrderView.build())));
+        addNavSection(menuBox, "menu.section.workOrders",
+                createNavItem("show-work-orders", "menu.workOrders", () -> showView(new ShowWorkOrdersView().getView())),
+                createNavItem("create-work-order", "menu.createWorkOrder", () -> showView(new CreateWorkOrderView())),
+                createNavItem("start-work-order", "menu.startWorkOrder", () -> showView(new StartWorkOrderView())),
+                createNavItem("complete-work-order", "menu.completeWorkOrder", () -> showView(CompleteWorkOrderView.build())));
 
-        addNavSection(menuBox, "SERVICES & MECHANICS",
-                createNavItem("show-services", "Show services", () -> showView(new ServiceView())),
-                createNavItem("show-mechanics", "Show mechanics", () -> showView(new MechanicView())),
-                createNavItem("mechanic-schedule", "Mechanic schedule", () -> showView(new MechanicScheduleView().getView())));
+        addNavSection(menuBox, "menu.section.servicesMechanics",
+                createNavItem("show-services", "menu.services", () -> showView(new ServiceView())),
+                createNavItem("show-mechanics", "menu.mechanics", () -> showView(new MechanicView())),
+                createNavItem("mechanic-schedule", "menu.schedule", () -> showView(new MechanicScheduleView().getView())));
 
-        addNavSection(menuBox, "INVOICES & PAYMENTS",
-                createNavItem("show-invoices", "Show invoices", () -> showView(ShowInvoiceView.build())),
-                createNavItem("create-invoice", "Create invoice", () -> showView(CreateInvoiceView.build())),
-                createNavItem("show-payments", "Show payments", () -> showView(new ShowPaymentsView().getView())),
-                createNavItem("process-payment", "Process payment", () -> showView(new ProcessPaymentView().getView())));
+        addNavSection(menuBox, "menu.section.invoicesPayments",
+                createNavItem("show-invoices", "menu.invoices", () -> showView(ShowInvoiceView.build())),
+                createNavItem("create-invoice", "menu.createInvoice", () -> showView(CreateInvoiceView.build())),
+                createNavItem("show-payments", "menu.payments", () -> showView(new ShowPaymentsView().getView())),
+                createNavItem("process-payment", "menu.processPayment", () -> showView(new ProcessPaymentView().getView())));
 
         // Tunn linje och sedan Exit längst ned, i rött
         Region divider = new Region();
@@ -564,7 +564,8 @@ public class AutoCoreApp extends Application {
         VBox.setMargin(divider, new Insets(8, 4, 6, 4));
 
 
-        Button exit = new Button("Exit");
+        Button exit = new Button();
+        exit.textProperty().bind(language.text("menu.exit"));
         exit.getStyleClass().addAll("nav-item", "exit-item");
         exit.setMaxWidth(Double.MAX_VALUE);
         exit.setOnAction(event -> Platform.exit());
@@ -585,8 +586,9 @@ public class AutoCoreApp extends Application {
     /**
      * Lägger till en sektionsrubrik följd av sektionens knappar.
      */
-    private void addNavSection(VBox menuBox, String title, Button... items) {
-        Label label = new Label(title);
+    private void addNavSection(VBox menuBox, String titleKey, Button... items) {
+        Label label = new Label();
+        label.textProperty().bind(language.text(titleKey));
         label.getStyleClass().add("nav-section-label");
         menuBox.getChildren().add(label);
         menuBox.getChildren().addAll(items);
@@ -598,8 +600,9 @@ public class AutoCoreApp extends Application {
      * markera-aktiv-logiken sexton gånger. pageKey sparas så att
      * Navigator.goTo(pageKey) kan hitta knappen.
      */
-    private Button createNavItem(String pageKey, String text, Runnable onClick) {
-        Button button = new Button(text);
+    private Button createNavItem(String pageKey, String textKey, Runnable onClick) {
+        Button button = new Button();
+        button.textProperty().bind(language.text(textKey));
         button.getStyleClass().add("nav-item");
         button.setMaxWidth(Double.MAX_VALUE);
         button.setOnAction(event -> {
