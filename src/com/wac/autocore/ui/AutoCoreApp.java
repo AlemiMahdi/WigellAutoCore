@@ -508,8 +508,8 @@ public class AutoCoreApp extends Application {
     }
 
     private HBox createOfflineBanner() {
-        Label message = new Label(
-                "Database not reachable – showing sample data. Changes will not be saved.");
+        Label message = new Label();
+        message.textProperty().bind(language.text("app.offline"));
         HBox banner = new HBox(message);
         banner.getStyleClass().add("offline-banner");
         return banner;

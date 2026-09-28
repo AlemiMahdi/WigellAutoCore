@@ -442,7 +442,9 @@ public final class UiKit {
 
         Node placeholder = table.getPlaceholder();
         if (placeholder == null) {
-            table.setPlaceholder(emptyText("Nothing to show yet."));
+            Label placeholderLabel = emptyText("");
+            placeholderLabel.textProperty().bind(LanguageManager.getInstance().text("common.nothingToShow"));
+            table.setPlaceholder(placeholderLabel);
         } else {
             placeholder.getStyleClass().add("empty-text");
         }
