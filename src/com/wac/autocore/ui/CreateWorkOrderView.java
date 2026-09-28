@@ -9,6 +9,7 @@ import com.wac.autocore.model.WorkOrder;
 import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.repository.WorkOrderRepository;
 import com.wac.autocore.service.GarageSystem;
+import com.wac.autocore.ui.language.LanguageManager;
 import javafx.collections.FXCollections;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -24,6 +25,8 @@ import java.util.List;
 //Formulär för att skapa arbetsordrar.
 public class CreateWorkOrderView  extends VBox {
 
+    private final LanguageManager language = LanguageManager.getInstance();
+
     // En CheckBox per tjänst. Tjänsten sparas i CheckBoxens userData
     // så att vi vet vilket ID som hör till en ikryssad ruta.
     private final List<CheckBox> serviceCheckBoxes = new ArrayList<>();
@@ -33,16 +36,17 @@ public class CreateWorkOrderView  extends VBox {
         setAlignment(Pos.TOP_CENTER);
 
         ComboBox<Booking> bookingComboBox = new ComboBox<>(FXCollections.observableArrayList(Database.getBookings()));
-        bookingComboBox.setPromptText("Select booking");
+        bookingComboBox.promptTextProperty().bind(language.text("createWorkOrder.selectBooking"));
         bookingComboBox.setConverter(bookingConverter());
         UiKit.keepPromptWhenCleared(bookingComboBox);
 
         ComboBox<Mechanic> mechanicComboBox = new ComboBox<>(FXCollections.observableArrayList(Database.getMechanics()));
-        mechanicComboBox.setPromptText("Select mechanic");
+        mechanicComboBox.promptTextProperty().bind(language.text("createWorkOrder.selectMechanic"));
         mechanicComboBox.setConverter(mechanicConverter());
         UiKit.keepPromptWhenCleared(mechanicComboBox);
 
         Button saveButton = UiKit.primaryButton("Create work order");
+        saveButton.textProperty().bind(language.text("createWorkOrder.title"));
 
         Label feedbackLabel = UiKit.feedbackLabel();
 
@@ -55,7 +59,7 @@ public class CreateWorkOrderView  extends VBox {
             Mechanic mechanic = mechanicComboBox.getValue();
 
             if (booking == null || mechanic == null){
-                UiKit.showError(feedbackLabel, "Please select a Booking and a Mechanic");
+                UiKit.showError(feedbackLabel, language.text("createWorkOrder.missingSelection").get());
 
                 return;
             }
@@ -70,10 +74,10 @@ public class CreateWorkOrderView  extends VBox {
 
             if(workOrder == null){
                 if (!mechanic.isAvailable()){
-                    UiKit.showError(feedbackLabel, "Mechanic is not available");
+                    UiKit.showError(feedbackLabel, language.text("createWorkOrder.unavailable").get());
                 }
                 else {
-                    UiKit.showError(feedbackLabel, "Work order could not be created. Please try again");
+                    UiKit.showError(feedbackLabel, language.text("createWorkOrder.createError").get());
                 }
                 return;
             }
@@ -88,12 +92,12 @@ public class CreateWorkOrderView  extends VBox {
                 Database.getWorkOrders().remove(workOrder);
                 booking.setStatus(previousBookingStatus);
 
-                UiKit.showError(feedbackLabel, "Work order could not be saved. Please try again.");
+                UiKit.showError(feedbackLabel, language.text("createWorkOrder.saveError").get());
                 exception.printStackTrace();
                 return;
             }
 
-            UiKit.showSuccess(feedbackLabel, "Work order has been created");
+            UiKit.showSuccess(feedbackLabel, language.text("createWorkOrder.success").get());
 
             //Jag tömmer valen efter registreringen har lyckats.
             bookingComboBox.getSelectionModel().clearSelection();
@@ -107,10 +111,10 @@ public class CreateWorkOrderView  extends VBox {
         });
 
         getChildren().add(UiKit.formContainer(
-                UiKit.pageHeader("Create work order", null),
-                UiKit.formField("Booking", bookingComboBox),
-                UiKit.formField("Mechanic", mechanicComboBox),
-                UiKit.formField("Services", buildServiceChecklist()),
+                UiKit.pageHeader(language.text("createWorkOrder.title"), null),
+                UiKit.formField(language.text("createWorkOrder.bookingLabel"), bookingComboBox),
+                UiKit.formField(language.text("bookings.mechanic"), mechanicComboBox),
+                UiKit.formField(language.text("services.title"), buildServiceChecklist()),
                 saveButton,
                 feedbackLabel
         ));
@@ -127,7 +131,9 @@ public class CreateWorkOrderView  extends VBox {
 
         VBox checklist = UiKit.checklistBox(serviceCheckBoxes.toArray(new CheckBox[0]));
         if (serviceCheckBoxes.isEmpty()) {
-            checklist.getChildren().add(UiKit.emptyText("No items found."));
+            Label emptyLabel = UiKit.emptyText("");
+            emptyLabel.textProperty().bind(language.text("createWorkOrder.empty"));
+            checklist.getChildren().add(emptyLabel);
         }
         return checklist;
     }
@@ -198,6 +204,6 @@ public class CreateWorkOrderView  extends VBox {
                 return vehicle.getRegistrationNumber();
             }
         }
-        return "Vehicle ID " + vehicleId;
+        return language.text("bookings.vehicleId").get() + " " + vehicleId;
     }
 }
