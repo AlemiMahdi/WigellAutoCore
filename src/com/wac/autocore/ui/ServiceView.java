@@ -3,6 +3,7 @@ package com.wac.autocore.ui;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.repository.ServiceItemRepository;
+import com.wac.autocore.ui.language.LanguageManager;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.geometry.Pos;
@@ -21,6 +22,7 @@ import java.text.DecimalFormatSymbols;
 // Visar befintliga tjänster i en tabell och låter användaren ändra tidsåtgången.
 public class ServiceView extends VBox {
 
+    private final LanguageManager language = LanguageManager.getInstance();
     private final TableView<ServiceItem> table = new TableView<ServiceItem>();
     private final TextField durationField = new TextField();
     private final Label feedbackLabel = UiKit.feedbackLabel();
@@ -32,7 +34,7 @@ public class ServiceView extends VBox {
         buildTable();
 
         getChildren().addAll(
-                UiKit.pageHeader("Services", null),
+                UiKit.pageHeader(language.text("services.title"), null),
                 table,
                 buildEditCard()
         );
@@ -60,6 +62,11 @@ public class ServiceView extends VBox {
                 new ReadOnlyStringWrapper(cell.getValue().getEstimatedMinutes() + " min"));
         timeColumn.getStyleClass().addAll("cell-right", "cell-muted");
 
+        nameColumn.textProperty().bind(language.text("services.name"));
+        descriptionColumn.textProperty().bind(language.text("services.description"));
+        priceColumn.textProperty().bind(language.text("services.price"));
+        timeColumn.textProperty().bind(language.text("services.time"));
+
         // Kolumnbredder i procent. CONSTRAINED_RESIZE_POLICY fördelar bredden
         // i proportion till maxWidth, så stora maxvärden fungerar som "vikter".
         // Beskrivningen får mest plats så att den inte klipps med "...".
@@ -73,7 +80,9 @@ public class ServiceView extends VBox {
         table.getColumns().add(priceColumn);
         table.getColumns().add(timeColumn);
 
-        table.setPlaceholder(new Label("No services found."));
+        Label emptyLabel = new Label();
+        emptyLabel.textProperty().bind(language.text("services.empty"));
+        table.setPlaceholder(emptyLabel);
         UiKit.styleTable(table);
 
         // Hämtar aktuella tjänster varje gång vyn öppnas
@@ -96,16 +105,19 @@ public class ServiceView extends VBox {
     // Kort under tabellen där man ändrar "Est. time" för vald tjänst.
     private VBox buildEditCard() {
         Label heading = new Label("Change estimated time");
+        heading.textProperty().bind(language.text("services.editTitle"));
         heading.getStyleClass().add("card-heading");
 
         Label hint = new Label("Select a service in the table and enter the new time in minutes.");
+        hint.textProperty().bind(language.text("services.prompt"));
         hint.getStyleClass().add("detail-text");
         hint.setWrapText(true);
 
-        durationField.setPromptText("Minutes, e.g. 45");
+        durationField.promptTextProperty().bind(language.text("services.minutesPrompt"));
         durationField.setPrefColumnCount(10);
 
         Button saveButton = UiKit.primaryButton("Save duration");
+        saveButton.textProperty().bind(language.text("services.save"));
         saveButton.setOnAction(event -> saveDuration());
 
         HBox inputRow = new HBox(12, durationField, saveButton);
@@ -126,7 +138,7 @@ public class ServiceView extends VBox {
         ServiceItem selected = table.getSelectionModel().getSelectedItem();
 
         if (selected == null) {
-            UiKit.showError(feedbackLabel, "Please select a service.");
+            UiKit.showError(feedbackLabel, language.text("services.select").get());
             return;
         }
 
@@ -135,12 +147,12 @@ public class ServiceView extends VBox {
         try {
             minutes = Integer.parseInt(durationField.getText().trim());
         } catch (NumberFormatException exception) {
-            UiKit.showError(feedbackLabel, "Enter a whole number greater than 0.");
+            UiKit.showError(feedbackLabel, language.text("services.invalidNumber").get());
             return;
         }
 
         if (minutes <= 0) {
-            UiKit.showError(feedbackLabel, "The duration must be greater than 0.");
+            UiKit.showError(feedbackLabel, language.text("services.invalidDuration").get());
             return;
         }
 
@@ -154,13 +166,13 @@ public class ServiceView extends VBox {
             selected.setEstimatedMinutes(previousMinutes);
             table.refresh();
 
-            UiKit.showError(feedbackLabel, "The duration could not be saved. Please try again.");
+            UiKit.showError(feedbackLabel, language.text("services.error").get());
             exception.printStackTrace();
             return;
         }
 
         table.refresh();
-        UiKit.showSuccess(feedbackLabel, "Duration saved.");
+        UiKit.showSuccess(feedbackLabel, language.text("services.saved").get());
     }
 
     private void setColumnWeight(TableColumn<ServiceItem, String> column, int percent) {
