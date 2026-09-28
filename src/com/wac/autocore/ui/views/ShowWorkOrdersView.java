@@ -7,6 +7,7 @@ import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.model.Vehicle;
 import com.wac.autocore.model.WorkOrder;
 import com.wac.autocore.ui.UiKit;
+import com.wac.autocore.ui.language.LanguageManager;
 
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
@@ -19,11 +20,13 @@ import java.util.List;
 // Visar arbetsordrarna som en kanban-tavla: CREATED, STARTED och COMPLETED.
 public class ShowWorkOrdersView {
 
+    private final LanguageManager language = LanguageManager.getInstance();
+
     public VBox getView() {
 
-        VBox createdColumn = UiKit.kanbanColumn("Created", "grey");
-        VBox startedColumn = UiKit.kanbanColumn("Started", "yellow");
-        VBox completedColumn = UiKit.kanbanColumn("Completed", "green");
+        VBox createdColumn = UiKit.kanbanColumn(language.text("badge.CREATED"), "grey");
+        VBox startedColumn = UiKit.kanbanColumn(language.text("badge.IN_PROGRESS"), "yellow");
+        VBox completedColumn = UiKit.kanbanColumn(language.text("badge.COMPLETED"), "green");
 
         // Sorterar varje arbetsorder till rätt kolumn utifrån dess status
         for (WorkOrder workOrder : Database.getWorkOrders()) {
@@ -46,7 +49,7 @@ public class ShowWorkOrdersView {
         HBox board = new HBox(24, createdColumn, startedColumn, completedColumn);
         board.setAlignment(Pos.TOP_LEFT);
 
-        return new VBox(20, UiKit.pageHeader("Work orders", null), board);
+        return new VBox(20, UiKit.pageHeader(language.text("workOrders.title"), null), board);
     }
 
     // Ett kort per arbetsorder: WO-id, fordon, mekaniker och tjänster
@@ -73,7 +76,9 @@ public class ShowWorkOrdersView {
     private void addEmptyTextIfNoCards(VBox column) {
         // Första barnet är rubriken, så 1 barn betyder "inga kort"
         if (column.getChildren().size() == 1) {
-            column.getChildren().add(UiKit.emptyText("No work orders"));
+            Label emptyLabel = UiKit.emptyText("");
+            emptyLabel.textProperty().bind(language.text("workOrders.empty"));
+            column.getChildren().add(emptyLabel);
         }
     }
 
@@ -87,10 +92,10 @@ public class ShowWorkOrdersView {
                                 + vehicle.getBrand() + " " + vehicle.getModel();
                     }
                 }
-                return "Vehicle ID " + booking.getVehicleId();
+                return language.text("bookings.vehicleId").get() + " " + booking.getVehicleId();
             }
         }
-        return "Booking ID " + bookingId;
+        return language.text("workOrders.bookingId").get() + " " + bookingId;
     }
 
     private String mechanicName(int mechanicId) {
@@ -100,14 +105,14 @@ public class ShowWorkOrdersView {
             }
         }
         // Ingen mekaniker med det ID:t (t.ex. 0) = inte tilldelad ännu
-        return "Unassigned";
+        return language.text("bookings.notAssigned").get();
     }
 
     // Gör om listan med tjänste-ID:n till "Oil change, Brake pads"
     private String servicesText(List<Integer> serviceItemIds) {
         List<String> names = new ArrayList<>();
         if (serviceItemIds == null) {
-            return "No services";
+            return language.text("workOrders.noServices").get();
         }
         for (Integer serviceItemId : serviceItemIds) {
             for (ServiceItem serviceItem : Database.getServiceItems()) {
@@ -117,7 +122,7 @@ public class ShowWorkOrdersView {
             }
         }
         if (names.isEmpty()) {
-            return "No services";
+            return language.text("workOrders.noServices").get();
         }
         return String.join(", ", names);
     }

@@ -364,6 +364,22 @@ public final class UiKit {
      */
     public static VBox kanbanColumn(String title, String dotVariant) {
         Label heading = new Label(title.toUpperCase());
+        return buildKanbanColumn(heading, dotVariant);
+    }
+
+    /**
+     * Samma kolumn, men rubriken är bunden till en text som kan ändras,
+     * t.ex. language.text("badge.CREATED"). Texten visas som den är,
+     * så nyckeln ska redan vara i versaler.
+     */
+    public static VBox kanbanColumn(ObservableValue<String> title, String dotVariant) {
+        Label heading = new Label();
+        heading.textProperty().bind(title);
+        return buildKanbanColumn(heading, dotVariant);
+    }
+
+    // Bygger själva kolumnen. Används av båda kanbanColumn-varianterna ovan.
+    private static VBox buildKanbanColumn(Label heading, String dotVariant) {
         heading.getStyleClass().add("kanban-header");
 
         HBox header = new HBox(8, dot(dotVariant), heading);
