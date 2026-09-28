@@ -3,6 +3,7 @@ package com.wac.autocore.ui;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Customer;
 import com.wac.autocore.model.Vehicle;
+import com.wac.autocore.ui.language.LanguageManager;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -20,8 +21,11 @@ public class ShowVehicleView {
      * Returnerar en VBox som kan visas i contentPane i AutoCoreApp.
      */
     public static VBox build() {
+        LanguageManager language = LanguageManager.getInstance();
+
         // Knappen tar användaren direkt till formuläret, precis som ett klick i menyn
         Button newVehicleButton = UiKit.primaryButton("+ New vehicle");
+        newVehicleButton.textProperty().bind(language.text("vehicles.new"));
         newVehicleButton.setOnAction(event -> Navigator.goTo("create-vehicle"));
 
         TableView<Vehicle> table = createVehicleTable();
@@ -31,13 +35,14 @@ public class ShowVehicleView {
         ObservableList<Vehicle> data = FXCollections.observableArrayList(Database.getVehicles());
         table.setItems(data);
 
-        VBox root = new VBox(20, UiKit.pageHeader("Vehicles", newVehicleButton), table);
+        VBox root = new VBox(20, UiKit.pageHeader(language.text("vehicles.title"), newVehicleButton), table);
         return root;
     }
 
     /** Bygger tabellen med kolumnerna Reg. no, Brand & model, Year och Owner. */
     private static TableView<Vehicle> createVehicleTable() {
         TableView<Vehicle> table = new TableView<>();
+        LanguageManager language = LanguageManager.getInstance();
 
         // Varje kolumn får sitt värde via en lambda som läser från Vehicle.
         // (Lambdan ger kompileringsfel om en getter stavas fel, till skillnad
@@ -61,6 +66,11 @@ public class ShowVehicleView {
         ownerCol.setCellValueFactory(cell ->
                 new ReadOnlyStringWrapper(findOwnerName(cell.getValue().getCustomerId())));
 
+        regCol.textProperty().bind(language.text("vehicles.registration"));
+        brandModelCol.textProperty().bind(language.text("vehicles.brandModel"));
+        yearCol.textProperty().bind(language.text("vehicles.year"));
+        ownerCol.textProperty().bind(language.text("vehicles.owner"));
+
         // Registreringsnumret är radens "nyckel" och visas i fetstil, år och ägare dämpat
         regCol.getStyleClass().add("cell-strong");
         yearCol.getStyleClass().add("cell-muted");
@@ -72,7 +82,9 @@ public class ShowVehicleView {
         table.getColumns().add(yearCol);
         table.getColumns().add(ownerCol);
 
-        table.setPlaceholder(new Label("No vehicles found."));
+        Label emptyLabel = new Label();
+        emptyLabel.textProperty().bind(language.text("vehicles.empty"));
+        table.setPlaceholder(emptyLabel);
 
         // Gemensam tabellstil: ramar, radhöjd och höjd som följer antalet rader
         UiKit.styleTable(table);
@@ -86,6 +98,6 @@ public class ShowVehicleView {
                 return customer.getName();
             }
         }
-        return "Customer #" + customerId;
+        return LanguageManager.getInstance().text("vehicles.unknownCustomer").get() + customerId;
     }
 }

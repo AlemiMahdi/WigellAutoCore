@@ -1,6 +1,7 @@
 package com.wac.autocore.ui;
 
 import javafx.beans.InvalidationListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -50,6 +51,21 @@ public final class UiKit {
     /** Sidhuvud: stor ljus rubrik till vänster och (valfritt, får vara null) en knapp längst till höger. */
     public static HBox pageHeader(String title, Node rightAction) {
         Label titleLabel = new Label(title);
+        return buildPageHeader(titleLabel, rightAction);
+    }
+
+    /**
+     * Samma sidhuvud, men rubriken är bunden till en text som kan ändras,
+     * t.ex. language.text("vehicles.title"). Byter språk direkt.
+     */
+    public static HBox pageHeader(ObservableValue<String> title, Node rightAction) {
+        Label titleLabel = new Label();
+        titleLabel.textProperty().bind(title);
+        return buildPageHeader(titleLabel, rightAction);
+    }
+
+    // Bygger själva sidhuvudet. Används av båda pageHeader-varianterna ovan.
+    private static HBox buildPageHeader(Label titleLabel, Node rightAction) {
         titleLabel.getStyleClass().add("page-title");
 
         // Tom yta som växer och trycker knappen hela vägen till höger
