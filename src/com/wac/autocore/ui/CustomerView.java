@@ -2,6 +2,7 @@ package com.wac.autocore.ui;
 
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Customer;
+import com.wac.autocore.ui.language.LanguageManager;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.scene.control.Button;
@@ -13,11 +14,14 @@ import javafx.scene.layout.VBox;
 // Visar alla befintliga kunder i en tabell
 public class CustomerView extends VBox {
 
+    private final LanguageManager language = LanguageManager.getInstance();
+
     public CustomerView() {
         setSpacing(20);
 
         // Knappen tar användaren direkt till formuläret, precis som ett klick i menyn
         Button newCustomerButton = UiKit.primaryButton("+ New customer");
+        newCustomerButton.textProperty().bind(language.text("customers.new"));
         newCustomerButton.setOnAction(event -> Navigator.goTo("create-customer"));
 
         TableView<Customer> table = createCustomerTable();
@@ -25,7 +29,7 @@ public class CustomerView extends VBox {
         // Hämtar kundlistan när vyn skapas
         table.setItems(FXCollections.observableArrayList(Database.getCustomers()));
 
-        getChildren().addAll(UiKit.pageHeader("Customers", newCustomerButton), table);
+        getChildren().addAll(UiKit.pageHeader(language.text("customers.title"), newCustomerButton), table);
     }
 
     /** Bygger tabellen med kolumnerna ID, Name, Phone, Email och VIP. */
@@ -55,6 +59,12 @@ public class CustomerView extends VBox {
                 new ReadOnlyStringWrapper(cell.getValue().isVip() ? "VIP" : "—"));
         vipColumn.setCellFactory(UiKit.<Customer>badgeCells());
 
+        idColumn.textProperty().bind(language.text("customers.id"));
+        nameColumn.textProperty().bind(language.text("customers.name"));
+        phoneColumn.textProperty().bind(language.text("customers.phone"));
+        emailColumn.textProperty().bind(language.text("customers.email"));
+        vipColumn.textProperty().bind(language.text("customers.vip"));
+
         // Telefon och e-post är sekundär information och visas därför dämpat
         phoneColumn.getStyleClass().add("cell-muted");
         emailColumn.getStyleClass().add("cell-muted");
@@ -75,7 +85,9 @@ public class CustomerView extends VBox {
         table.getColumns().add(emailColumn);
         table.getColumns().add(vipColumn);
 
-        table.setPlaceholder(new Label("No customers found."));
+        Label emptyLabel = new Label();
+        emptyLabel.textProperty().bind(language.text("customers.empty"));
+        table.setPlaceholder(emptyLabel);
 
         // Gemensam tabellstil: ramar, radhöjd och höjd som följer antalet rader
         UiKit.styleTable(table);
