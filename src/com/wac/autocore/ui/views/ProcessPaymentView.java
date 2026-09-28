@@ -6,6 +6,7 @@ import com.wac.autocore.model.Payment;
 import com.wac.autocore.service.GarageSystem;
 import com.wac.autocore.ui.ShowInvoiceView;
 import com.wac.autocore.ui.UiKit;
+import com.wac.autocore.ui.language.LanguageManager;
 
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -19,6 +20,7 @@ import com.wac.autocore.repository.PaymentRepository;
 
 public class ProcessPaymentView {
 
+    private final LanguageManager language = LanguageManager.getInstance();
     private final GarageSystem garageSystem = new GarageSystem();
     private final PaymentRepository paymentRepository = new PaymentRepository();
 
@@ -39,9 +41,9 @@ public class ProcessPaymentView {
             }
         });
         invoiceBox.getItems().addAll(Database.getInvoices());
-        invoiceBox.setPromptText(
-                invoiceBox.getItems().isEmpty() ? "No invoices yet" : "Select invoice"
-        );
+        invoiceBox.promptTextProperty().bind(language.text(
+                invoiceBox.getItems().isEmpty() ? "processPayment.noInvoicesPrompt" : "processPayment.invoiceSelectPrompt"
+        ));
         UiKit.keepPromptWhenCleared(invoiceBox);
 
 
@@ -50,7 +52,7 @@ public class ProcessPaymentView {
         // därför visar fältet bara det och går inte att ändra.
         TextField amountField = new TextField();
         amountField.setEditable(false);
-        amountField.setPromptText("Select an invoice");
+        amountField.promptTextProperty().bind(language.text("processPayment.invoiceSelectPrompt"));
         amountField.getStyleClass().add("readonly-field");
 
         invoiceBox.valueProperty().addListener((observable, oldValue, selected) -> {
@@ -74,9 +76,8 @@ public class ProcessPaymentView {
                 "CASH"
         );
 
-        paymentTypeBox.setPromptText(
-                "Select payment type"
-        );
+        paymentTypeBox.promptTextProperty().bind(language.text("processPayment.typePrompt"));
+
         paymentTypeBox.setConverter(new StringConverter<String>() {
             @Override
             public String toString(String type) {
@@ -95,12 +96,13 @@ public class ProcessPaymentView {
         Label messageLabel = UiKit.feedbackLabel();
 
         if (invoiceBox.getItems().isEmpty()) {
-            UiKit.showInfo(messageLabel, "There are no invoices to pay yet.");
+            UiKit.showInfo(messageLabel, language.text("processPayment.noInvoices").get());
         }
 
 
         Button processButton =
                 UiKit.successButton("Process payment");
+        processButton.textProperty().bind(language.text("processPayment.button"));
 
 
         processButton.setOnAction(event -> {
@@ -110,7 +112,7 @@ public class ProcessPaymentView {
             if (selectedInvoice == null) {
 
                 UiKit.showError(messageLabel,
-                        "Please select an invoice."
+                        language.text("processPayment.selectInvoice").get()
                 );
 
                 return;
@@ -125,7 +127,7 @@ public class ProcessPaymentView {
             if (paymentType == null) {
 
                 UiKit.showError(messageLabel,
-                        "Please select a payment type."
+                        language.text("processPayment.selectType").get()
                 );
 
                 return;
@@ -145,8 +147,7 @@ public class ProcessPaymentView {
             if (payment == null) {
 
                 UiKit.showError(messageLabel,
-                        "Payment could not be processed. " +
-                                "Check invoice ID or if the invoice is already paid."
+                        language.text("processPayment.processError").get()
                 );
 
                 return;
@@ -168,7 +169,7 @@ public class ProcessPaymentView {
                 refreshInvoiceTexts(invoiceBox);
 
                 UiKit.showError(messageLabel,
-                        "Payment could not be saved to the database."
+                        language.text("processPayment.saveError").get()
                 );
 
                 exception.printStackTrace();
@@ -179,7 +180,7 @@ public class ProcessPaymentView {
             if (payment.isSuccessful()) {
 
                 UiKit.showSuccess(messageLabel,
-                        "Payment completed successfully."
+                        language.text("processPayment.success").get()
                 );
 
                 invoiceBox.setValue(null);
@@ -191,7 +192,7 @@ public class ProcessPaymentView {
 
             } else {
 
-                UiKit.showError(messageLabel, "Payment failed.");
+                UiKit.showError(messageLabel, language.text("processPayment.failed").get());
 
 
             }
@@ -199,10 +200,10 @@ public class ProcessPaymentView {
 
 
         VBox form = UiKit.formContainer(
-                UiKit.pageHeader("Process payment", null),
-                UiKit.formField("Invoice", invoiceBox),
-                UiKit.formField("Amount", amountField),
-                UiKit.formField("Payment type", paymentTypeBox),
+                UiKit.pageHeader(language.text("processPayment.title"), null),
+                UiKit.formField(language.text("payments.invoice"), invoiceBox),
+                UiKit.formField(language.text("invoices.amount"), amountField),
+                UiKit.formField(language.text("payments.type"), paymentTypeBox),
                 processButton,
                 messageLabel
         );
@@ -215,21 +216,23 @@ public class ProcessPaymentView {
     }
 
     /**
-     * "CARD" -> "Card". Används även i ShowPaymentsView så att betalsätt ser likadana ut.
+     * "CARD" -> "Kort"/"Card" via språkfilen. Används även i ShowPaymentsView så att betalsätt ser likadana ut.
      */
     public static String formatPaymentType(String type) {
         if (type == null || type.trim().isEmpty()) {
             return "—";
         }
-        String lower = type.trim().toLowerCase();
-        return Character.toUpperCase(lower.charAt(0)) + lower.substring(1);
+        return LanguageManager.getInstance()
+                .text("payment.type." + type.trim().toUpperCase()).get();
     }
 
-    // "WO-1 invoice · 3 495 SEK unpaid"
+    // "WO-1 faktura · 3 495 SEK · Obetald"
     private static String describeInvoice(Invoice invoice) {
-        return ShowInvoiceView.workOrderCode(invoice.getWorkOrderId()) + " invoice · "
-                + ShowInvoiceView.formatSek(invoice.getTotalAmount())
-                + (invoice.isPaid() ? " paid" : " unpaid");
+        LanguageManager language = LanguageManager.getInstance();
+        return ShowInvoiceView.workOrderCode(invoice.getWorkOrderId()) + " "
+                + language.text("payments.invoiceSuffix").get() + " · "
+                + ShowInvoiceView.formatSek(invoice.getTotalAmount()) + " · "
+                + language.text(invoice.isPaid() ? "badge.PAID" : "badge.UNPAID").get();
     }
 
     // En ComboBox ritar inte om texterna av sig själv när ett objekt ändras
