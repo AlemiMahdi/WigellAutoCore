@@ -223,6 +223,21 @@ public final class UiKit {
     /** Ett fält med sin etikett ovanför, t.ex. formField("Name", nameField). Fältet fyller bredden. */
     public static VBox formField(String label, Node field) {
         Label labelNode = new Label(label);
+        return buildFormField(labelNode, field);
+    }
+
+    /**
+     * Samma fält, men etiketten är bunden till en text som kan ändras,
+     * t.ex. language.text("customers.name"). Byter språk direkt.
+     */
+    public static VBox formField(ObservableValue<String> label, Node field) {
+        Label labelNode = new Label();
+        labelNode.textProperty().bind(label);
+        return buildFormField(labelNode, field);
+    }
+
+    // Bygger själva fältet. Används av båda formField-varianterna ovan.
+    private static VBox buildFormField(Label labelNode, Node field) {
         labelNode.getStyleClass().add("form-label");
 
         if (field instanceof Region) {

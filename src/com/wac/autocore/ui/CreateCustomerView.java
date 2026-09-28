@@ -4,6 +4,7 @@ import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Customer;
 import com.wac.autocore.repository.CustomerRepository;
 import com.wac.autocore.service.GarageSystem;
+import com.wac.autocore.ui.language.LanguageManager;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -13,6 +14,7 @@ import javafx.scene.layout.VBox;
 // Formulär för att skapa nya kunder
 public class CreateCustomerView extends VBox {
 
+    private final LanguageManager language = LanguageManager.getInstance();
     private final GarageSystem garageSystem = new GarageSystem();
     private final CustomerRepository customerRepository = new CustomerRepository();
 
@@ -28,19 +30,20 @@ public class CreateCustomerView extends VBox {
         // Formulärkolumnen ska ligga centrerad högst upp i innehållsytan
         setAlignment(Pos.TOP_CENTER);
 
-        nameField.setPromptText("Full name");
-        phoneField.setPromptText("Phone number");
-        emailField.setPromptText("Email address");
+        nameField.promptTextProperty().bind(language.text("customer.create.namePrompt"));
+        phoneField.promptTextProperty().bind(language.text("customer.create.phonePrompt"));
+        emailField.promptTextProperty().bind(language.text("customer.create.emailPrompt"));
 
         Button saveButton = UiKit.primaryButton("Create customer");
+        saveButton.textProperty().bind(language.text("customer.create.title"));
         saveButton.setOnAction(event -> saveCustomer());
 
         // Rubriken ligger inne i formulärkolumnen, som i designen
         getChildren().add(UiKit.formContainer(
-                UiKit.pageHeader("Create customer", null),
-                UiKit.formField("Name", nameField),
-                UiKit.formField("Phone", phoneField),
-                UiKit.formField("Email", emailField),
+                UiKit.pageHeader(language.text("customer.create.title"), null),
+                UiKit.formField(language.text("customers.name"), nameField),
+                UiKit.formField(language.text("customers.phone"), phoneField),
+                UiKit.formField(language.text("customers.email"), emailField),
                 saveButton,
                 feedback
         ));
@@ -61,12 +64,12 @@ public class CreateCustomerView extends VBox {
             // Tar bort kunden ur minnet om databassparandet misslyckas.
             Database.getCustomers().remove(customer);
 
-            UiKit.showError(feedback, "Customer could not be saved. Please try again.");
+            UiKit.showError(feedback, language.text("customer.create.error").get());
             exception.printStackTrace();
             return;
         }
 
-        UiKit.showSuccess(feedback, "Customer created successfully.\n" + customer);
+        UiKit.showSuccess(feedback, language.text("customer.create.success").get() + "\n" + customer);
 
         // Tömmer fälten först när kunden har sparats.
         nameField.clear();
