@@ -1,5 +1,6 @@
 package com.wac.autocore.ui;
 
+import com.wac.autocore.ui.language.LanguageManager;
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
@@ -120,6 +121,13 @@ public final class UiKit {
         return badge;
     }
 
+    /** Samma som badge, men texten hämtas från språkfilen och byter språk direkt. */
+    private static Label badgeFromKey(String key, String variant) {
+        Label badge = badge("", variant);
+        badge.textProperty().bind(LanguageManager.getInstance().text(key));
+        return badge;
+    }
+
     /**
      * Gör om en status från modellen till en badge med rätt text och färg,
      * så att samma status ser likadan ut på alla sidor.
@@ -127,32 +135,32 @@ public final class UiKit {
      */
     public static Label statusBadge(String modelStatus) {
         if (modelStatus == null || modelStatus.trim().isEmpty()) {
-            return badge("UNKNOWN", "grey");
+            return badgeFromKey("badge.UNKNOWN", "grey");
         }
         // Jämför utan hänsyn till stora/små bokstäver ("Paid" = "PAID")
         String status = modelStatus.trim().toUpperCase();
 
         if (status.equals("BOOKED")) {
-            return badge("BOOKED", "purple");
+            return badgeFromKey("badge.BOOKED", "purple");
         } else if (status.equals("WORK_ORDER_CREATED")) {
-            return badge("WO CREATED", "grey");
+            return badgeFromKey("badge.WORK_ORDER_CREATED", "grey");
         } else if (status.equals("CREATED")) {
-            return badge("CREATED", "grey");
+            return badgeFromKey("badge.CREATED", "grey");
         } else if (status.equals("IN_PROGRESS")) {
             // Designen kallar "IN_PROGRESS" för STARTED
-            return badge("STARTED", "yellow");
+            return badgeFromKey("badge.IN_PROGRESS", "yellow");
         } else if (status.equals("COMPLETED")) {
-            return badge("COMPLETED", "green");
+            return badgeFromKey("badge.COMPLETED", "green");
         } else if (status.equals("PAID")) {
-            return badge("Paid", "green");
+            return badgeFromKey("badge.PAID", "green");
         } else if (status.equals("UNPAID")) {
-            return badge("Unpaid", "red");
+            return badgeFromKey("badge.UNPAID", "red");
         } else if (status.equals("SUCCESSFUL")) {
-            return badge("Successful", "green");
+            return badgeFromKey("badge.SUCCESSFUL", "green");
         } else if (status.equals("FAILED")) {
-            return badge("Failed", "red");
+            return badgeFromKey("badge.FAILED", "red");
         } else if (status.equals("VIP")) {
-            return badge("VIP", "yellow");
+            return badgeFromKey("badge.VIP", "yellow");
         }
         return badge(modelStatus, "grey");
     }
