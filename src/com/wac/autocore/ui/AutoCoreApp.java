@@ -26,11 +26,24 @@ import com.wac.autocore.ui.views.ProcessPaymentView;
 import com.wac.autocore.ui.views.MechanicScheduleView;
 
 import com.wac.autocore.data.Database;
+import com.wac.autocore.model.Customer;
+import com.wac.autocore.repository.CustomerRepository;
 import javafx.scene.control.Alert;
-
 
 import java.util.List;
 
+import com.wac.autocore.model.Vehicle;
+import com.wac.autocore.repository.VehicleRepository;
+import com.wac.autocore.model.ServiceItem;
+import com.wac.autocore.model.Mechanic;
+import com.wac.autocore.repository.ServiceItemRepository;
+import com.wac.autocore.repository.MechanicRepository;
+import com.wac.autocore.ui.language.LanguageManager;
+import javafx.scene.layout.HBox;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.RadioMenuItem;
+import javafx.scene.control.ToggleGroup;
+import javafx.scene.layout.HBox;
 import com.wac.autocore.model.Invoice;
 import com.wac.autocore.model.Payment;
 import com.wac.autocore.repository.InvoiceRepository;
@@ -40,6 +53,9 @@ import com.wac.autocore.repository.PaymentRepository;
 public class AutoCoreApp extends Application {
 
     private StackPane contentPane;
+
+    private final LanguageManager language =
+            LanguageManager.getInstance();
 
     @Override
     public void start(Stage primaryStage) {
@@ -57,16 +73,16 @@ public class AutoCoreApp extends Application {
             exception.printStackTrace();
 
             Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Database error");
-            alert.setHeaderText("Could not load data from the database.");
-            alert.setContentText(
-                    "Check the database connection and restart the application."
-            );
+
+            alert.titleProperty().bind(language.text("database.error.title"));
+            alert.headerTextProperty().bind(language.text("database.error.header"));
+            alert.contentTextProperty().bind(language.text("database.error.message"));
+
             alert.showAndWait();
 
-                javafx.application.Platform.exit();
-                return;
-                }
+            javafx.application.Platform.exit();
+            return;
+        }
 
         BorderPane root = new BorderPane();
 
@@ -88,35 +104,36 @@ public class AutoCoreApp extends Application {
         primaryStage.setTitle("Wigell AutoCore");
         primaryStage.setScene(scene);
         primaryStage.show();
+    }
+
+    private void loadCustomers() {
+        CustomerRepository repository = new CustomerRepository();
+        List<Customer> savedCustomers = repository.findAllCustomers();
+
+        if (savedCustomers.isEmpty()) {
+            // Sparar originalets exempelkunder vid första starten.
+            for (Customer customer : Database.getCustomers()) {
+                repository.save(customer);
+            }
+            return;
         }
 
-        private void loadCustomers() {
-                CustomerRepository repository = new CustomerRepository();
-                List<Customer> savedCustomers = repository.findAllCustomers();
-
-                if (savedCustomers.isEmpty()) {
-                // Sparar originalets exempelkunder vid första starten.
-                for (Customer customer : Database.getCustomers()) {
-                        repository.save(customer);
-                }
-                return;
-                }
-
-                // Kontrollerar ID-ordningen eftersom originalet använder kundlistans storlek + 1 för att skapa nästa ID.
-                for (int i = 0; i < savedCustomers.size(); i++) {
-                if (savedCustomers.get(i).getId() != i + 1) {
-                        throw new IllegalStateException(
-                                "Customer IDs must be consecutive, starting at 1."
-                        );
-                }
-                }
-
-                // Ersätter kunderna i minnet med de sparade kunderna.
-                Database.getCustomers().clear();
-                Database.getCustomers().addAll(savedCustomers);
+        // Kontrollerar ID-ordningen eftersom originalet använder kundlistans storlek + 1 för att skapa nästa ID.
+        for (int i = 0; i < savedCustomers.size(); i++) {
+            if (savedCustomers.get(i).getId() != i + 1) {
+                throw new IllegalStateException(
+                        "Customer IDs must be consecutive, starting at 1."
+                );
+            }
         }
+
+        // Ersätter kunderna i minnet med de sparade kunderna.
+        Database.getCustomers().clear();
+        Database.getCustomers().addAll(savedCustomers);
+    }
+
     // Läser in fordon efter att kunderna har laddats.
-        private void loadVehicles() {
+    private void loadVehicles() {
                 VehicleRepository repository = new VehicleRepository();
                 List<Vehicle> savedVehicles = repository.findAllVehicles();
 
@@ -158,41 +175,42 @@ public class AutoCoreApp extends Application {
                 Database.getVehicles().clear();
                 Database.getVehicles().addAll(savedVehicles);
                 }
+        }
+
+    private void loadServiceItems() {
+
+    ServiceItemRepository repository =
+            new ServiceItemRepository();
+
+    List<ServiceItem> savedServiceItems =
+            repository.findAllServiceItems();
+
+    if (savedServiceItems.isEmpty()) {
+
+        // Första starten: sparar originalets exempeldata.
+        for (ServiceItem serviceItem : Database.getServiceItems()) {
+            repository.save(serviceItem);
+        }
+
+        return;
     }
 
-        private void loadServiceItems() {
-
-        ServiceItemRepository repository =
-                new ServiceItemRepository();
-
-        List<ServiceItem> savedServiceItems =
-                repository.findAllServiceItems();
-
-        if (savedServiceItems.isEmpty()) {
-
-                // Första starten: sparar originalets exempeldata.
-                for (ServiceItem serviceItem : Database.getServiceItems()) {
-                repository.save(serviceItem);
-                }
-
-                return;
+    // Kontrollerar att ID:n följer originalets struktur.
+    for (int i = 0; i < savedServiceItems.size(); i++) {
+        if (savedServiceItems.get(i).getId() != i + 1) {
+            throw new IllegalStateException(
+                    "Service item IDs must be consecutive, starting at 1."
+            );
         }
+    }
 
-        // Kontrollerar att ID:n följer originalets struktur.
-        for (int i = 0; i < savedServiceItems.size(); i++) {
-                if (savedServiceItems.get(i).getId() != i + 1) {
-                throw new IllegalStateException(
-                        "Service item IDs must be consecutive, starting at 1."
-                );
-                }
-        }
+    // Ersätter minnesdatan med datan från databasen.
+    Database.getServiceItems().clear();
+    Database.getServiceItems().addAll(savedServiceItems);
+}
 
-        // Ersätter minnesdatan med datan från databasen.
-        Database.getServiceItems().clear();
-        Database.getServiceItems().addAll(savedServiceItems);
-        }
 
-        private void loadMechanics() {
+    private void loadMechanics() {
 
         MechanicRepository repository =
                 new MechanicRepository();
@@ -223,7 +241,7 @@ public class AutoCoreApp extends Application {
         Database.getMechanics().clear();
         Database.getMechanics().addAll(savedMechanics);
         }
-        
+
         private void loadInvoices() {
 
         InvoiceRepository repository =
@@ -254,7 +272,7 @@ public class AutoCoreApp extends Application {
         Database.getInvoices().clear();
         Database.getInvoices().addAll(savedInvoices);
         }
-        
+
         private void loadPayments() {
 
         PaymentRepository repository =
@@ -424,10 +442,52 @@ public class AutoCoreApp extends Application {
                         "-fx-font-weight: bold;"
         );
 
-        Label subtitle = new Label("A Wigell Group Company");
+        Label subtitle = new Label();
+        subtitle.textProperty().bind(language.text("header.subtitle"));
 
-        VBox header = new VBox(5, title, subtitle);
+        MenuButton languageMenu = new MenuButton();
+        languageMenu.textProperty().bind(language.text("language.current"));
+        languageMenu.accessibleTextProperty().bind(
+                language.text("language.label")
+        );
 
+        RadioMenuItem swedish = new RadioMenuItem("Svenska");
+        RadioMenuItem english = new RadioMenuItem("English");
+
+        ToggleGroup languageGroup = new ToggleGroup();
+        swedish.setToggleGroup(languageGroup);
+        english.setToggleGroup(languageGroup);
+
+        // Markeringen följer språket som visas.
+        Runnable updateSelection = () -> {
+            boolean isSwedish =
+                    "Svenska".equals(languageMenu.getText());
+
+            swedish.setSelected(isSwedish);
+            english.setSelected(!isSwedish);
+        };
+
+        languageMenu.textProperty().addListener(
+                (observable, oldText, newText) -> updateSelection.run()
+        );
+
+        swedish.setOnAction(event -> {
+            language.setLanguage("sv");
+            updateSelection.run();
+        });
+
+        english.setOnAction(event -> {
+            language.setLanguage("en");
+            updateSelection.run();
+        });
+
+        languageMenu.getItems().addAll(swedish, english);
+        updateSelection.run();
+
+        HBox languageRow = new HBox(languageMenu);
+        languageRow.setAlignment(Pos.CENTER_RIGHT);
+
+        VBox header = new VBox(5, languageRow, title, subtitle);
         header.setAlignment(Pos.CENTER);
         header.setPadding(new Insets(20));
 
@@ -495,6 +555,24 @@ public class AutoCoreApp extends Application {
         Button exit =
                 createMenuButton("Exit");
 
+        showCustomers.textProperty().bind(language.text("menu.customers"));
+        createCustomer.textProperty().bind(language.text("menu.createCustomer"));
+        showVehicles.textProperty().bind(language.text("menu.vehicles"));
+        createVehicle.textProperty().bind(language.text("menu.createVehicle"));
+        showBookings.textProperty().bind(language.text("menu.bookings"));
+        createBooking.textProperty().bind(language.text("menu.createBooking"));
+        showServices.textProperty().bind(language.text("menu.services"));
+        showMechanics.textProperty().bind(language.text("menu.mechanics"));
+        showWorkOrders.textProperty().bind(language.text("menu.workOrders"));
+        createWorkOrder.textProperty().bind(language.text("menu.createWorkOrder"));
+        startWorkOrder.textProperty().bind(language.text("menu.startWorkOrder"));
+        completeWorkOrder.textProperty().bind(language.text("menu.completeWorkOrder"));
+        showInvoices.textProperty().bind(language.text("menu.invoices"));
+        createInvoice.textProperty().bind(language.text("menu.createInvoice"));
+        showPayments.textProperty().bind(language.text("menu.payments"));
+        processPayment.textProperty().bind(language.text("menu.processPayment"));
+        scheduleButton.textProperty().bind(language.text("menu.schedule"));
+        exit.textProperty().bind(language.text("menu.exit"));
 
         menuBox.getChildren().addAll(
                 showCustomers,
@@ -640,9 +718,8 @@ public class AutoCoreApp extends Application {
 
     private void showWelcomePage() {
 
-        Label welcome = new Label(
-                "Welcome to Wigell AutoCore"
-        );
+        Label welcome = new Label();
+        welcome.textProperty().bind(language.text("welcome"));
 
         welcome.setStyle(
                 "-fx-font-size: 24px;" +

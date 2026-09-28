@@ -12,10 +12,13 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
+import com.wac.autocore.ui.language.LanguageManager;
 
 public class ShowWorkOrdersView {
 
     public VBox getView() {
+
+        LanguageManager language = LanguageManager.getInstance();
 
         Label title = new Label("WORK ORDERS");
 
@@ -54,27 +57,30 @@ public class ShowWorkOrdersView {
         );
 
 
-        // Services
+// Services
         TableColumn<WorkOrder, String> servicesColumn =
                 new TableColumn<>("Services");
 
-        servicesColumn.setCellValueFactory(cellData ->
+        servicesColumn.setCellValueFactory(cell ->
                 new SimpleStringProperty(
-                        cellData.getValue()
-                                .getServiceItemIds()
-                                .toString()
+                        cell.getValue().getServiceItemIds().toString()
                 )
         );
 
-
-        // Status
+// Status
         TableColumn<WorkOrder, String> statusColumn =
                 new TableColumn<>("Status");
 
-        statusColumn.setCellValueFactory(
-                new PropertyValueFactory<WorkOrder, String>("status")
+        statusColumn.setCellValueFactory(cell ->
+                language.text("workOrder.status." + cell.getValue().getStatus())
         );
-
+// Uppdaterar rubrikerna direkt vid språkbyte.
+        title.textProperty().bind(language.text("workOrders.title"));
+        idColumn.textProperty().bind(language.text("workOrders.id"));
+        bookingIdColumn.textProperty().bind(language.text("workOrders.bookingId"));
+        mechanicIdColumn.textProperty().bind(language.text("workOrders.mechanicId"));
+        servicesColumn.textProperty().bind(language.text("workOrders.services"));
+        statusColumn.textProperty().bind(language.text("workOrders.status"));
 
         table.getColumns().addAll(
                 idColumn,
@@ -92,9 +98,10 @@ public class ShowWorkOrdersView {
 
         table.setItems(workOrders);
 
-        table.setPlaceholder(
-                new Label("No work orders found.")
-        );
+        Label emptyLabel = new Label();
+        emptyLabel.textProperty().bind(language.text("workOrders.empty"));
+        table.setPlaceholder(emptyLabel);
+
 
         table.setColumnResizePolicy(
                 TableView.CONSTRAINED_RESIZE_POLICY

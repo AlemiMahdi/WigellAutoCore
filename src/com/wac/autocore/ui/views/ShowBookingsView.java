@@ -22,10 +22,13 @@ import javafx.beans.property.ReadOnlyStringWrapper;
 
 import java.util.HashMap;
 import java.util.Map;
+import com.wac.autocore.ui.language.LanguageManager;
 
 public class ShowBookingsView {
 
     public VBox getView() {
+
+        LanguageManager language = LanguageManager.getInstance();
 
         Map<Integer, Integer> mechanicByBooking = new HashMap<>();
         Map<Integer, String> mechanicNames = new HashMap<>();
@@ -41,9 +44,10 @@ public class ShowBookingsView {
         } catch (RuntimeException e) {
            e.printStackTrace();
 
-           Label errorLabel = new Label(
-                   "Bookings could not be loaded. Please reopen this page to try again."
-           );
+            Label errorLabel = new Label();
+            errorLabel.textProperty().bind(
+                    language.text("bookings.loadError")
+            );
            errorLabel.setWrapText(true);
 
            VBox errorView = new VBox(15, errorLabel);
@@ -106,8 +110,8 @@ public class ShowBookingsView {
         TableColumn<Booking, String> statusColumn =
                 new TableColumn<>("Status");
 
-        statusColumn.setCellValueFactory(
-                new PropertyValueFactory<Booking, String>("status")
+        statusColumn.setCellValueFactory(cell ->
+                language.text("booking.status." + cell.getValue().getStatus())
         );
 
         TableColumn<Booking, String> mechanicColumn =
@@ -117,27 +121,39 @@ public class ShowBookingsView {
             int bookingId = cell.getValue().getId();
 
             if (!mechanicByBooking.containsKey(bookingId)) {
-                return new ReadOnlyStringWrapper("Booking not saved");
+                return language.text("bookings.notSaved");
             }
 
             Integer mechanicId = mechanicByBooking.get(bookingId);
 
             if (mechanicId == null) {
-                return new ReadOnlyStringWrapper("Not assigned");
+                return language.text("bookings.notAssigned");
             }
 
             String mechanicName = mechanicNames.get(mechanicId);
 
             if (mechanicName == null) {
-                return new ReadOnlyStringWrapper(
-                        "Unknown mechanic (ID: " + mechanicId + ")"
-                );
+                return language.text("bookings.unknownMechanic")
+                        .concat(" (ID: ")
+                        .concat(String.valueOf(mechanicId))
+                        .concat(")");
             }
 
             return new ReadOnlyStringWrapper(
                     mechanicName + " (ID: " + mechanicId + ")"
             );
         });
+
+        // Uppdaterar rubrikerna direkt vid språkbyte.
+        title.textProperty().bind(language.text("bookings.title"));
+        idColumn.textProperty().bind(language.text("bookings.id"));
+        vehicleColumn.textProperty().bind(language.text("bookings.vehicleId"));
+        dateColumn.textProperty().bind(language.text("bookings.date"));
+        startTimeColumn.textProperty().bind(language.text("bookings.startTime"));
+        durationColumn.textProperty().bind(language.text("bookings.duration"));
+        mechanicColumn.textProperty().bind(language.text("bookings.mechanic"));
+        descriptionColumn.textProperty().bind(language.text("bookings.description"));
+        statusColumn.textProperty().bind(language.text("bookings.status"));
 
         table.getColumns().addAll(
                 idColumn,
@@ -151,6 +167,7 @@ public class ShowBookingsView {
         );
 
 
+
         ObservableList<Booking> bookings =
                 FXCollections.observableArrayList(
                         Database.getBookings()
@@ -158,9 +175,9 @@ public class ShowBookingsView {
 
         table.setItems(bookings);
 
-        table.setPlaceholder(
-                new Label("No bookings found.")
-        );
+        Label emptyLabel = new Label();
+        emptyLabel.textProperty().bind(language.text("bookings.empty"));
+        table.setPlaceholder(emptyLabel);
 
         table.setColumnResizePolicy(
                 TableView.CONSTRAINED_RESIZE_POLICY

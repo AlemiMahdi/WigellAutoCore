@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import com.wac.autocore.ui.language.LanguageManager;
 
 public class MechanicScheduleView {
 
@@ -32,10 +33,11 @@ public class MechanicScheduleView {
 
     public VBox getView() {
 
+        LanguageManager language = LanguageManager.getInstance();
+
         if (!loadMechanicMap()) {
-            Label errorLabel = new Label(
-                    "Mechanic schedule could not be loaded. Please reopen this page to try again."
-            );
+            Label errorLabel = new Label();
+            errorLabel.textProperty().bind(language.text("schedule.loadError"));
             errorLabel.setWrapText(true);
 
             VBox errorView = new VBox(15, errorLabel);
@@ -98,8 +100,21 @@ public class MechanicScheduleView {
                 descCol,
                 statusCol
         );
-        table.setPlaceholder(new Label("Select a mechanic"));
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        // Uppdaterar rubrikerna direkt vid språkbyte.
+        title.textProperty().bind(language.text("schedule.title"));
+        mechanicCombo.promptTextProperty().bind(language.text("schedule.select"));
+
+        idCol.textProperty().bind(language.text("schedule.id"));
+        dateCol.textProperty().bind(language.text("schedule.date"));
+        startTimeCol.textProperty().bind(language.text("schedule.startTime"));
+        durationCol.textProperty().bind(language.text("schedule.duration"));
+        vehicleCol.textProperty().bind(language.text("schedule.vehicle"));
+        descCol.textProperty().bind(language.text("schedule.description"));
+        statusCol.textProperty().bind(language.text("schedule.status"));
+
+        Label emptyLabel = new Label();
+        emptyLabel.textProperty().bind(language.text("schedule.select"));
 
 
         mechanicCombo.setOnAction(actionEvent -> {
@@ -122,11 +137,13 @@ public class MechanicScheduleView {
                     .collect(Collectors.toList());
 
             table.setItems(FXCollections.observableArrayList(result));
-            if (result.isEmpty()) {
-                table.setPlaceholder(new Label("No bookings for this mechanic"));
+            emptyLabel.textProperty().bind(language.text("schedule.empty"));
 
-            }
-            countLabel.setText(result.size() + " bookings");
+            countLabel.textProperty().bind(
+                    language.text("schedule.count")
+                            .concat(" ")
+                            .concat(String.valueOf(result.size()))
+            );
         });
 
         VBox root = new VBox(10, title, mechanicCombo, table, countLabel);

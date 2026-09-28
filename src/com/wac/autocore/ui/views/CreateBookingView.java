@@ -16,8 +16,11 @@ import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
 
 import com.wac.autocore.model.Mechanic;
+import com.wac.autocore.ui.language.LanguageManager;
 
 public class CreateBookingView {
+
+    LanguageManager language = LanguageManager.getInstance();
 
     private final GarageSystem garageSystem = new GarageSystem();
 
@@ -82,6 +85,20 @@ public class CreateBookingView {
 
         Button createButton = new Button("Create booking");
 
+        // Uppdaterar texterna direkt vid språkbyte.
+        title.textProperty().bind(language.text("createBooking.title"));
+        vehiclesLabel.textProperty().bind(language.text("createBooking.availableVehicles"));
+        vehicleIdLabel.textProperty().bind(language.text("createBooking.vehicleId"));
+        vehicleIdField.promptTextProperty().bind(language.text("createBooking.vehicleIdPrompt"));
+        dateLabel.textProperty().bind(language.text("createBooking.date"));
+        startTimeLabel.textProperty().bind(language.text("createBooking.startTime"));
+        durationLabel.textProperty().bind(language.text("createBooking.duration"));
+        durationField.promptTextProperty().bind(language.text("createBooking.durationPrompt"));
+        mechanicLabel.textProperty().bind(language.text("createBooking.mechanic"));
+        mechanicCombo.promptTextProperty().bind(language.text("createBooking.mechanicPrompt"));
+        descriptionLabel.textProperty().bind(language.text("createBooking.description"));
+        createButton.textProperty().bind(language.text("createBooking.button"));
+
         BookingRepository bookingRepository = new BookingRepository();
 
 
@@ -95,7 +112,9 @@ public class CreateBookingView {
 
                 LocalDate date = datePicker.getValue();
                 if (date == null) {
-                    messageLabel.setText("Please select a date.");
+                    messageLabel.textProperty().bind(
+                            language.text("createBooking.selectDate")
+                    );
                     return;
                 }
 
@@ -106,9 +125,9 @@ public class CreateBookingView {
                         startTimeField.getText().trim()
                 );
                 } catch (DateTimeParseException exception) {
-                messageLabel.setText(
-                        "Please enter start time as HH:mm."
-                );
+                    messageLabel.textProperty().bind(
+                            language.text("createBooking.invalidStartTime")
+                    );
                 return;
                 }
 
@@ -120,23 +139,25 @@ public class CreateBookingView {
                         durationField.getText().trim()
                 );
                 } catch (NumberFormatException exception) {
-                messageLabel.setText(
-                        "Please enter a valid duration."
-                );
+                    messageLabel.textProperty().bind(
+                            language.text("createBooking.invalidDuration")
+                    );
                 return;
                 }
 
                 if (durationMinutes <= 0) {
-                messageLabel.setText(
-                        "Duration must be greater than 0."
-                );
+                    messageLabel.textProperty().bind(
+                            language.text("createBooking.durationGreaterThanZero")
+                    );
                 return;
                 }
 
                 Mechanic mechanic = mechanicCombo.getValue();
 
                 if (mechanic == null) {
-                    messageLabel.setText("Please select a mechanic.");
+                    messageLabel.textProperty().bind(
+                            language.text("createBooking.selectMechanic")
+                    );
                     return;
                 }
 
@@ -148,10 +169,10 @@ public class CreateBookingView {
                                 durationMinutes
                         );
 
-                if (overlapping) {      
-                messageLabel.setText(
-                        "The mechanic already has a booking during this time."
-                );
+                if (overlapping) {
+                    messageLabel.textProperty().bind(
+                            language.text("createBooking.overlapping")
+                    );
                 return;
                 }
 
@@ -177,15 +198,15 @@ public class CreateBookingView {
                         // Tar bort bokningen ur minnet om databassparandet misslyckades.
                         Database.getBookings().remove(booking);
 
-                        messageLabel.setText(
-                                "Booking could not be saved. Please try again."
+                        messageLabel.textProperty().bind(
+                                language.text("createBooking.saveError")
                         );
                         exception.printStackTrace();
                         return;
                     }
 
-                    messageLabel.setText(
-                            "Booking created successfully."
+                    messageLabel.textProperty().bind(
+                            language.text("createBooking.success")
                     );
 
                     vehicleIdField.clear();
@@ -198,15 +219,15 @@ public class CreateBookingView {
 
                 } else {
 
-                    messageLabel.setText(
-                            "Booking could not be created."
+                    messageLabel.textProperty().bind(
+                            language.text("createBooking.createError")
                     );
                 }
 
             } catch (NumberFormatException e) {
 
-                messageLabel.setText(
-                        "Please enter a valid vehicle ID."
+                messageLabel.textProperty().bind(
+                        language.text("createBooking.invalidVehicleId")
                 );
 
             }

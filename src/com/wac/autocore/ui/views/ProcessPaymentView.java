@@ -15,13 +15,34 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 
 import com.wac.autocore.repository.PaymentRepository;
+import com.wac.autocore.ui.language.LanguageManager;
+import javafx.scene.control.ListCell;
 
 public class ProcessPaymentView {
 
     private final GarageSystem garageSystem = new GarageSystem();
     private final PaymentRepository paymentRepository = new PaymentRepository();
 
+    // Översätter visningstexten men behåller betalningstypens kodvärde.
+    private ListCell<String> createPaymentTypeCell(LanguageManager language) {
+        return new ListCell<String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                textProperty().unbind();
+
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    textProperty().bind(language.text("payment.type." + item));
+                }
+            }
+        };
+    }
+
     public VBox getView() {
+
+        LanguageManager language = LanguageManager.getInstance();
 
         Label title = new Label("PROCESS PAYMENT");
 
@@ -57,6 +78,9 @@ public class ProcessPaymentView {
         ComboBox<String> paymentTypeBox =
                 new ComboBox<>();
 
+        paymentTypeBox.setCellFactory(list -> createPaymentTypeCell(language));
+        paymentTypeBox.setButtonCell(createPaymentTypeCell(language));
+
         paymentTypeBox.getItems().addAll(
                 "CARD",
                 "SWISH",
@@ -75,6 +99,24 @@ public class ProcessPaymentView {
         Button processButton =
                 new Button("Process payment");
 
+        // Uppdaterar formulärets texter direkt vid språkbyte.
+        title.textProperty().bind(language.text("processPayment.title"));
+        invoicesLabel.textProperty().bind(language.text("processPayment.invoices"));
+        invoiceIdLabel.textProperty().bind(language.text("processPayment.invoiceId"));
+        invoiceIdField.promptTextProperty().bind(
+                language.text("processPayment.invoicePrompt")
+        );
+        paymentTypeLabel.textProperty().bind(language.text("processPayment.type"));
+        paymentTypeBox.promptTextProperty().bind(
+                language.text("processPayment.typePrompt")
+        );
+        processButton.textProperty().bind(language.text("processPayment.button"));
+
+        messageLabel.setWrapText(true);
+
+        Label emptyLabel = new Label();
+        emptyLabel.textProperty().bind(language.text("invoices.empty"));
+        invoiceList.setPlaceholder(emptyLabel);
 
         processButton.setOnAction(event -> {
 
@@ -88,8 +130,8 @@ public class ProcessPaymentView {
 
             } catch (NumberFormatException e) {
 
-                messageLabel.setText(
-                        "Please enter a valid invoice ID."
+                messageLabel.textProperty().bind(
+                        language.text("processPayment.invalidId")
                 );
 
                 return;
@@ -101,8 +143,8 @@ public class ProcessPaymentView {
 
             if (paymentType == null) {
 
-                messageLabel.setText(
-                        "Please select a payment type."
+                messageLabel.textProperty().bind(
+                        language.text("processPayment.selectType")
                 );
 
                 return;
@@ -121,9 +163,8 @@ public class ProcessPaymentView {
 
             if (payment == null) {
 
-                messageLabel.setText(
-                        "Payment could not be processed. " +
-                                "Check invoice ID or if the invoice is already paid."
+                messageLabel.textProperty().bind(
+                        language.text("processPayment.processError")
                 );
 
                 return;
@@ -144,9 +185,9 @@ public class ProcessPaymentView {
 
         invoiceList.refresh();
 
-        messageLabel.setText(
-                "Payment could not be saved to the database."
-        );
+            messageLabel.textProperty().bind(
+                    language.text("processPayment.saveError")
+            );
 
         exception.printStackTrace();
 
@@ -155,9 +196,9 @@ public class ProcessPaymentView {
 
         if (payment.isSuccessful()) {
 
-                messageLabel.setText(
-                        "Payment completed successfully."
-                );
+            messageLabel.textProperty().bind(
+                    language.text("processPayment.success")
+            );
 
                 invoiceIdField.clear();
                 paymentTypeBox.setValue(null);
@@ -165,9 +206,9 @@ public class ProcessPaymentView {
                 invoiceList.refresh();
 
         } else {
-                messageLabel.setText(
-                        "Payment failed."
-                );
+            messageLabel.textProperty().bind(
+                    language.text("processPayment.failed")
+            );
         }
         });
 

@@ -10,6 +10,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.repository.VehicleRepository;
+import com.wac.autocore.ui.language.LanguageManager;
 
 
 public class CreateVehicleView {
@@ -19,6 +20,8 @@ public class CreateVehicleView {
      * Returnerar en VBox som kan visas i contentPane i AutoCoreApp.
      */
     public static VBox build() {
+
+        LanguageManager language = LanguageManager.getInstance();
         GarageSystem garageSystem = new GarageSystem();
 
         VehicleRepository vehicleRepository = new VehicleRepository();
@@ -59,6 +62,15 @@ public class CreateVehicleView {
         Button createButton = new Button("Create vehicle");
         Label statusLabel = new Label(); // visar resultat/felmeddelande till användaren
 
+        statusLabel.setWrapText(true);
+
+        regLabel.textProperty().bind(language.text("vehicle.create.registration"));
+        brandLabel.textProperty().bind(language.text("vehicle.create.brand"));
+        modelLabel.textProperty().bind(language.text("vehicle.create.model"));
+        yearLabel.textProperty().bind(language.text("vehicle.create.year"));
+        customerLabel.textProperty().bind(language.text("vehicle.create.customerId"));
+        createButton.textProperty().bind(language.text("vehicle.create.save"));
+
         // Körs varje gång användaren klickar på "Create vehicle".
         createButton.setOnAction(actionEvent -> {
             String registrationNumber = regField.getText();
@@ -75,7 +87,9 @@ public class CreateVehicleView {
                 year = Integer.parseInt(yearField.getText());
                 customerId = Integer.parseInt(customerField.getText());
             } catch (NumberFormatException e) {
-                statusLabel.setText("År och kund-Id måste vara siffror!");
+                statusLabel.textProperty().bind(
+                        language.text("vehicle.create.invalidNumbers")
+                );
                 return; // avbryt, skapa inget fordon
             }
 
@@ -84,8 +98,8 @@ public class CreateVehicleView {
             Vehicle vehicle = garageSystem.createVehicle(registrationNumber, brand, model, year, customerId);
 
             if (vehicle == null) {
-                statusLabel.setText(
-                        "Kunde inte skapa fordon. Kontrollera kund-ID."
+                statusLabel.textProperty().bind(
+                        language.text("vehicle.create.invalidCustomer")
                 );
                 return;
             }
@@ -97,15 +111,17 @@ public class CreateVehicleView {
                 // Ångrar tillägget i minnet om databassparandet misslyckas.
                 Database.getVehicles().remove(vehicle);
 
-                statusLabel.setText(
-                        "Fordonet kunde inte sparas. Försök igen."
+                statusLabel.textProperty().bind(
+                        language.text("vehicle.create.error")
                 );
                 exception.printStackTrace();
                 return;
             }
 
-            statusLabel.setText(
-                    "Fordon skapat: " + vehicle.getRegistrationNumber()
+            statusLabel.textProperty().bind(
+                    language.text("vehicle.create.success")
+                            .concat(" ")
+                            .concat(vehicle.getRegistrationNumber())
             );
 
 // Tömmer formuläret efter att sparandet har lyckats.

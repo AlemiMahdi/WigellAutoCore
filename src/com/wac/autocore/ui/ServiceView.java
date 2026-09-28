@@ -12,12 +12,15 @@ import javafx.scene.layout.VBox;
 import com.wac.autocore.repository.ServiceItemRepository;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
+import com.wac.autocore.ui.language.LanguageManager;
 
 //visar befintliga tjänster i en tabell
 public class ServiceView extends VBox {
 
     public ServiceView() {
         setSpacing(15);
+
+        LanguageManager language = LanguageManager.getInstance();
 
         //rubrik
         Label title = new Label("Services");
@@ -69,7 +72,9 @@ public class ServiceView extends VBox {
         table.getColumns().add(timeColumn);
 
 
-        table.setPlaceholder(new Label("No services found."));
+        Label emptyLabel = new Label();
+        emptyLabel.textProperty().bind(language.text("services.empty"));
+        table.setPlaceholder(emptyLabel);
 
         //hämtar aktuella tjänster varje gång vyn öppnas
         table.setItems(
@@ -84,11 +89,23 @@ public class ServiceView extends VBox {
         Label feedbackLabel = new Label();
         feedbackLabel.setWrapText(true);
 
+        title.textProperty().bind(language.text("services.title"));
+        idColumn.textProperty().bind(language.text("services.id"));
+        nameColumn.textProperty().bind(language.text("services.name"));
+        descriptionColumn.textProperty().bind(language.text("services.description"));
+        priceColumn.textProperty().bind(language.text("services.price"));
+        timeColumn.textProperty().bind(language.text("services.time"));
+
+        durationLabel.textProperty().bind(language.text("services.duration"));
+        durationField.promptTextProperty().bind(language.text("services.prompt"));
+        saveButton.textProperty().bind(language.text("services.save"));
+
         ServiceItemRepository repository = new ServiceItemRepository();
 
 // Visar tidsåtgången för tjänsten som användaren väljer.
         table.getSelectionModel().selectedItemProperty().addListener(
                 (observable, previous, selected) -> {
+                    feedbackLabel.textProperty().unbind();
                     feedbackLabel.setText("");
 
                     if (selected == null) {
@@ -105,7 +122,9 @@ public class ServiceView extends VBox {
             ServiceItem selected = table.getSelectionModel().getSelectedItem();
 
             if (selected == null) {
-                feedbackLabel.setText("Please select a service.");
+                feedbackLabel.textProperty().bind(
+                        language.text("services.select")
+                );
                 return;
             }
 
@@ -114,12 +133,16 @@ public class ServiceView extends VBox {
             try {
                 minutes = Integer.parseInt(durationField.getText().trim());
             } catch (NumberFormatException exception) {
-                feedbackLabel.setText("Enter a whole number greater than 0.");
+                feedbackLabel.textProperty().bind(
+                        language.text("services.invalidNumber")
+                );
                 return;
             }
 
             if (minutes <= 0) {
-                feedbackLabel.setText("The duration must be greater than 0.");
+                feedbackLabel.textProperty().bind(
+                        language.text("services.invalidDuration")
+                );
                 return;
             }
 
@@ -133,15 +156,17 @@ public class ServiceView extends VBox {
                 selected.setEstimatedMinutes(previousMinutes);
                 table.refresh();
 
-                feedbackLabel.setText(
-                        "The duration could not be saved. Please try again."
+                feedbackLabel.textProperty().bind(
+                        language.text("services.error")
                 );
                 exception.printStackTrace();
                 return;
             }
 
             table.refresh();
-            feedbackLabel.setText("Duration saved.");
+            feedbackLabel.textProperty().bind(
+                    language.text("services.saved")
+            );
         });
 
         VBox.setVgrow(table, Priority.ALWAYS);

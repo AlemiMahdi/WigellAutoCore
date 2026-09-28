@@ -12,6 +12,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
+import com.wac.autocore.ui.language.LanguageManager;
 
 //Visar arbetsordrar och startar vald order.
 public class StartWorkOrderView extends VBox {
@@ -19,6 +20,8 @@ public class StartWorkOrderView extends VBox {
 
     public StartWorkOrderView() {
         setSpacing(10);
+
+        LanguageManager language = LanguageManager.getInstance();
 
         Label titleLabel = new Label("Start Work Order");
         titleLabel.setStyle("-fx-font-size: 20");
@@ -32,7 +35,18 @@ public class StartWorkOrderView extends VBox {
         Button startButton = new Button("Start Work Order");
 
         Label feedbackLabel = new Label();
+
         feedbackLabel.setWrapText(true);
+
+        Label workOrderLabel = new Label();
+
+// Uppdaterar texterna direkt vid språkbyte.
+        titleLabel.textProperty().bind(language.text("startWorkOrder.title"));
+        workOrderLabel.textProperty().bind(language.text("startWorkOrder.label"));
+        workOrderComboBox.promptTextProperty().bind(
+                language.text("startWorkOrder.prompt")
+        );
+        startButton.textProperty().bind(language.text("startWorkOrder.button"));
 
         GarageSystem garageSystem = new GarageSystem();
         WorkOrderRepository workOrderRepository = new WorkOrderRepository();
@@ -40,13 +54,17 @@ public class StartWorkOrderView extends VBox {
         MechanicRepository mechanicRepository = new MechanicRepository();
 
         if (workOrderComboBox.getItems().isEmpty()) {
-            feedbackLabel.setText("No Work Order has been found. Please create a work order first.");
+            feedbackLabel.textProperty().bind(
+                    language.text("startWorkOrder.empty")
+            );
             startButton.setDisable(true);
         }
         startButton.setOnAction(event -> {
             WorkOrder workorder = workOrderComboBox.getValue();
             if (workorder == null) {
-                feedbackLabel.setText("Please select a Work Order.");
+                feedbackLabel.textProperty().bind(
+                        language.text("startWorkOrder.select")
+                );
                 return;
             }
 
@@ -81,16 +99,22 @@ public class StartWorkOrderView extends VBox {
                         mechanicRepository.save(mechanic);
                     }
 
-                    feedbackLabel.setText(
-                            "Work order " + workorder.getId() + " has been started.");
+                    feedbackLabel.textProperty().bind(
+                            language.text("startWorkOrder.success")
+                                    .concat(" ")
+                                    .concat(String.valueOf(workorder.getId()))
+                    );
                 } catch (RuntimeException exception) {
-                    feedbackLabel.setText(
-                            "Work order was started but could not be saved.");
+                    feedbackLabel.textProperty().bind(
+                            language.text("startWorkOrder.saveError")
+                    );
                     exception.printStackTrace();
                 }
 
             } else  {
-                feedbackLabel.setText("Work order cannot be started.");
+                feedbackLabel.textProperty().bind(
+                        language.text("startWorkOrder.cannotStart")
+                );
             }
 
             //Återställer val och laddar om lista
@@ -100,8 +124,13 @@ public class StartWorkOrderView extends VBox {
 
         });
 
-        getChildren().addAll(titleLabel, new Label("Work order:"), workOrderComboBox, feedbackLabel, startButton);
-
+        getChildren().addAll(
+                titleLabel,
+                workOrderLabel,
+                workOrderComboBox,
+                feedbackLabel,
+                startButton
+        );
 
 
     }

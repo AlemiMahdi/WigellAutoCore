@@ -11,12 +11,16 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.repository.InvoiceRepository;
+import com.wac.autocore.ui.language.LanguageManager;
 
 
 
 public class CreateInvoiceView {
 
     public static VBox build(){
+
+        LanguageManager language = LanguageManager.getInstance();
+
         GarageSystem garageSystem = new GarageSystem();
 
         InvoiceRepository invoiceRepository = new InvoiceRepository();
@@ -39,13 +43,24 @@ public class CreateInvoiceView {
         Button createButton = new Button("Create invoice");
         Label statusLabel = new Label();
 
+        statusLabel.setWrapText(true);
+
+// Uppdaterar formulärets texter direkt vid språkbyte.
+        workOrderIdLabel.textProperty().bind(
+                language.text("createInvoice.workOrderId")
+        );
+        discountLabel.textProperty().bind(language.text("createInvoice.discount"));
+        createButton.textProperty().bind(language.text("createInvoice.button"));
+
         createButton.setOnAction(actionEvent -> {
             int workOrderId;
 
             try {
                 workOrderId = Integer.parseInt(workOrderIdField.getText());
             } catch(NumberFormatException e) {
-                statusLabel.setText("Work order ID has to be a number.");
+                statusLabel.textProperty().bind(
+                        language.text("createInvoice.invalidId")
+                );
                 return;
             }
             String discountCode = discoutField.getText();
@@ -55,8 +70,8 @@ public class CreateInvoiceView {
 
             if (invoice == null) {
 
-                statusLabel.setText(
-                        "Could not create invoice. Check work order ID."
+                statusLabel.textProperty().bind(
+                        language.text("createInvoice.createError")
                 );
 
             } else {
@@ -65,8 +80,8 @@ public class CreateInvoiceView {
 
                     invoiceRepository.save(invoice);
 
-                    statusLabel.setText(
-                            "Invoice created and saved."
+                    statusLabel.textProperty().bind(
+                            language.text("createInvoice.success")
                     );
 
                     workOrderIdField.clear();
@@ -75,8 +90,8 @@ public class CreateInvoiceView {
                 } catch (RuntimeException exception) {
 
                     Database.getInvoices().remove(invoice);
-                    statusLabel.setText(
-                            "Invoice could not be saved to the database."
+                    statusLabel.textProperty().bind(
+                            language.text("createInvoice.saveError")
                     );
                     exception.printStackTrace();
                 }
