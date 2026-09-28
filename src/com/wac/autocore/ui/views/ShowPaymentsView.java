@@ -5,10 +5,12 @@ import com.wac.autocore.model.Invoice;
 import com.wac.autocore.model.Payment;
 import com.wac.autocore.ui.ShowInvoiceView;
 import com.wac.autocore.ui.UiKit;
+import com.wac.autocore.ui.language.LanguageManager;
 
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.VBox;
@@ -23,12 +25,14 @@ public class ShowPaymentsView {
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     public VBox getView() {
+        LanguageManager language = LanguageManager.getInstance();
 
         TableView<Payment> table = new TableView<>();
 
-        table.setPlaceholder(
-                UiKit.emptyText("No payments found.")
-        );
+        Label emptyLabel = UiKit.emptyText("");
+        emptyLabel.textProperty().bind(language.text("payments.empty"));
+        table.setPlaceholder(emptyLabel);
+
 
 
         // Invoice – visas som "WO-1 invoice" så man ser vilken arbetsorder det gäller
@@ -40,7 +44,6 @@ public class ShowPaymentsView {
                         describeInvoice(cellData.getValue().getInvoiceId())
                 )
         );
-
 
         // Amount – fetstil och högerställd så beloppen står under varandra
         TableColumn<Payment, String> amountColumn =
@@ -93,6 +96,11 @@ public class ShowPaymentsView {
         );
         successfulColumn.setCellFactory(UiKit.<Payment>badgeCells());
 
+        invoiceColumn.textProperty().bind(language.text("payments.invoice"));
+        amountColumn.textProperty().bind(language.text("payments.amount"));
+        paymentTypeColumn.textProperty().bind(language.text("payments.type"));
+        paymentDateColumn.textProperty().bind(language.text("payments.date"));
+        successfulColumn.textProperty().bind(language.text("payments.status"));
 
         table.getColumns().addAll(
                 invoiceColumn,
@@ -118,7 +126,7 @@ public class ShowPaymentsView {
         VBox view = new VBox(24);
 
         view.getChildren().addAll(
-                UiKit.pageHeader("Payments", null),
+                UiKit.pageHeader(language.text("payments.title"), null),
                 table
         );
 
@@ -128,11 +136,13 @@ public class ShowPaymentsView {
     // Letar upp fakturan för att kunna visa dess arbetsorder-nummer.
     // Hittas den inte visas faktura-id:t i stället.
     private static String describeInvoice(int invoiceId) {
+        LanguageManager language = LanguageManager.getInstance();
         for (Invoice invoice : Database.getInvoices()) {
             if (invoice.getId() == invoiceId) {
-                return ShowInvoiceView.workOrderCode(invoice.getWorkOrderId()) + " invoice";
+                return ShowInvoiceView.workOrderCode(invoice.getWorkOrderId()) + " "
+                        + language.text("payments.invoiceSuffix").get();
             }
         }
-        return "Invoice #" + invoiceId;
+        return language.text("payments.invoiceNumber").get() + invoiceId;
     }
 }
