@@ -5,6 +5,7 @@ import com.wac.autocore.model.Customer;
 import com.wac.autocore.model.Vehicle;
 import com.wac.autocore.repository.VehicleRepository;
 import com.wac.autocore.service.GarageSystem;
+import com.wac.autocore.ui.language.LanguageManager;
 import javafx.collections.FXCollections;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -22,27 +23,29 @@ public class CreateVehicleView {
      * Returnerar en VBox som kan visas i contentPane i AutoCoreApp.
      */
     public static VBox build() {
+        LanguageManager language = LanguageManager.getInstance();
         GarageSystem garageSystem = new GarageSystem();
 
         VehicleRepository vehicleRepository = new VehicleRepository();
 
         TextField regField = new TextField();
-        regField.setPromptText("Enter registration number");
+        regField.promptTextProperty().bind(language.text("vehicle.create.regPrompt"));
 
         TextField brandField = new TextField();
-        brandField.setPromptText("Enter brand");
+        brandField.promptTextProperty().bind(language.text("vehicle.create.brandPrompt"));
 
         TextField modelField = new TextField();
-        modelField.setPromptText("Enter model");
+        modelField.promptTextProperty().bind(language.text("vehicle.create.modelPrompt"));
 
         TextField yearField = new TextField();
-        yearField.setPromptText("Enter year");
+        yearField.promptTextProperty().bind(language.text("vehicle.create.yearPrompt"));
 
         // Ägaren väljs i en lista i stället för att skriva in ett kund-id,
         // då kan användaren inte råka skriva ett id som inte finns.
         ComboBox<Customer> ownerBox = createOwnerBox();
 
         Button createButton = UiKit.primaryButton("Create vehicle");
+        createButton.textProperty().bind(language.text("vehicle.create.save"));
         Label statusLabel = UiKit.feedbackLabel(); // visar resultat/felmeddelande till användaren
 
         // Körs varje gång användaren klickar på "Create vehicle".
@@ -59,13 +62,13 @@ public class CreateVehicleView {
             try {
                 year = Integer.parseInt(yearField.getText().trim());
             } catch (NumberFormatException e) {
-                UiKit.showError(statusLabel, "Year must be a number!");
+                UiKit.showError(statusLabel, language.text("vehicle.create.invalidYear").get());
                 return; // avbryt, skapa inget fordon
             }
 
             Customer owner = ownerBox.getValue();
             if (owner == null) {
-                UiKit.showError(statusLabel, "Please choose an owner.");
+                UiKit.showError(statusLabel, language.text("vehicle.create.selectOwner").get());
                 return;
             }
             int customerId = owner.getId();
@@ -75,7 +78,7 @@ public class CreateVehicleView {
             Vehicle vehicle = garageSystem.createVehicle(registrationNumber, brand, model, year, customerId);
 
             if (vehicle == null) {
-                UiKit.showError(statusLabel, "Could not create vehicle. Check the owner.");
+                UiKit.showError(statusLabel, language.text("vehicle.create.invalidOwner").get());
                 return;
             }
 
@@ -86,12 +89,12 @@ public class CreateVehicleView {
                 // Ångrar tillägget i minnet om databassparandet misslyckas.
                 Database.getVehicles().remove(vehicle);
 
-                UiKit.showError(statusLabel, "The vehicle could not be saved. Please try again.");
+                UiKit.showError(statusLabel, language.text("vehicle.create.error").get());
                 exception.printStackTrace();
                 return;
             }
 
-            UiKit.showSuccess(statusLabel, "Vehicle created: " + vehicle.getRegistrationNumber());
+            UiKit.showSuccess(statusLabel, language.text("vehicle.create.success").get() + " " + vehicle.getRegistrationNumber());
 
             // Tömmer formuläret efter att sparandet har lyckats.
             regField.clear();
@@ -104,13 +107,13 @@ public class CreateVehicleView {
         // Rubriken ligger inne i formulärkolumnen, som i designen.
         // Märke och modell hör ihop och står därför bredvid varandra.
         VBox form = UiKit.formContainer(
-                UiKit.pageHeader("Create vehicle", null),
-                UiKit.formField("Registration number", regField),
+                UiKit.pageHeader(language.text("vehicle.create.save"), null),
+                UiKit.formField(language.text("vehicles.registration"), regField),
                 UiKit.formRow(
-                        UiKit.formField("Brand", brandField),
-                        UiKit.formField("Model", modelField)),
-                UiKit.formField("Year", yearField),
-                UiKit.formField("Owner", ownerBox),
+                        UiKit.formField(language.text("vehicles.brand"), brandField),
+                        UiKit.formField(language.text("vehicles.model"), modelField)),
+                UiKit.formField(language.text("vehicles.year"), yearField),
+                UiKit.formField(language.text("vehicles.owner"), ownerBox),
                 createButton,
                 statusLabel
         );
@@ -125,7 +128,7 @@ public class CreateVehicleView {
     private static ComboBox<Customer> createOwnerBox() {
         ComboBox<Customer> ownerBox =
                 new ComboBox<>(FXCollections.observableArrayList(Database.getCustomers()));
-        ownerBox.setPromptText("Choose owner");
+        ownerBox.promptTextProperty().bind(LanguageManager.getInstance().text("vehicle.create.ownerPrompt"));
 
         // Utan converter visar ComboBox kundens toString(), som innehåller alla fält.
         ownerBox.setConverter(new StringConverter<Customer>() {
