@@ -6,12 +6,17 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
+import com.wac.autocore.data.Database;
+import com.wac.autocore.repository.CustomerRepository;
+import com.wac.autocore.ui.language.LanguageManager;
 
 //formulär för att skapa nya kunder
 public class CreateCustomerView extends VBox {
 
     public CreateCustomerView() {
         setSpacing(10);
+
+        LanguageManager language = LanguageManager.getInstance();
 
         Label title = new Label("Create customer");
         title.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
@@ -28,6 +33,20 @@ public class CreateCustomerView extends VBox {
 
         GarageSystem garageSystem = new GarageSystem();
 
+        CustomerRepository customerRepository = new CustomerRepository();
+
+        title.textProperty().bind(language.text("customer.create.title"));
+        saveButton.textProperty().bind(language.text("customer.create.save"));
+
+        Label nameLabel = new Label();
+        nameLabel.textProperty().bind(language.text("customer.create.name"));
+
+        Label phoneLabel = new Label();
+        phoneLabel.textProperty().bind(language.text("customer.create.phone"));
+
+        Label emailLabel = new Label();
+        emailLabel.textProperty().bind(language.text("customer.create.email"));
+
         saveButton.setOnAction(event -> {
             Customer customer = garageSystem.createCustomer(
                     nameField.getText(),
@@ -35,12 +54,40 @@ public class CreateCustomerView extends VBox {
                     emailField.getText()
             );
 
-            confirmation.setText(
-                    "Customer created successfully.\n" + customer
+            try {
+                // Sparar kunden i MySQL innan vi visar en bekräftelse.
+                customerRepository.save(customer);
+            } catch (RuntimeException exception) {
+                // Tar bort kunden ur minnet om databassparandet misslyckas.
+                Database.getCustomers().remove(customer);
+
+                confirmation.textProperty().unbind();
+                confirmation.textProperty().bind(
+                        language.text("customer.create.error")
+                );
+                exception.printStackTrace();
+                return;
+            }
+
+            confirmation.textProperty().bind(
+                    language.text("customer.create.success")
+                            .concat("\n")
+                            .concat(language.text("customers.id"))
+                            .concat(": " + customer.getId() + "\n")
+                            .concat(language.text("customer.create.name"))
+                            .concat(" " + customer.getName() + "\n")
+                            .concat(language.text("customer.create.phone"))
+                            .concat(" " + customer.getPhone() + "\n")
+                            .concat(language.text("customer.create.email"))
+                            .concat(" " + customer.getEmail() + "\n")
+                            .concat(language.text("customers.vip"))
+                            .concat(": ")
+                            .concat(language.text(
+                                    customer.isVip() ? "common.yes" : "common.no"
+                            ))
             );
 
-
-// fälten töms så att nästa kund kan registreras
+            // Tömmer fälten först när kunden har sparats.
             nameField.clear();
             phoneField.clear();
             emailField.clear();
@@ -48,11 +95,11 @@ public class CreateCustomerView extends VBox {
 
         getChildren().addAll(
                 title,
-                new Label("Name:"),
+                nameLabel,
                 nameField,
-                new Label("Phone:"),
+                phoneLabel,
                 phoneField,
-                new Label("Email:"),
+                emailLabel,
                 emailField,
                 saveButton,
                 confirmation
