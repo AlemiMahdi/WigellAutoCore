@@ -2,10 +2,12 @@ package com.wac.autocore.ui;
 
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Invoice;
+import com.wac.autocore.ui.language.LanguageManager;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.VBox;
@@ -18,14 +20,18 @@ import java.util.Collections;
 public class ShowInvoiceView {
 
     public static VBox build() {
+        LanguageManager language = LanguageManager.getInstance();
 
         // "+ New invoice" byter sida via Navigator, så att menyn också
         // markerar "Create invoice" som aktiv (precis som vid ett menyklick)
         Button newInvoiceButton = UiKit.primaryButton("+ New invoice");
+        newInvoiceButton.textProperty().bind(language.text("invoices.new"));
         newInvoiceButton.setOnAction(event -> Navigator.goTo("create-invoice"));
 
         TableView<Invoice> table = new TableView<>();
-        table.setPlaceholder(UiKit.emptyText("No invoices yet."));
+        Label emptyLabel = UiKit.emptyText("");
+        emptyLabel.textProperty().bind(language.text("invoices.empty"));
+        table.setPlaceholder(emptyLabel);
 
         // Arbetsorder visas som "WO-<id>" som i designen
         TableColumn<Invoice, String> workOrderCol = new TableColumn<>("Work order");
@@ -59,6 +65,13 @@ public class ShowInvoiceView {
                 new SimpleStringProperty(cellData.getValue().isPaid() ? "Paid" : "Unpaid"));
         paidCol.setCellFactory(UiKit.<Invoice>badgeCells());
 
+        workOrderCol.textProperty().bind(language.text("invoices.workOrderId"));
+        invoiceDateCol.textProperty().bind(language.text("invoices.date"));
+        amountCol.textProperty().bind(language.text("invoices.amount"));
+        discountCol.textProperty().bind(language.text("invoices.discount"));
+        totalAmountCol.textProperty().bind(language.text("invoices.total"));
+        paidCol.textProperty().bind(language.text("invoices.status"));
+
         table.getColumns().addAll(workOrderCol, invoiceDateCol, amountCol, discountCol, totalAmountCol, paidCol);
 
         // Kopia av listan, vänd så att nyaste fakturan hamnar överst.
@@ -69,7 +82,7 @@ public class ShowInvoiceView {
 
         UiKit.styleTable(table);
 
-        VBox view = new VBox(24, UiKit.pageHeader("Invoices", newInvoiceButton), table);
+        VBox view = new VBox(24, UiKit.pageHeader(language.text("invoices.title"), newInvoiceButton), table);
         return view;
     }
 
