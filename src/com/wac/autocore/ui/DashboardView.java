@@ -8,6 +8,7 @@ import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.model.Vehicle;
 import com.wac.autocore.model.WorkOrder;
 import com.wac.autocore.ui.language.LanguageManager;
+import javafx.beans.value.ObservableValue;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.layout.ColumnConstraints;
@@ -57,9 +58,9 @@ public class DashboardView extends VBox {
         );
     }
 
-    // ------------------------------------------------------------
+
     // Rad 1: fyra nyckeltal
-    // ------------------------------------------------------------
+
 
     private HBox createStatRow() {
         // Aktiva = allt som inte är klart (CREATED eller IN_PROGRESS)
@@ -82,14 +83,15 @@ public class DashboardView extends VBox {
                 .filter(b -> "BOOKED".equals(b.getStatus()))
                 .count();
 
-        VBox activeCard = createStatCard("ACTIVE WORK ORDERS",
-                String.valueOf(activeCount), "Created or in progress");
-        VBox revenueCard = createStatCard("REVENUE THIS MONTH",
-                formatSek(revenue), "Invoiced in " + monthName(thisMonth));
-        VBox customersCard = createStatCard("CUSTOMERS",
-                String.valueOf(customerCount), "Registered customers");
-        VBox pendingCard = createStatCard("PENDING APPROVAL",
-                String.valueOf(pendingCount), "Bookings without work order");
+        VBox activeCard = createStatCard(language.text("dashboard.activeTitle"),
+                String.valueOf(activeCount), language.text("dashboard.activeSubtitle"));
+        // Månadens namn läggs till efter texten, t.ex. "Fakturerat i september"
+        VBox revenueCard = createStatCard(language.text("dashboard.revenueTitle"),
+                formatSek(revenue), language.text("dashboard.revenueSubtitle").concat(" " + monthName(thisMonth)));
+        VBox customersCard = createStatCard(language.text("dashboard.customersTitle"),
+                String.valueOf(customerCount), language.text("dashboard.customersSubtitle"));
+        VBox pendingCard = createStatCard(language.text("dashboard.pendingTitle"),
+                String.valueOf(pendingCount), language.text("dashboard.pendingSubtitle"));
 
         // Värdet i sista kortet ska synas i accentfärg (som i designen)
         pendingCard.getChildren().get(1).getStyleClass().add("stat-value-accent");
@@ -97,14 +99,17 @@ public class DashboardView extends VBox {
         return new HBox(20, activeCard, revenueCard, customersCard, pendingCard);
     }
 
-    private VBox createStatCard(String title, String value, String subtitle) {
-        Label titleLabel = new Label(title);
+    // Titel och undertitel är bundna till språkfilen, värdet är en vanlig siffra
+    private VBox createStatCard(ObservableValue<String> title, String value, ObservableValue<String> subtitle) {
+        Label titleLabel = new Label();
+        titleLabel.textProperty().bind(title);
         titleLabel.getStyleClass().add("stat-title");
 
         Label valueLabel = new Label(value);
         valueLabel.getStyleClass().add("stat-value");
 
-        Label subtitleLabel = new Label(subtitle);
+        Label subtitleLabel = new Label();
+        subtitleLabel.textProperty().bind(subtitle);
         subtitleLabel.getStyleClass().add("stat-subtitle");
 
         VBox card = new VBox(6, titleLabel, valueLabel, subtitleLabel);
@@ -113,9 +118,9 @@ public class DashboardView extends VBox {
         return card;
     }
 
-    // ------------------------------------------------------------
+
     // Rad 2: veckodiagram (ca 60 %) + senaste arbetsordrar (ca 40 %)
-    // ------------------------------------------------------------
+
 
     private GridPane createChartRow() {
         // GridPane med procentkolumner ger ett fast förhållande 60/40,
@@ -140,10 +145,12 @@ public class DashboardView extends VBox {
     }
 
     private VBox createWeeklyChart() {
-        Label title = new Label("Weekly work orders");
+        Label title = new Label();
+        title.textProperty().bind(language.text("dashboard.weeklyTitle"));
         title.getStyleClass().add("card-title");
 
-        Label hint = new Label("Work orders per booking date, this week");
+        Label hint = new Label();
+        hint.textProperty().bind(language.text("dashboard.weeklyHint"));
         hint.getStyleClass().add("card-hint");
 
         // Räknar arbetsordrar per veckodag (index 0 = måndag)
@@ -197,7 +204,8 @@ public class DashboardView extends VBox {
         Label valueLabel = new Label(count > 0 ? String.valueOf(count) : "");
         valueLabel.getStyleClass().add("chart-value");
 
-        Label dayLabel = new Label(day.getDisplayName(TextStyle.SHORT, Locale.ENGLISH));
+        // Dagens kortnamn på valt språk, t.ex. "mån" eller "Mon"
+        Label dayLabel = new Label(day.getDisplayName(TextStyle.SHORT, currentLocale()));
         dayLabel.getStyleClass().add("chart-day");
 
         VBox column = new VBox(4, valueLabel, bar, dayLabel);
@@ -207,7 +215,8 @@ public class DashboardView extends VBox {
     }
 
     private VBox createRecentWorkOrders() {
-        Label title = new Label("Recent work orders");
+        Label title = new Label();
+        title.textProperty().bind(language.text("dashboard.recentTitle"));
         title.getStyleClass().add("card-title");
 
         VBox card = new VBox(6, title);
@@ -223,7 +232,7 @@ public class DashboardView extends VBox {
         });
 
         if (recent.isEmpty()) {
-            card.getChildren().add(createEmptyText("No work orders yet"));
+            card.getChildren().add(createEmptyText("dashboard.noWorkOrders"));
             return card;
         }
 
@@ -275,18 +284,18 @@ public class DashboardView extends VBox {
         return badge;
     }
 
-    // ------------------------------------------------------------
+
     // Rad 3: kanban med tre kolumner
-    // ------------------------------------------------------------
+
 
     private HBox createKanbanRow() {
         return new HBox(20,
-                createKanbanColumn("Pending", "CREATED"),
-                createKanbanColumn("In progress", "IN_PROGRESS"),
-                createKanbanColumn("Ready for pickup", "COMPLETED"));
+                createKanbanColumn("dashboard.pending", "CREATED"),
+                createKanbanColumn("dashboard.inProgress", "IN_PROGRESS"),
+                createKanbanColumn("dashboard.readyForPickup", "COMPLETED"));
     }
 
-    private VBox createKanbanColumn(String title, String status) {
+    private VBox createKanbanColumn(String titleKey, String status) {
         List<WorkOrder> orders = new ArrayList<WorkOrder>();
         for (WorkOrder wo : Database.getWorkOrders()) {
             if (status.equals(wo.getStatus())) {
@@ -294,7 +303,10 @@ public class DashboardView extends VBox {
             }
         }
 
-        Label heading = new Label(title + " (" + orders.size() + ")");
+        // Rubrik + antal, t.ex. "Pågående (1)". concat gör att antalet
+        // följer med när texten byter språk.
+        Label heading = new Label();
+        heading.textProperty().bind(language.text(titleKey).concat(" (" + orders.size() + ")"));
         heading.getStyleClass().add("card-title");
 
         VBox column = new VBox(10, heading);
@@ -302,7 +314,7 @@ public class DashboardView extends VBox {
         makeEqualWidth(column);
 
         if (orders.isEmpty()) {
-            column.getChildren().add(createEmptyText("Nothing here right now"));
+            column.getChildren().add(createEmptyText("dashboard.nothingHere"));
         }
         for (WorkOrder wo : orders) {
             column.getChildren().add(createKanbanItem(wo));
@@ -327,9 +339,9 @@ public class DashboardView extends VBox {
         return item;
     }
 
-    // ------------------------------------------------------------
+
     // Små hjälpmetoder
-    // ------------------------------------------------------------
+
 
     /** Får flera kort i samma HBox att dela lika på bredden. */
     private void makeEqualWidth(Region region) {
@@ -339,10 +351,17 @@ public class DashboardView extends VBox {
         region.setPrefWidth(0);
     }
 
-    private Label createEmptyText(String text) {
-        Label label = new Label(text);
+    // Dämpad text som byter språk direkt, t.ex. "Inget här just nu"
+    private Label createEmptyText(String key) {
+        Label label = new Label();
+        label.textProperty().bind(language.text(key));
         label.getStyleClass().add("empty-text");
         return label;
+    }
+
+    // Java-språket som hör till valt språk ("sv" eller "en"), för månader och veckodagar
+    private Locale currentLocale() {
+        return new Locale(language.text("language.code").get());
     }
 
     private String formatSek(double amount) {
@@ -351,7 +370,7 @@ public class DashboardView extends VBox {
     }
 
     private String monthName(YearMonth month) {
-        return month.getMonth().getDisplayName(TextStyle.FULL, Locale.ENGLISH);
+        return month.getMonth().getDisplayName(TextStyle.FULL, currentLocale());
     }
 
     private String workOrderCode(WorkOrder wo) {
@@ -372,7 +391,7 @@ public class DashboardView extends VBox {
             return String.join(", ", names);
         }
         Booking booking = findBooking(wo.getBookingId());
-        return booking != null ? booking.getDescription() : "Work order";
+        return booking != null ? booking.getDescription() : language.text("dashboard.workOrder").get();
     }
 
     private Booking findBooking(int bookingId) {
@@ -399,7 +418,7 @@ public class DashboardView extends VBox {
 
     private String vehicleText(Vehicle vehicle) {
         if (vehicle == null) {
-            return "Unknown vehicle";
+            return language.text("common.unknownVehicle").get();
         }
         return vehicle.getRegistrationNumber() + " · " + vehicle.getBrand() + " " + vehicle.getModel();
     }
@@ -412,7 +431,7 @@ public class DashboardView extends VBox {
                 }
             }
         }
-        return "Unknown customer";
+        return language.text("common.unknownCustomer").get();
     }
 
     private String mechanicName(int mechanicId) {
@@ -421,6 +440,6 @@ public class DashboardView extends VBox {
                 return mechanic.getName();
             }
         }
-        return "No mechanic";
+        return language.text("bookings.notAssigned").get();
     }
 }
