@@ -10,6 +10,7 @@ import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.repository.MechanicRepository;
 import com.wac.autocore.repository.WorkOrderRepository;
 import com.wac.autocore.service.GarageSystem;
+import com.wac.autocore.ui.language.LanguageManager;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
@@ -24,6 +25,7 @@ public class CompleteWorkOrderView {
     // Kortens maxbredd – ungefär som i designen
     private static final double CARD_MAX_WIDTH = 680;
 
+    private final LanguageManager language = LanguageManager.getInstance();
     private final GarageSystem garageSystem = new GarageSystem();
     private final WorkOrderRepository workOrderRepository = new WorkOrderRepository();
     private final BookingRepository bookingRepository = new BookingRepository();
@@ -63,6 +65,7 @@ public class CompleteWorkOrderView {
         for (WorkOrder order : Database.getWorkOrders()) {
             if ("IN_PROGRESS".equals(order.getStatus())) {
                 Button completeButton = UiKit.successButton("Complete work order");
+                completeButton.textProperty().bind(language.text("completeWorkOrder.button"));
                 int workOrderId = order.getId();
                 completeButton.setOnAction(event -> {
                     if (completeWorkOrder(workOrderId)) {
@@ -91,8 +94,8 @@ public class CompleteWorkOrderView {
         badgeRow.setAlignment(Pos.CENTER_LEFT);
 
         Mechanic mechanic = findMechanic(order.getMechanicId());
-        Label mechanicLabel = new Label("Mechanic: "
-                + (mechanic == null ? "Not assigned" : mechanic.getName()));
+        Label mechanicLabel = new Label(language.text("createWorkOrder.mechanic").get() + " "
+                + (mechanic == null ? language.text("bookings.notAssigned").get() : mechanic.getName()));
         mechanicLabel.getStyleClass().add("detail-text");
 
         // Checklistan är ett stöd för mekanikern – den stoppar inte slutförandet
@@ -106,7 +109,9 @@ public class CompleteWorkOrderView {
             }
         }
         if (checklist.getChildren().isEmpty()) {
-            checklist.getChildren().add(UiKit.emptyText("No services on this work order."));
+            Label noServicesLabel = UiKit.emptyText("");
+            noServicesLabel.textProperty().bind(language.text("completeWorkOrder.noServices"));
+            checklist.getChildren().add(noServicesLabel);
         }
 
         HBox buttonRow = new HBox(completeButton);
@@ -121,14 +126,17 @@ public class CompleteWorkOrderView {
     // Visas när ingen order är påbörjad – med en genväg till "Start work order".
     private VBox createEmptyCard() {
         Label heading = new Label("No started work orders");
+        heading.textProperty().bind(language.text("completeWorkOrder.emptyTitle"));
         heading.getStyleClass().add("card-heading");
 
         Button startButton = UiKit.primaryButton("Go to Start work order");
+        startButton.textProperty().bind(language.text("completeWorkOrder.goToStart"));
         startButton.setOnAction(event -> Navigator.goTo("start-work-order"));
 
-        VBox card = UiKit.card(heading,
-                UiKit.emptyText("Only work orders with status STARTED can be completed."),
-                startButton);
+        Label hintLabel = UiKit.emptyText("");
+        hintLabel.textProperty().bind(language.text("completeWorkOrder.emptyHint"));
+
+        VBox card = UiKit.card(heading, hintLabel, startButton);
         card.getStyleClass().add("detail-card");
         card.setMaxWidth(CARD_MAX_WIDTH);
         return card;
@@ -146,11 +154,11 @@ public class CompleteWorkOrderView {
             }
         }
         if (foundOrder == null) {
-            UiKit.showError(statusLabel, "Work order does not exist");
+            UiKit.showError(statusLabel, language.text("completeWorkOrder.notFound").get());
             return false;
         }
         if (!foundOrder.getStatus().equals("IN_PROGRESS")) {
-            UiKit.showError(statusLabel, "Cannot complete work order. Has to be on status: IN_PROGRESS.");
+            UiKit.showError(statusLabel, language.text("completeWorkOrder.invalidStatus").get());
             return false;
         }
 
@@ -172,10 +180,10 @@ public class CompleteWorkOrderView {
                 mechanicRepository.save(mechanic);
             }
 
-            UiKit.showSuccess(statusLabel, "Work order completed");
+            UiKit.showSuccess(statusLabel, language.text("completeWorkOrder.success").get());
         } catch (RuntimeException exception) {
             UiKit.showError(statusLabel,
-                    "Work order was completed but could not be saved.");
+                    language.text("completeWorkOrder.error").get());
             exception.printStackTrace();
         }
         // Ordern är slutförd i minnet även om sparandet misslyckades, så korten byggs om
@@ -223,6 +231,6 @@ public class CompleteWorkOrderView {
                 }
             }
         }
-        return "Unknown vehicle";
+        return language.text("common.unknownVehicle").get();
     }
 }
