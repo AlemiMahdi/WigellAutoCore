@@ -1,5 +1,6 @@
 package com.wac.autocore.ui;
 
+import com.wac.autocore.ui.language.LanguageManager;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.data.HibernateUtil;
 import com.wac.autocore.model.*;
@@ -15,15 +16,14 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
+import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+
 
 
 import java.util.HashMap;
@@ -55,6 +55,8 @@ public class AutoCoreApp extends Application {
 
     // Sant om data inte gick att läsa från MySQL vid start
     private boolean offlineMode = false;
+
+    private final LanguageManager language = LanguageManager.getInstance();
 
     @Override
     public void start(Stage primaryStage) {
@@ -459,18 +461,50 @@ public class AutoCoreApp extends Application {
     // Header och offline-banner
     // ------------------------------------------------------------
 
-    private VBox createHeader() {
+    private StackPane createHeader() {
         Label title = new Label("WIGELL AUTOCORE");
         title.getStyleClass().add("app-title");
 
-        Label subtitle = new Label("A Wigell Group Company");
+        Label subtitle = new Label();
+        subtitle.textProperty().bind(language.text("header.subtitle"));
         subtitle.getStyleClass().add("app-subtitle");
 
-        VBox header = new VBox(4, title, subtitle);
+        // Rubrik och underrubrik ligger centrerade mitt i sidhuvudet
+        VBox titleBox = new VBox(4, title, subtitle);
+        titleBox.setAlignment(Pos.CENTER);
+
+        // Språkväljaren läggs ovanpå, men skjuts ut till höger kant
+        MenuButton languageMenu = createLanguageMenu();
+        StackPane.setAlignment(languageMenu, Pos.CENTER_RIGHT);
+
+        StackPane header = new StackPane(titleBox, languageMenu);
         header.getStyleClass().add("app-header");
-        header.setAlignment(Pos.CENTER);
         header.setPadding(new Insets(18));
         return header;
+    }
+
+    /** Knapp med rullgardinsmeny för att byta språk (Svenska/English).*/
+    private MenuButton createLanguageMenu() {
+        MenuButton languageMenu = new MenuButton();
+        languageMenu.textProperty().bind(language.text("language.current"));
+        languageMenu.accessibleTextProperty().bind(language.text("language.label"));
+        languageMenu.getStyleClass().add("language-menu");
+
+        // Språknamnet översätts inte: man skriver alltid språket på sitt eget språk
+        RadioMenuItem swedish = new RadioMenuItem("Svenska");
+        RadioMenuItem english = new RadioMenuItem("English");
+
+        // ToggleGroup: bara ett av valen kan vara markerat åt gången
+        ToggleGroup languageGroup = new ToggleGroup();
+        swedish.setToggleGroup(languageGroup);
+        english.setToggleGroup(languageGroup);
+        swedish.setSelected(true); // appen startar på svenska
+
+        swedish.setOnAction(actionEvent -> language.setLanguage("sv"));
+        english.setOnAction(actionEvent -> language.setLanguage("en"));
+
+        languageMenu.getItems().addAll(swedish, english);
+        return languageMenu;
     }
 
     private HBox createOfflineBanner() {
