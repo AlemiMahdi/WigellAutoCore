@@ -7,6 +7,7 @@ import com.wac.autocore.model.Vehicle;
 import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.service.GarageSystem;
 import com.wac.autocore.ui.UiKit;
+import com.wac.autocore.ui.language.LanguageManager;
 
 import javafx.collections.FXCollections;
 import javafx.geometry.Pos;
@@ -27,6 +28,7 @@ import java.time.format.DateTimeParseException;
 // Formulär för att boka in ett fordon: välj fordon, datum, mekaniker och skriv en beskrivning.
 public class CreateBookingView {
 
+    private final LanguageManager language = LanguageManager.getInstance();
     private final GarageSystem garageSystem = new GarageSystem();
 
     public VBox getView() {
@@ -36,34 +38,35 @@ public class CreateBookingView {
         ComboBox<Vehicle> vehicleCombo = new ComboBox<>(
                 FXCollections.observableArrayList(Database.getVehicles())
         );
-        vehicleCombo.setPromptText("Select vehicle");
+        vehicleCombo.promptTextProperty().bind(language.text("createBooking.vehiclePrompt"));
         vehicleCombo.setConverter(vehicleConverter());
         UiKit.keepPromptWhenCleared(vehicleCombo);
 
         DatePicker datePicker = new DatePicker();
-        datePicker.setPromptText("Select date");
+        datePicker.promptTextProperty().bind(language.text("createBooking.datePrompt"));
 
         TextField startTimeField = new TextField();
         startTimeField.setPromptText("HH:mm");
 
         TextField durationField = new TextField();
-        durationField.setPromptText("Example: 60");
+        durationField.promptTextProperty().bind(language.text("createBooking.durationPrompt"));
 
         ComboBox<Mechanic> mechanicCombo = new ComboBox<>(
                 FXCollections.observableArrayList(Database.getMechanics())
         );
-        mechanicCombo.setPromptText("Select mechanic");
+        mechanicCombo.promptTextProperty().bind(language.text("createBooking.mechanicPrompt"));
         mechanicCombo.setConverter(mechanicConverter());
         UiKit.keepPromptWhenCleared(mechanicCombo);
 
         TextArea descriptionField = new TextArea();
-        descriptionField.setPromptText("What should be done?");
+        descriptionField.promptTextProperty().bind(language.text("createBooking.descriptionPrompt"));
         descriptionField.setPrefRowCount(3);
         descriptionField.setWrapText(true);
 
         Label messageLabel = UiKit.feedbackLabel();
 
         Button createButton = UiKit.primaryButton("Create booking");
+        createButton.textProperty().bind(language.text("createBooking.button"));
 
         BookingRepository bookingRepository = new BookingRepository();
 
@@ -72,7 +75,7 @@ public class CreateBookingView {
 
             Vehicle vehicle = vehicleCombo.getValue();
             if (vehicle == null) {
-                UiKit.showError(messageLabel, "Please select a vehicle.");
+                UiKit.showError(messageLabel, language.text("createBooking.selectVehicle").get());
                 return;
 
             }
@@ -80,7 +83,7 @@ public class CreateBookingView {
 
             LocalDate date = datePicker.getValue();
             if (date == null) {
-                UiKit.showError(messageLabel, "Please select a date.");
+                UiKit.showError(messageLabel, language.text("createBooking.selectDate").get());
                 return;
             }
 
@@ -88,7 +91,7 @@ public class CreateBookingView {
             try {
                 startTime = LocalTime.parse(startTimeField.getText().trim());
             } catch (DateTimeParseException exception) {
-                UiKit.showError(messageLabel, "Please enter start time as HH:mm.");
+                UiKit.showError(messageLabel, language.text("createBooking.invalidStartTime").get());
                 return;
             }
 
@@ -96,18 +99,18 @@ public class CreateBookingView {
             try {
                 durationMinutes = Integer.parseInt(durationField.getText().trim());
             } catch (NumberFormatException exception) {
-                UiKit.showError(messageLabel, "Please enter a valid duration.");
+                UiKit.showError(messageLabel, language.text("createBooking.invalidDuration").get());
                 return;
             }
 
             if (durationMinutes <= 0) {
-                UiKit.showError(messageLabel, "Duration must be greater than 0.");
+                UiKit.showError(messageLabel, language.text("createBooking.durationGreaterThanZero").get());
                 return;
             }
 
             Mechanic mechanic = mechanicCombo.getValue();
             if (mechanic == null) {
-                UiKit.showError(messageLabel, "Please select a mechanic.");
+                UiKit.showError(messageLabel, language.text("createBooking.selectMechanic").get());
                 return;
             }
 
@@ -115,7 +118,7 @@ public class CreateBookingView {
                     mechanic.getId(), date, startTime, durationMinutes
             );
             if (overlapping) {
-                UiKit.showError(messageLabel, "The mechanic already has a booking during this time.");
+                UiKit.showError(messageLabel, language.text("createBooking.overlapping").get());
                 return;
             }
 
@@ -125,7 +128,7 @@ public class CreateBookingView {
             Booking booking = garageSystem.createBooking(vehicleId, date, description);
 
             if (booking == null) {
-                UiKit.showError(messageLabel, "Booking could not be created.");
+                UiKit.showError(messageLabel, language.text("createBooking.createError").get());
                 return;
             }
             booking.setStartTime(startTime);
@@ -138,12 +141,12 @@ public class CreateBookingView {
                 // Tar bort bokningen ur minnet om databassparandet misslyckades.
                 Database.getBookings().remove(booking);
 
-                UiKit.showError(messageLabel, "Booking could not be saved. Please try again.");
+                UiKit.showError(messageLabel, language.text("createBooking.saveError").get());
                 exception.printStackTrace();
                 return;
             }
 
-            UiKit.showSuccess(messageLabel, "Booking created successfully.");
+            UiKit.showSuccess(messageLabel, language.text("createBooking.success").get());
 
             // Tömmer formuläret så att nästa bokning kan skrivas in direkt
             vehicleCombo.getSelectionModel().clearSelection();
@@ -157,17 +160,17 @@ public class CreateBookingView {
         });
 
         VBox form = UiKit.formContainer(
-                UiKit.pageHeader("Create booking", null),
-                UiKit.formField("Vehicle", vehicleCombo),
+                UiKit.pageHeader(language.text("createBooking.title"), null),
+                UiKit.formField(language.text("bookings.vehicle"), vehicleCombo),
                 UiKit.formRow(
-                        UiKit.formField("Date", datePicker),
-                        UiKit.formField("Start time", startTimeField)
+                        UiKit.formField(language.text("bookings.date"), datePicker),
+                        UiKit.formField(language.text("bookings.startTime"), startTimeField)
                 ),
                 UiKit.formRow(
-                        UiKit.formField("Duration (minutes)", durationField),
-                        UiKit.formField("Mechanic", mechanicCombo)
+                        UiKit.formField(language.text("createBooking.durationLabel"), durationField),
+                        UiKit.formField(language.text("bookings.mechanic"), mechanicCombo)
                 ),
-                UiKit.formField("Description", descriptionField),
+                UiKit.formField(language.text("bookings.description"), descriptionField),
                 createButton,
                 messageLabel
         );
