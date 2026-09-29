@@ -1,16 +1,19 @@
 package com.wac.autocore.ui;
 
+import com.wac.autocore.data.Database;
+import com.wac.autocore.model.Customer;
 import com.wac.autocore.model.Vehicle;
+import com.wac.autocore.repository.VehicleRepository;
 import com.wac.autocore.service.GarageSystem;
-import javafx.geometry.Insets;
+import com.wac.autocore.ui.language.LanguageManager;
+import javafx.collections.FXCollections;
+import javafx.geometry.Pos;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
-import com.wac.autocore.data.Database;
-import com.wac.autocore.repository.VehicleRepository;
-import com.wac.autocore.ui.language.LanguageManager;
+import javafx.util.StringConverter;
 
 
 public class CreateVehicleView {
@@ -20,56 +23,30 @@ public class CreateVehicleView {
      * Returnerar en VBox som kan visas i contentPane i AutoCoreApp.
      */
     public static VBox build() {
-
         LanguageManager language = LanguageManager.getInstance();
         GarageSystem garageSystem = new GarageSystem();
 
         VehicleRepository vehicleRepository = new VehicleRepository();
 
-        // GridPane ger oss ett rutnät (rader/kolumner) att placera
-        // labels och textfält i, som ett formulär.
-        GridPane form = new GridPane();
-        form.setHgap(10); // horisontellt avstånd mellan kolumner
-        form.setVgap(10); // vertikalt avstånd mellan rader
-
-        Label regLabel = new Label("Registreringsnummer:");
         TextField regField = new TextField();
+        regField.promptTextProperty().bind(language.text("vehicle.create.regPrompt"));
 
-        Label brandLabel = new Label("Märke:");
         TextField brandField = new TextField();
+        brandField.promptTextProperty().bind(language.text("vehicle.create.brandPrompt"));
 
-        Label modelLabel = new Label("Model:");
         TextField modelField = new TextField();
+        modelField.promptTextProperty().bind(language.text("vehicle.create.modelPrompt"));
 
-        Label yearLabel = new Label("År:");
         TextField yearField = new TextField();
+        yearField.promptTextProperty().bind(language.text("vehicle.create.yearPrompt"));
 
-        Label customerLabel = new Label("Kund-Id");
-        TextField customerField = new TextField();
+        // Ägaren väljs i en lista i stället för att skriva in ett kund-id,
+        // då kan användaren inte råka skriva ett id som inte finns.
+        ComboBox<Customer> ownerBox = createOwnerBox();
 
-        // Placera varje label/fält i rätt kolumn (0/1) och rad (0-4).
-        form.add(regLabel, 0, 0);
-        form.add(regField, 1, 0);
-        form.add(brandLabel, 0, 1);
-        form.add(brandField, 1, 1);
-        form.add(modelLabel, 0, 2);
-        form.add(modelField, 1, 2);
-        form.add(yearLabel, 0, 3);
-        form.add(yearField, 1, 3);
-        form.add(customerLabel, 0, 4);
-        form.add(customerField, 1, 4);
-
-        Button createButton = new Button("Create vehicle");
-        Label statusLabel = new Label(); // visar resultat/felmeddelande till användaren
-
-        statusLabel.setWrapText(true);
-
-        regLabel.textProperty().bind(language.text("vehicle.create.registration"));
-        brandLabel.textProperty().bind(language.text("vehicle.create.brand"));
-        modelLabel.textProperty().bind(language.text("vehicle.create.model"));
-        yearLabel.textProperty().bind(language.text("vehicle.create.year"));
-        customerLabel.textProperty().bind(language.text("vehicle.create.customerId"));
+        Button createButton = UiKit.primaryButton("Create vehicle");
         createButton.textProperty().bind(language.text("vehicle.create.save"));
+        Label statusLabel = UiKit.feedbackLabel(); // visar resultat/felmeddelande till användaren
 
         // Körs varje gång användaren klickar på "Create vehicle".
         createButton.setOnAction(actionEvent -> {
@@ -78,29 +55,30 @@ public class CreateVehicleView {
             String model = modelField.getText();
 
             int year;
-            int customerId;
 
-            // Textfälten ger oss bara String, så vi måste konvertera
-            // år och kund-id till int. Om användaren skrivit bokstäver
+            // Textfältet ger oss bara String, så vi måste konvertera
+            // året till int. Om användaren skrivit bokstäver
             // istället för siffror kastas NumberFormatException.
             try {
-                year = Integer.parseInt(yearField.getText());
-                customerId = Integer.parseInt(customerField.getText());
+                year = Integer.parseInt(yearField.getText().trim());
             } catch (NumberFormatException e) {
-                statusLabel.textProperty().bind(
-                        language.text("vehicle.create.invalidNumbers")
-                );
+                UiKit.showError(statusLabel, language.text("vehicle.create.invalidYear").get());
                 return; // avbryt, skapa inget fordon
             }
+
+            Customer owner = ownerBox.getValue();
+            if (owner == null) {
+                UiKit.showError(statusLabel, language.text("vehicle.create.selectOwner").get());
+                return;
+            }
+            int customerId = owner.getId();
 
             // GarageSystem returnerar null om kund-id:t inte finns,
             // istället för att kasta ett undantag - så vi måste kolla själva.
             Vehicle vehicle = garageSystem.createVehicle(registrationNumber, brand, model, year, customerId);
 
             if (vehicle == null) {
-                statusLabel.textProperty().bind(
-                        language.text("vehicle.create.invalidCustomer")
-                );
+                UiKit.showError(statusLabel, language.text("vehicle.create.invalidOwner").get());
                 return;
             }
 
@@ -111,30 +89,66 @@ public class CreateVehicleView {
                 // Ångrar tillägget i minnet om databassparandet misslyckas.
                 Database.getVehicles().remove(vehicle);
 
-                statusLabel.textProperty().bind(
-                        language.text("vehicle.create.error")
-                );
+                UiKit.showError(statusLabel, language.text("vehicle.create.error").get());
                 exception.printStackTrace();
                 return;
             }
 
-            statusLabel.textProperty().bind(
-                    language.text("vehicle.create.success")
-                            .concat(" ")
-                            .concat(vehicle.getRegistrationNumber())
-            );
+            UiKit.showSuccess(statusLabel, language.text("vehicle.create.success").get() + " " + vehicle.getRegistrationNumber());
 
-// Tömmer formuläret efter att sparandet har lyckats.
+            // Tömmer formuläret efter att sparandet har lyckats.
             regField.clear();
             brandField.clear();
             modelField.clear();
             yearField.clear();
-            customerField.clear();
+            ownerBox.getSelectionModel().clearSelection();
         });
 
-        VBox root = new VBox(15, form, createButton, statusLabel);
-        root.setPadding(new Insets(20));
+        // Rubriken ligger inne i formulärkolumnen, som i designen.
+        // Märke och modell hör ihop och står därför bredvid varandra.
+        VBox form = UiKit.formContainer(
+                UiKit.pageHeader(language.text("vehicle.create.save"), null),
+                UiKit.formField(language.text("vehicles.registration"), regField),
+                UiKit.formRow(
+                        UiKit.formField(language.text("vehicles.brand"), brandField),
+                        UiKit.formField(language.text("vehicles.model"), modelField)),
+                UiKit.formField(language.text("vehicles.year"), yearField),
+                UiKit.formField(language.text("vehicles.owner"), ownerBox),
+                createButton,
+                statusLabel
+        );
 
+        // Yttre VBox som centrerar formulärkolumnen högst upp i innehållsytan
+        VBox root = new VBox(form);
+        root.setAlignment(Pos.TOP_CENTER);
         return root;
+    }
+
+    /** Skapar listan med alla kunder. Kunden visas med sitt namn i listan. */
+    private static ComboBox<Customer> createOwnerBox() {
+        ComboBox<Customer> ownerBox =
+                new ComboBox<>(FXCollections.observableArrayList(Database.getCustomers()));
+        ownerBox.promptTextProperty().bind(LanguageManager.getInstance().text("vehicle.create.ownerPrompt"));
+
+        // Utan converter visar ComboBox kundens toString(), som innehåller alla fält.
+        ownerBox.setConverter(new StringConverter<Customer>() {
+            @Override
+            public String toString(Customer customer) {
+                return customer == null ? "" : customer.getName();
+            }
+
+            @Override
+            public Customer fromString(String text) {
+                return null; // behövs inte, listan är inte redigerbar
+            }
+        });
+
+        UiKit.keepPromptWhenCleared(ownerBox);
+
+        // Förvald första kund, som i designen, så att formuläret går snabbt att fylla i
+        if (!ownerBox.getItems().isEmpty()) {
+            ownerBox.getSelectionModel().selectFirst();
+        }
+        return ownerBox;
     }
 }

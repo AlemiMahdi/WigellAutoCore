@@ -2,89 +2,87 @@ package com.wac.autocore.ui;
 
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Mechanic;
-import javafx.beans.property.ReadOnlyStringWrapper;
-import javafx.collections.FXCollections;
+import com.wac.autocore.ui.language.LanguageManager;
+import javafx.geometry.Pos;
 import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import com.wac.autocore.ui.language.LanguageManager;
 
-//visar systemets befintliga mekaniker i en tabell
+import java.util.List;
+
+// Visar systemets mekaniker som kort, två per rad.
 public class MechanicView extends VBox {
 
+    private static final int CARDS_PER_ROW = 2;
+    private final LanguageManager language = LanguageManager.getInstance();
+
     public MechanicView() {
-        setSpacing(15);
+        setSpacing(20);
 
-        LanguageManager language = LanguageManager.getInstance();
+        // Hämtar aktuella mekaniker när vyn öppnas
+        List<Mechanic> mechanics = Database.getMechanics();
 
-        //skapar sidans rubrik
-        Label title = new Label("Mechanics");
-        title.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
+        if (mechanics.isEmpty()) {
+            Label emptyLabel = UiKit.emptyText("");
+            emptyLabel.textProperty().bind(language.text("mechanics.empty"));
+            getChildren().addAll(
+                    UiKit.pageHeader(language.text("mechanics.title"), null),
+                    emptyLabel);
+            return;
+        }
 
-        TableView<Mechanic> table = new TableView<>(); //inehåller en rad per mekaniker
+        getChildren().addAll(UiKit.pageHeader(language.text("mechanics.title"), null), buildCardGrid(mechanics));
+    }
 
-        //kopplar kolumnerna till mekanikers uppgift
-        TableColumn<Mechanic, String> idColumn =
-                new TableColumn<>("ID");
-        idColumn.setCellValueFactory(cell ->
-                new ReadOnlyStringWrapper(
-                        String.valueOf(cell.getValue().getId())));
+    // GridPane med två lika breda kolumner – korten fyller bredden och radbryts jämnt.
+    private GridPane buildCardGrid(List<Mechanic> mechanics) {
+        GridPane grid = new GridPane();
+        grid.setHgap(20);
+        grid.setVgap(20);
 
-        TableColumn<Mechanic, String> nameColumn =
-                new TableColumn<>("Name");
-        nameColumn.setCellValueFactory(cell ->
-                new ReadOnlyStringWrapper(cell.getValue().getName()));
+        for (int i = 0; i < CARDS_PER_ROW; i++) {
+            ColumnConstraints column = new ColumnConstraints();
+            column.setPercentWidth(100.0 / CARDS_PER_ROW);
+            column.setHgrow(Priority.ALWAYS);
+            column.setFillWidth(true);
+            grid.getColumnConstraints().add(column);
+        }
 
-        TableColumn<Mechanic, String> phoneColumn =
-                new TableColumn<>("Phone");
-        phoneColumn.setCellValueFactory(cell ->
-                new ReadOnlyStringWrapper(cell.getValue().getPhone()));
+        for (int i = 0; i < mechanics.size(); i++) {
+            VBox card = createMechanicCard(mechanics.get(i));
+            // Kolumn = i % 2, rad = i / 2 → 0,0  1,0  0,1  1,1 ...
+            grid.add(card, i % CARDS_PER_ROW, i / CARDS_PER_ROW);
+        }
+        return grid;
+    }
 
-        TableColumn<Mechanic, String> specializationColumn =
-                new TableColumn<>("Specialization");
-        specializationColumn.setCellValueFactory(cell ->
-                new ReadOnlyStringWrapper(
-                        cell.getValue().getSpecialization()));
+    // Ett kort: prick + namn, specialisering, telefon och tillgänglighet.
+    private VBox createMechanicCard(Mechanic mechanic) {
+        boolean available = mechanic.isAvailable();
 
+        Label nameLabel = new Label(mechanic.getName());
+        nameLabel.getStyleClass().add("mechanic-name");
 
-        //visar tillgänglighet
-        TableColumn<Mechanic, String> availableColumn =
-                new TableColumn<>("Available");
-        availableColumn.setCellValueFactory(cell ->
-                language.text(
-                        cell.getValue().isAvailable() ? "common.yes" : "common.no"
-                )
-        );
+        // Grön prick = ledig, grå prick = upptagen med en arbetsorder
+        HBox nameRow = new HBox(10, UiKit.dot(available ? "green" : "grey"), nameLabel);
+        nameRow.setAlignment(Pos.CENTER_LEFT);
 
-        // Binder texterna så att de uppdateras direkt vid språkbyte.
-        title.textProperty().bind(language.text("mechanics.title"));
-        idColumn.textProperty().bind(language.text("mechanics.id"));
-        nameColumn.textProperty().bind(language.text("mechanics.name"));
-        phoneColumn.textProperty().bind(language.text("mechanics.phone"));
-        specializationColumn.textProperty().bind(
-                language.text("mechanics.specialization")
-        );
-        availableColumn.textProperty().bind(language.text("mechanics.available"));
+        Label roleLabel = new Label(mechanic.getSpecialization());
+        roleLabel.getStyleClass().add("mechanic-role");
 
-        table.getColumns().add(idColumn);
-        table.getColumns().add(nameColumn);
-        table.getColumns().add(phoneColumn);
-        table.getColumns().add(specializationColumn);
-        table.getColumns().add(availableColumn);
+        Label phoneLabel = new Label(mechanic.getPhone());
+        phoneLabel.getStyleClass().add("mechanic-phone");
 
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        Label emptyLabel = new Label();
-        emptyLabel.textProperty().bind(language.text("mechanics.empty"));
-        table.setPlaceholder(emptyLabel);
+        Label availabilityLabel = new Label();
+        availabilityLabel.textProperty().bind(language.text(available ? "mechanics.available" : "mechanics.unavailable"));
+        availabilityLabel.getStyleClass().add(available ? "availability-available" : "availability-off");
 
-        //hämtar aktuella mekaniker när vyn öppnas
-        table.setItems(
-                FXCollections.observableArrayList(Database.getMechanics())
-        );
-
-        VBox.setVgrow(table, Priority.ALWAYS);
-        getChildren().addAll(title, table);
+        VBox card = new VBox(nameRow, roleLabel, phoneLabel, availabilityLabel);
+        card.getStyleClass().add("mechanic-card");
+        card.setMaxWidth(Double.MAX_VALUE);
+        return card;
     }
 }
