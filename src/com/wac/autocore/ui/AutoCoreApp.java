@@ -1,5 +1,6 @@
 package com.wac.autocore.ui;
 
+import java.net.URL;
 import com.wac.autocore.ui.language.LanguageManager;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.data.HibernateUtil;
@@ -23,6 +24,8 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 
 
@@ -41,6 +44,9 @@ import java.util.Map;
 
 public class AutoCoreApp extends Application {
 
+    private static final Logger LOGGER =
+            Logger.getLogger(AutoCoreApp.class.getName());
+
     private StackPane contentPane;
 
     // ScrollPane runt innehållsytan, så att höga vyer går att scrolla
@@ -51,7 +57,7 @@ public class AutoCoreApp extends Application {
 
     // Alla menyval, med sidnyckel (t.ex. "create-customer") som nyckel.
     // Används av Navigator så att en knapp i en vy kan "klicka" på menyn.
-    private final Map<String, Button> navItemsByKey = new HashMap<String, Button>();
+    private final Map<String, Button> navItemsByKey = new HashMap<>();
 
     // Sant om data inte gick att läsa från MySQL vid start
     private boolean offlineMode = false;
@@ -90,7 +96,13 @@ public class AutoCoreApp extends Application {
         showDashboard();
 
         Scene scene = new Scene(root, 1280, 800);
-        scene.getStylesheets().add(AutoCoreApp.class.getResource("styles.css").toExternalForm());
+        URL stylesheet = AutoCoreApp.class.getResource("styles.css");
+
+        if (stylesheet == null) {
+            throw new IllegalStateException("Kunde inte hitta styles.css");
+        }
+
+        scene.getStylesheets().add(stylesheet.toExternalForm());
 
         primaryStage.setTitle("Wigell AutoCore");
         primaryStage.setMinWidth(1100);
@@ -117,7 +129,7 @@ public class AutoCoreApp extends Application {
             loadPayments();
 
         } catch (RuntimeException exception) {
-            exception.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Kunde inte läsa data från databasen.", exception);
             offlineMode = true;
         }
     }
@@ -587,11 +599,24 @@ public class AutoCoreApp extends Application {
      * Lägger till en sektionsrubrik följd av sektionens knappar.
      */
     private void addNavSection(VBox menuBox, String titleKey, Button... items) {
-        Label label = new Label();
-        label.textProperty().bind(language.text(titleKey));
-        label.getStyleClass().add("nav-section-label");
-        menuBox.getChildren().add(label);
-        menuBox.getChildren().addAll(items);
+        VBox content = new VBox(1);
+        content.getChildren().addAll(items);
+
+        TitledPane section = new TitledPane();
+        Label heading = new Label();
+        heading.textProperty().bind(language.text(titleKey));
+        heading.getStyleClass().add("nav-section-heading");
+        heading.setMouseTransparent(true);
+
+        section.setText("");
+        section.setGraphic(heading);
+        section.setContent(content);
+        section.setExpanded(true);
+        section.setAnimated(false);
+        section.setMaxWidth(Double.MAX_VALUE);
+        section.getStyleClass().add("nav-section");
+
+        menuBox.getChildren().add(section);
     }
 
     /**
