@@ -28,3 +28,6 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+# Kraschrapporter från Java
+hs_err_pid*.log
