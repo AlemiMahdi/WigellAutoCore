@@ -1,102 +1,109 @@
 package com.wac.autocore.ui.views;
 
 import com.wac.autocore.data.Database;
+import com.wac.autocore.model.Invoice;
 import com.wac.autocore.model.Payment;
+import com.wac.autocore.ui.ShowInvoiceView;
+import com.wac.autocore.ui.UiKit;
+import com.wac.autocore.ui.language.LanguageManager;
 
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
 
-import java.time.LocalDateTime;
-import com.wac.autocore.ui.language.LanguageManager;
+import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 
 public class ShowPaymentsView {
 
+    // Datum och klockslag utan sekunder, t.ex. "2026-09-18 14:02"
+    private static final DateTimeFormatter DATE_TIME_FORMAT =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
     public VBox getView() {
-
         LanguageManager language = LanguageManager.getInstance();
-
-        Label title = new Label("PAYMENTS");
-
-        title.setStyle(
-                "-fx-font-size: 24px;" +
-                        "-fx-font-weight: bold;"
-        );
 
         TableView<Payment> table = new TableView<>();
 
-
-        // ID
-        TableColumn<Payment, Integer> idColumn =
-                new TableColumn<>("ID");
-
-        idColumn.setCellValueFactory(
-                new PropertyValueFactory<Payment, Integer>("id")
-        );
+        Label emptyLabel = UiKit.emptyText("");
+        emptyLabel.textProperty().bind(language.text("payments.empty"));
+        table.setPlaceholder(emptyLabel);
 
 
-        // Invoice ID
-        TableColumn<Payment, Integer> invoiceIdColumn =
-                new TableColumn<>("Invoice ID");
 
-        invoiceIdColumn.setCellValueFactory(
-                new PropertyValueFactory<Payment, Integer>("invoiceId")
-        );
+        // Invoice – visas som "WO-1 invoice" så man ser vilken arbetsorder det gäller
+        TableColumn<Payment, String> invoiceColumn =
+                new TableColumn<>("Invoice");
 
-
-        // Amount
-        TableColumn<Payment, Double> amountColumn =
-                new TableColumn<>("Amount");
-
-        amountColumn.setCellValueFactory(
-                new PropertyValueFactory<Payment, Double>("amount")
-        );
-
-
-        // Payment type
-        TableColumn<Payment, String> paymentTypeColumn =
-                new TableColumn<>("Payment type");
-
-        paymentTypeColumn.setCellValueFactory(cell ->
-                language.text("payment.type." + cell.getValue().getPaymentType())
-        );
-
-        // Payment date
-        TableColumn<Payment, LocalDateTime> paymentDateColumn =
-                new TableColumn<>("Date");
-
-        paymentDateColumn.setCellValueFactory(
-                new PropertyValueFactory<Payment, LocalDateTime>("paymentDate")
-        );
-
-
-        // Successful
-        TableColumn<Payment, String> successfulColumn =
-                new TableColumn<>("Successful");
-
-        successfulColumn.setCellValueFactory(cell ->
-                language.text(
-                        cell.getValue().isSuccessful() ? "common.yes" : "common.no"
+        invoiceColumn.setCellValueFactory(cellData ->
+                new SimpleStringProperty(
+                        describeInvoice(cellData.getValue().getInvoiceId())
                 )
         );
 
-        title.textProperty().bind(language.text("payments.title"));
-        idColumn.textProperty().bind(language.text("payments.id"));
-        invoiceIdColumn.textProperty().bind(language.text("payments.invoiceId"));
+        // Amount – fetstil och högerställd så beloppen står under varandra
+        TableColumn<Payment, String> amountColumn =
+                new TableColumn<>("Amount");
+
+        amountColumn.setCellValueFactory(cellData ->
+                new SimpleStringProperty(
+                        ShowInvoiceView.formatSek(cellData.getValue().getAmount())
+                )
+        );
+        amountColumn.getStyleClass().addAll("cell-right", "cell-strong");
+
+
+        // Payment type – "CARD" visas som "Card"
+        TableColumn<Payment, String> paymentTypeColumn =
+                new TableColumn<>("Type");
+
+        paymentTypeColumn.setCellValueFactory(cellData ->
+                new SimpleStringProperty(
+                        ProcessPaymentView.formatPaymentType(cellData.getValue().getPaymentType())
+                )
+        );
+        paymentTypeColumn.getStyleClass().add("cell-muted");
+
+
+        // Payment date
+        TableColumn<Payment, String> paymentDateColumn =
+                new TableColumn<>("Date");
+
+        paymentDateColumn.setCellValueFactory(cellData ->
+                new SimpleStringProperty(
+                        cellData.getValue().getPaymentDate() == null
+                                ? "—"
+                                : cellData.getValue().getPaymentDate().format(DATE_TIME_FORMAT)
+                )
+        );
+        paymentDateColumn.getStyleClass().add("cell-muted");
+
+
+        // Status – modellen har en boolean, badgen vill ha text
+        TableColumn<Payment, String> successfulColumn =
+                new TableColumn<>("Status");
+
+        successfulColumn.setCellValueFactory(cellData ->
+                new SimpleStringProperty(
+                        cellData.getValue().isSuccessful()
+                                ? "Successful"
+                                : "Failed"
+                )
+        );
+        successfulColumn.setCellFactory(UiKit.<Payment>badgeCells());
+
+        invoiceColumn.textProperty().bind(language.text("payments.invoice"));
         amountColumn.textProperty().bind(language.text("payments.amount"));
         paymentTypeColumn.textProperty().bind(language.text("payments.type"));
         paymentDateColumn.textProperty().bind(language.text("payments.date"));
-        successfulColumn.textProperty().bind(language.text("payments.successful"));
+        successfulColumn.textProperty().bind(language.text("payments.status"));
 
         table.getColumns().addAll(
-                idColumn,
-                invoiceIdColumn,
+                invoiceColumn,
                 amountColumn,
                 paymentTypeColumn,
                 paymentDateColumn,
@@ -104,31 +111,38 @@ public class ShowPaymentsView {
         );
 
 
+        // Kopia av listan, vänd så att senaste betalningen hamnar överst
         ObservableList<Payment> payments =
                 FXCollections.observableArrayList(
                         Database.getPayments()
                 );
+        Collections.reverse(payments);
 
         table.setItems(payments);
 
-        Label emptyLabel = new Label();
-        emptyLabel.textProperty().bind(language.text("payments.empty"));
-        table.setPlaceholder(emptyLabel);
-
-        table.setColumnResizePolicy(
-                TableView.CONSTRAINED_RESIZE_POLICY
-        );
+        UiKit.styleTable(table);
 
 
-        VBox view = new VBox(15);
-
-        view.setPadding(new Insets(10));
+        VBox view = new VBox(24);
 
         view.getChildren().addAll(
-                title,
+                UiKit.pageHeader(language.text("payments.title"), null),
                 table
         );
 
         return view;
+    }
+
+    // Letar upp fakturan för att kunna visa dess arbetsorder-nummer.
+    // Hittas den inte visas faktura-id:t i stället.
+    private static String describeInvoice(int invoiceId) {
+        LanguageManager language = LanguageManager.getInstance();
+        for (Invoice invoice : Database.getInvoices()) {
+            if (invoice.getId() == invoiceId) {
+                return ShowInvoiceView.workOrderCode(invoice.getWorkOrderId()) + " "
+                        + language.text("payments.invoiceSuffix").get();
+            }
+        }
+        return language.text("payments.invoiceNumber").get() + invoiceId;
     }
 }

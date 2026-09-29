@@ -1,77 +1,122 @@
 package com.wac.autocore.ui;
 
 
+import com.wac.autocore.data.Database;
+import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.Invoice;
+import com.wac.autocore.model.ServiceItem;
+import com.wac.autocore.model.Vehicle;
+import com.wac.autocore.model.WorkOrder;
 import com.wac.autocore.service.GarageSystem;
-import javafx.geometry.Insets;
+import com.wac.autocore.ui.language.LanguageManager;
+import javafx.geometry.Pos;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
-import com.wac.autocore.data.Database;
-import com.wac.autocore.repository.InvoiceRepository;
-import com.wac.autocore.ui.language.LanguageManager;
 
+import javafx.util.StringConverter;
+
+import com.wac.autocore.repository.InvoiceRepository;
+
+
+import java.time.LocalDate;
 
 
 public class CreateInvoiceView {
 
     public static VBox build(){
-
         LanguageManager language = LanguageManager.getInstance();
-
         GarageSystem garageSystem = new GarageSystem();
-
         InvoiceRepository invoiceRepository = new InvoiceRepository();
 
-        GridPane form = new GridPane();
-        form.setHgap(10);
-        form.setVgap(10);
 
-        Label workOrderIdLabel = new Label("Work order Id");
-        TextField workOrderIdField = new TextField();
+        // --- Arbetsorder ---
+        // Bara avslutade (COMPLETED) arbetsordrar kan faktureras,
+        // så vi visar bara dem i listan.
+        ComboBox<WorkOrder> workOrderBox = new ComboBox<>();
+        workOrderBox.setConverter(new StringConverter<WorkOrder>() {
+            @Override
+            public String toString(WorkOrder workOrder) {
+                return workOrder == null ? "" : describeWorkOrder(workOrder);
+            }
 
-        Label discountLabel = new Label("Discount");
+
+
+            @Override
+            public WorkOrder fromString(String text) {
+                return null; // Används inte – listan går inte att skriva i
+            }
+        });
+        loadCompletedWorkOrders(workOrderBox);
+        UiKit.keepPromptWhenCleared(workOrderBox);
+
+        // --- Datum ---
+        // GarageSystem sätter alltid dagens datum på fakturan,
+        // så fältet visar bara det och går inte att ändra.
+        TextField dateField = new TextField(LocalDate.now().toString());
+        dateField.setEditable(false);
+        dateField.getStyleClass().add("readonly-field");
+
+        // --- Belopp ---
+        // Beloppet räknas ut av GarageSystem från arbetsorderns tjänster.
+        // Här visar vi samma summa i förväg, därför är fältet låst.
+        TextField amountField = new TextField();
+        amountField.setEditable(false);
+        amountField.promptTextProperty().bind(language.text("startWorkOrder.prompt"));
+        amountField.getStyleClass().add("readonly-field");
+
+        // --- Rabatt ---
+        // Rabatten anges som en rabattkod (t.ex. WELCOME10 eller SERVICE200)
         TextField discoutField = new TextField();
+        discoutField.promptTextProperty().bind(language.text("createInvoice.discountPrompt"));
 
-        form.add(workOrderIdLabel, 0, 0);
-        form.add(workOrderIdField, 1, 0);
-        form.add(discountLabel, 0, 1);
-        form.add(discoutField, 1, 1);
+        // --- Total ---
+        Label totalValue = new Label(ShowInvoiceView.formatSek(0));
 
-        Button createButton = new Button("Create invoice");
-        Label statusLabel = new Label();
-
-        statusLabel.setWrapText(true);
-
-// Uppdaterar formulärets texter direkt vid språkbyte.
-        workOrderIdLabel.textProperty().bind(
-                language.text("createInvoice.workOrderId")
-        );
-        discountLabel.textProperty().bind(language.text("createInvoice.discount"));
+        Button createButton = UiKit.primaryButton("Create invoice");
         createButton.textProperty().bind(language.text("createInvoice.button"));
+        Label statusLabel = UiKit.feedbackLabel();
+
+        // Uppdatera Amount och Total direkt när man väljer arbetsorder
+        workOrderBox.valueProperty().addListener((observable, oldValue, selected) -> {
+            if (selected == null) {
+                amountField.clear();
+                totalValue.setText(ShowInvoiceView.formatSek(0));
+            } else {
+                double amount = sumServicePrices(selected);
+                amountField.setText(ShowInvoiceView.formatSek(amount));
+                totalValue.setText(ShowInvoiceView.formatSek(amount));
+            }
+        });
+
+        // Tala om varför listan är tom, annars ser det ut som ett fel
+        if (workOrderBox.getItems().isEmpty()) {
+            UiKit.showInfo(statusLabel, language.text("createInvoice.noCompleted").get());
+        } else {
+            UiKit.showInfo(statusLabel, language.text("createInvoice.discountInfo").get());
+        }
 
         createButton.setOnAction(actionEvent -> {
-            int workOrderId;
+            WorkOrder selectedWorkOrder = workOrderBox.getValue();
 
-            try {
-                workOrderId = Integer.parseInt(workOrderIdField.getText());
-            } catch(NumberFormatException e) {
-                statusLabel.textProperty().bind(
-                        language.text("createInvoice.invalidId")
-                );
+            if (selectedWorkOrder == null) {
+                UiKit.showError(statusLabel, language.text("startWorkOrder.select").get());
                 return;
             }
+            int workOrderId = selectedWorkOrder.getId();
             String discountCode = discoutField.getText();
 
 
             Invoice invoice = garageSystem.createInvoice(workOrderId, discountCode);
 
+
+
             if (invoice == null) {
 
-                statusLabel.textProperty().bind(
-                        language.text("createInvoice.createError")
+                UiKit.showError(statusLabel,
+                        language.text("createInvoice.createError").get()
                 );
 
             } else {
@@ -80,30 +125,97 @@ public class CreateInvoiceView {
 
                     invoiceRepository.save(invoice);
 
-                    statusLabel.textProperty().bind(
-                            language.text("createInvoice.success")
+                    UiKit.showSuccess(statusLabel, language.text("createInvoice.successFor").get() + " "
+                            + ShowInvoiceView.workOrderCode(workOrderId)
+                            + ". " + language.text("createInvoice.totalLabel").get() + ": "
+                            + ShowInvoiceView.formatSek(invoice.getTotalAmount())
                     );
 
-                    workOrderIdField.clear();
+                    workOrderBox.setValue(null);
                     discoutField.clear();
 
                 } catch (RuntimeException exception) {
 
                     Database.getInvoices().remove(invoice);
-                    statusLabel.textProperty().bind(
-                            language.text("createInvoice.saveError")
+                    UiKit.showError(statusLabel,
+                            language.text("createInvoice.saveError").get()
                     );
                     exception.printStackTrace();
                 }
+
             }
 
 
         });
 
-        VBox root = new VBox(15, form, createButton, statusLabel);
-        root.setPadding(new Insets(20));
+        VBox form = UiKit.formContainer(
+                UiKit.pageHeader(language.text("createInvoice.button"), null),
+                UiKit.formField(language.text("createInvoice.workOrderLabel"), workOrderBox),
+                UiKit.formField(language.text("invoices.date"), dateField),
+                UiKit.formRow(
+                        UiKit.formField(language.text("invoices.amount"), amountField),
+                        UiKit.formField(language.text("invoices.discount"), discoutField)),
+                UiKit.totalBox(language.text("createInvoice.totalLabel"), totalValue),
+                createButton,
+                statusLabel);
+
+        // Formulärkolumnen ska ligga centrerad i innehållsytan
+        VBox root = new VBox(form);
+        root.setAlignment(Pos.TOP_CENTER);
         return root;
 
 
     }
+
+    // Fyller listan med alla arbetsordrar som har status COMPLETED
+    private static void loadCompletedWorkOrders(ComboBox<WorkOrder> workOrderBox) {
+        for (WorkOrder workOrder : Database.getWorkOrders()) {
+            if ("COMPLETED".equals(workOrder.getStatus())) {
+                workOrderBox.getItems().add(workOrder);
+            }
+        }
+        if (workOrderBox.getItems().isEmpty()) {
+            workOrderBox.promptTextProperty().bind(LanguageManager.getInstance().text("createInvoice.noCompletedPrompt"));
+        } else {
+            workOrderBox.promptTextProperty().bind(LanguageManager.getInstance().text("startWorkOrder.prompt"));
+        }
+    }
+
+    // "WO-2 · Volkswagen Passat" – bilen gör det lättare att hitta rätt order
+    private static String describeWorkOrder(WorkOrder workOrder) {
+        String text = ShowInvoiceView.workOrderCode(workOrder.getId());
+        Vehicle vehicle = findVehicleFor(workOrder);
+        if (vehicle != null) {
+            text += " · " + vehicle.getBrand() + " " + vehicle.getModel();
+        }
+        return text;
+    }
+
+    // Arbetsorder -> bokning -> fordon (null om något saknas)
+    private static Vehicle findVehicleFor(WorkOrder workOrder) {
+        for (Booking booking : Database.getBookings()) {
+            if (booking.getId() == workOrder.getBookingId()) {
+                for (Vehicle vehicle : Database.getVehicles()) {
+                    if (vehicle.getId() == booking.getVehicleId()) {
+                        return vehicle;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    // Samma summa som GarageSystem.createInvoice räknar fram (före rabatt)
+    private static double sumServicePrices(WorkOrder workOrder) {
+        double sum = 0.0;
+        for (Integer serviceItemId : workOrder.getServiceItemIds()) {
+            for (ServiceItem serviceItem : Database.getServiceItems()) {
+                if (serviceItem.getId() == serviceItemId) {
+                    sum += serviceItem.getPrice();
+                }
+            }
+        }
+        return sum;
+    }
+
 }
