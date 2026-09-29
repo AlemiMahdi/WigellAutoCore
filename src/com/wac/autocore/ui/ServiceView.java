@@ -26,6 +26,8 @@ public class ServiceView extends VBox {
     private final TableView<ServiceItem> table = new TableView<ServiceItem>();
     private final TextField durationField = new TextField();
     private final Label feedbackLabel = UiKit.feedbackLabel();
+    private final TextField priceField = new TextField();
+    private final Label priceFeedbackLabel = UiKit.feedbackLabel();
     private final ServiceItemRepository repository = new ServiceItemRepository();
 
     public ServiceView() {
@@ -36,7 +38,8 @@ public class ServiceView extends VBox {
         getChildren().addAll(
                 UiKit.pageHeader(language.text("services.title"), null),
                 table,
-                buildEditCard()
+                buildEditCard(),
+                buildPriceCard()
         );
     }
 
@@ -92,11 +95,15 @@ public class ServiceView extends VBox {
         table.getSelectionModel().selectedItemProperty().addListener(
                 (observable, previous, selected) -> {
                     feedbackLabel.setText("");
+                    priceFeedbackLabel.setText("");
 
                     if (selected == null) {
                         durationField.clear();
+                        priceField.clear();
+
                     } else {
                         durationField.setText(String.valueOf(selected.getEstimatedMinutes()));
+                        priceField.setText(String.valueOf(selected.getPrice()));
                     }
                 }
         );
@@ -129,6 +136,36 @@ public class ServiceView extends VBox {
         feedbackLabel.visibleProperty().bind(feedbackLabel.textProperty().isNotEmpty());
 
         VBox card = UiKit.card(heading, hint, inputRow, feedbackLabel);
+        card.getStyleClass().add("detail-card");
+        return card;
+    }
+
+    private VBox buildPriceCard() {
+        Label heading = new Label("Change price");
+        heading.textProperty().bind(language.text("services.priceEditTitle"));
+        heading.getStyleClass().add("card-heading");
+
+        Label hint = new Label("Select a service in the table and enter the new price.");
+        hint.textProperty().bind(language.text("services.pricePrompt"));
+        hint.getStyleClass().add("detail-text");
+        hint.setWrapText(true);
+
+        priceField.promptTextProperty().bind(language.text("services.pricePlaceholder"));
+        priceField.setPrefColumnCount(10);
+
+        Button saveButton = UiKit.primaryButton("Save price");
+        saveButton.textProperty().bind(language.text("services.savePrice"));
+        saveButton.setOnAction(event -> savePrice());
+
+        HBox inputRow = new HBox(12, priceField, saveButton);
+        inputRow.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(priceField, Priority.NEVER);
+
+        // Tomt meddelande ska inte lämna ett hål längst ner i kortet
+        priceFeedbackLabel.managedProperty().bind(priceFeedbackLabel.textProperty().isNotEmpty());
+        priceFeedbackLabel.visibleProperty().bind(priceFeedbackLabel.textProperty().isNotEmpty());
+
+        VBox card = UiKit.card(heading, hint, inputRow, priceFeedbackLabel);
         card.getStyleClass().add("detail-card");
         return card;
     }
@@ -174,6 +211,8 @@ public class ServiceView extends VBox {
         table.refresh();
         UiKit.showSuccess(feedbackLabel, language.text("services.saved").get());
     }
+
+    private void savePrice() {}
 
     private void setColumnWeight(TableColumn<ServiceItem, String> column, int percent) {
         column.setMaxWidth(percent * 100000.0);
