@@ -16,6 +16,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
+import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 
@@ -212,7 +213,46 @@ public class ServiceView extends VBox {
         UiKit.showSuccess(feedbackLabel, language.text("services.saved").get());
     }
 
-    private void savePrice() {}
+    private void savePrice() {
+        ServiceItem selected = table.getSelectionModel().getSelectedItem();
+
+        if (selected == null) {
+            UiKit.showError(priceFeedbackLabel, language.text("services.select").get());
+            return;
+        }
+
+        double price;
+
+        try {
+            price = Double.parseDouble(priceField.getText().trim().replace(",", "."));
+        } catch (NumberFormatException exception) {
+            UiKit.showError(priceFeedbackLabel, language.text("services.invalidPrice").get());
+            return;
+        }
+
+        if (price <= 0) {
+            UiKit.showError(priceFeedbackLabel, language.text("services.invalidPrice").get());
+            return;
+        }
+
+        // Behåller det gamla värdet om sparandet misslyckas.
+        double previousPrice = selected.getPrice();
+        selected.setPrice(price);
+
+        try {
+            repository.save(selected);
+        } catch (RuntimeException exception) {
+            selected.setPrice(previousPrice);
+            table.refresh();
+
+            UiKit.showError(priceFeedbackLabel, language.text("services.priceError").get());
+            exception.printStackTrace();
+            return;
+        }
+
+        table.refresh();
+        UiKit.showSuccess(priceFeedbackLabel, language.text("services.priceSaved").get());
+    }
 
     private void setColumnWeight(TableColumn<ServiceItem, String> column, int percent) {
         column.setMaxWidth(percent * 100000.0);
@@ -223,6 +263,7 @@ public class ServiceView extends VBox {
         DecimalFormatSymbols symbols = new DecimalFormatSymbols();
         symbols.setGroupingSeparator(' ');
         DecimalFormat format = new DecimalFormat("#,##0", symbols);
+        format.setRoundingMode(RoundingMode.HALF_UP);
         return format.format(price) + " SEK";
     }
 }
