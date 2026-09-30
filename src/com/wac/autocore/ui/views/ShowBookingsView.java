@@ -20,12 +20,12 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-
 import java.time.LocalDate;
 import java.time.LocalTime;
-
 import java.util.HashMap;
 import java.util.Map;
+import javafx.scene.control.TableRow;
+import javafx.scene.input.MouseButton;
 
 // Visar alla bokningar i en tabell: fordon, datum, mekaniker, beskrivning och status.
 public class ShowBookingsView {
@@ -161,7 +161,36 @@ public class ShowBookingsView {
         table.setPlaceholder(emptyLabel);
         UiKit.styleTable(table);
 
-        return new VBox(20, buildHeader(), table);
+        VBox root = new VBox(20, buildHeader(), table);
+
+// Dubbelklick på en bokning öppnar formuläret.
+        table.setRowFactory(tableView -> {
+            TableRow<Booking> row = new TableRow<>();
+
+            row.setOnMouseClicked(event -> {
+                if (event.getButton() == MouseButton.PRIMARY
+                        && event.getClickCount() == 2
+                        && !row.isEmpty()) {
+
+                    Booking selectedBooking = row.getItem();
+
+                    Button backButton = new Button();
+                    backButton.textProperty().bind(language.text("bookings.back"));
+                    backButton.setOnAction(backEvent ->
+                            Navigator.goTo("show-bookings")
+                    );
+
+                    VBox editView =
+                            new EditBookingServicesView().getView(selectedBooking);
+
+                    root.getChildren().setAll(backButton, editView);
+                }
+            });
+
+            return row;
+        });
+
+        return root;
     }
 
     // Rubrik med "+ New booking" till höger som hoppar till formuläret

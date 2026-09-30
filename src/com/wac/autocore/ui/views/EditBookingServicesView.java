@@ -10,8 +10,8 @@ import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-
 import java.util.Locale;
+
 public class EditBookingServicesView {
 
     public VBox getView() {
@@ -23,18 +23,18 @@ public class EditBookingServicesView {
 
         Label titleLabel = new Label();
 
-        titleLabel.textProperty().bind(language.text("editBookingServicesView.title"));
+        titleLabel.textProperty().bind(language.text("editBookingServices.title"));
         titleLabel.getStyleClass().add("panel-title");
 
         Label bookingLabel = new Label();
-        bookingLabel.textProperty().bind(language.text("editBookingServicesView.booking"));
+        bookingLabel.textProperty().bind(language.text("editBookingServices.booking"));
 
         ComboBox<Booking> bookingComboBox = new ComboBox<>(
                 FXCollections.observableArrayList(Database.getBookings())
         );
 
         bookingComboBox.setMaxWidth(Double.MAX_VALUE);
-        bookingComboBox.promptTextProperty().bind(language.text("editBookingServicesView.selectBooking"));
+        bookingComboBox.promptTextProperty().bind(language.text("editBookingServices.selectBooking"));
 
 
         // Visar bokningens ID och datum utan modellens engelska toString-text.
@@ -136,7 +136,7 @@ public class EditBookingServicesView {
                 10,
                 titleLabel,
                 bookingLabel,
-                bookingLabel,
+                bookingComboBox,
                 servicesLabel,
                 helpLabel,
                 serviceList,
