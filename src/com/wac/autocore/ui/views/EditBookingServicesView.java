@@ -14,8 +14,11 @@ import javafx.scene.layout.VBox;
 import java.util.Locale;
 public class EditBookingServicesView {
 
-    public VBox getView(){
+    public VBox getView() {
+        return getView(null);
+    }
 
+    public VBox getView(Booking selectedBooking) {
         LanguageManager language = LanguageManager.getInstance();
 
         Label titleLabel = new Label();
@@ -145,6 +148,12 @@ public class EditBookingServicesView {
 
         root.setPadding(new Insets(20));
         VBox.setVgrow(serviceList, Priority.ALWAYS);
+
+        // Förväljer bokningen när formuläret öppnas från bokningslistan.
+        if (selectedBooking != null) {
+            bookingComboBox.setValue(selectedBooking);
+            bookingComboBox.setDisable(true);
+        }
 
         return root;
     }
