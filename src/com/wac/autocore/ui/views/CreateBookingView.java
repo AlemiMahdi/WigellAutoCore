@@ -12,6 +12,7 @@ import com.wac.autocore.ui.language.LanguageManager;
 import javafx.collections.FXCollections;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
@@ -19,6 +20,13 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
+import javafx.scene.control.ListCell;
+import javafx.collections.ObservableList;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.wac.autocore.model.ServiceItem;
+import javafx.scene.control.ListView;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -57,6 +65,47 @@ public class CreateBookingView {
         mechanicCombo.promptTextProperty().bind(language.text("createBooking.mechanicPrompt"));
         mechanicCombo.setConverter(mechanicConverter());
         UiKit.keepPromptWhenCleared(mechanicCombo);
+
+        List<ServiceItem> selectedServices = new ArrayList<>();
+        ListView<ServiceItem> serviceList = new ListView<>(
+            FXCollections.observableArrayList(Database.getServiceItems())
+        );
+        
+        serviceList.setPrefHeight(150);
+        serviceList.setCellFactory(listView -> new javafx.scene.control.ListCell<ServiceItem>() {
+
+        private final CheckBox checkBox = new CheckBox();
+
+        @Override
+        protected void updateItem(ServiceItem service, boolean empty) {
+            super.updateItem(service, empty);
+
+            if (empty || service == null) {
+                setGraphic(null);
+                return;
+            }
+
+            checkBox.setText(
+                    service.getName()
+                            + " – " + service.getPrice() + " kr"
+                            + " – " + service.getEstimatedMinutes() + " min"
+            );
+
+            checkBox.setSelected(selectedServices.contains(service));
+
+            checkBox.setOnAction(event -> {
+                if (checkBox.isSelected()) {
+                    if (!selectedServices.contains(service)) {
+                        selectedServices.add(service);
+                    }
+                } else {
+                    selectedServices.remove(service);
+                }
+            });
+
+                setGraphic(checkBox);
+            }
+        });
 
         TextArea descriptionField = new TextArea();
         descriptionField.promptTextProperty().bind(language.text("createBooking.descriptionPrompt"));
@@ -114,6 +163,11 @@ public class CreateBookingView {
                 return;
             }
 
+            if (selectedServices.isEmpty()) {
+                UiKit.showError(messageLabel, "Select at least one service");
+                return;
+            }
+
             boolean overlapping = bookingRepository.hasOverlappingBooking(
                     mechanic.getId(), date, startTime, durationMinutes
             );
@@ -131,6 +185,8 @@ public class CreateBookingView {
                 UiKit.showError(messageLabel, language.text("createBooking.createError").get());
                 return;
             }
+
+            booking.setServices(new ArrayList<>(selectedServices));
             booking.setStartTime(startTime);
             booking.setDurationMinutes(durationMinutes);
 
@@ -157,6 +213,8 @@ public class CreateBookingView {
             descriptionField.clear();
             mechanicCombo.getSelectionModel().clearSelection();
             mechanicCombo.setValue(null);
+            selectedServices.clear();
+            serviceList.refresh();
         });
 
         VBox form = UiKit.formContainer(
@@ -170,6 +228,7 @@ public class CreateBookingView {
                         UiKit.formField(language.text("createBooking.durationLabel"), durationField),
                         UiKit.formField(language.text("bookings.mechanic"), mechanicCombo)
                 ),
+                UiKit.formField("Services", serviceList),
                 UiKit.formField(language.text("bookings.description"), descriptionField),
                 createButton,
                 messageLabel
