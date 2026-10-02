@@ -14,6 +14,13 @@ import java.util.Locale;
 import javafx.scene.control.ListCell;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
+import com.wac.autocore.repository.BookingRepository;
+import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.ui.UiKit;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Arrays;
 
 public class EditBookingServicesView {
 
@@ -133,27 +140,115 @@ public class EditBookingServicesView {
         serviceList.getSelectionModel().getSelectedItems().addListener(
                 (ListChangeListener<ServiceItem>) change -> updateTotals.run()
         );
-
-        // Tillfälligt: tömmer valet när bokningen byts.
-        // WAC-34 ska senare användas för att läsa in bokningens tjänster.
+// Markerar de tjänster som redan hör till bokningen.
         bookingComboBox.valueProperty().addListener(
-                (observable, previous, selected) ->
-                        serviceList.getSelectionModel().clearSelection()
+                (observable, previous, selected) -> {
+                    serviceList.getSelectionModel().clearSelection();
+
+                    if (selected == null) {
+                        return;
+                    }
+
+                    for (int i = 0; i < serviceList.getItems().size(); i++) {
+                        ServiceItem service = serviceList.getItems().get(i);
+
+                        boolean belongsToBooking = selected.getServices()
+                                .stream()
+                                .anyMatch(savedService ->
+                                        savedService.getId() == service.getId());
+
+                        if (belongsToBooking) {
+                            serviceList.getSelectionModel().select(i);
+                        }
+                    }
+                }
         );
 
         updateTotals.run();
 
-        Label noticeLabel = new Label();
-        noticeLabel.textProperty().bind(
-                language.text("editBookingServices.preview")
-        );
-        noticeLabel.setWrapText(true);
+        Label noticeLabel = UiKit.feedbackLabel();
 
-        Button saveButton = new Button();
+        BookingRepository bookingRepository = new BookingRepository();
+
+        Button saveButton = UiKit.primaryButton("");
         saveButton.textProperty().bind(language.text("editBookingServices.save"));
+        saveButton.disableProperty().bind(
+                bookingComboBox.valueProperty().isNull()
+        );
 
-        // Aktiveras först när validering och permanent lagring är inkopplade.
-        saveButton.setDisable(true);
+        saveButton.setOnAction(event -> {
+            Booking booking = bookingComboBox.getValue();
+
+            if (booking == null) {
+                return;
+            }
+
+            // Kopierar valet så att listan inte följer senare klick i vyn
+            List<ServiceItem> selectedServices = new ArrayList<>(
+                    serviceList.getSelectionModel().getSelectedItems()
+            );
+
+            List<Integer> serviceIds = new ArrayList<>();
+
+            for (ServiceItem service : selectedServices) {
+                serviceIds.add(service.getId());
+            }
+
+            final int totalMinutes;
+
+            try {
+                totalMinutes = bookingRepository.updateBookingServices(
+                        booking.getId(), serviceIds
+                );
+            } catch (RuntimeException exception) {
+                String key = "editBookingServices.saveError";
+
+                List<String> validationKeys = Arrays.asList(
+                        "editBookingServices.notFound",
+                        "editBookingServices.locked",
+                        "editBookingServices.selectService",
+                        "editBookingServices.serviceMissing",
+                        "editBookingServices.invalidDuration",
+                        "editBookingServices.missingTime",
+                        "editBookingServices.overlap"
+                );
+
+                if (exception instanceof IllegalArgumentException
+                        && validationKeys.contains(exception.getMessage())) {
+                    key = exception.getMessage();
+                } else {
+                    java.util.logging.Logger.getLogger(
+                            EditBookingServicesView.class.getName()
+                    ).log(
+                            java.util.logging.Level.SEVERE,
+                            "Could not update booking services",
+                            exception
+                    );
+                }
+
+                noticeLabel.textProperty().unbind();
+                UiKit.showError(noticeLabel, "");
+                noticeLabel.textProperty().bind(language.text(key));
+                return;
+            }
+
+            // Uppdaterar minnet först efter lyckat databassparande.
+            booking.setServices(new ArrayList<>(selectedServices));
+            booking.setDurationMinutes(totalMinutes);
+
+            for (WorkOrder order : Database.getWorkOrders()) {
+                if (order.getBookingId() == booking.getId()
+                        && "CREATED".equals(order.getStatus())) {
+                    order.setServiceItemIds(new ArrayList<>(serviceIds));
+                }
+            }
+
+            noticeLabel.textProperty().unbind();
+            UiKit.showSuccess(noticeLabel, "");
+            noticeLabel.textProperty().bind(
+                    language.text("editBookingServices.saved")
+            );
+        });
 
         VBox root = new VBox(
                 10,
