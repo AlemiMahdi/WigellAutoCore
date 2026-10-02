@@ -1,14 +1,7 @@
 package com.wac.autocore.service;
 
 import com.wac.autocore.data.Database;
-import com.wac.autocore.model.Booking;
-import com.wac.autocore.model.Customer;
-import com.wac.autocore.model.Invoice;
-import com.wac.autocore.model.Mechanic;
-import com.wac.autocore.model.Payment;
-import com.wac.autocore.model.ServiceItem;
-import com.wac.autocore.model.Vehicle;
-import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.model.*;
 
 import java.time.LocalDate;
 
@@ -313,16 +306,25 @@ public class GarageSystem {
             return null;
         }
 
-        double amount = 0.0;
+        int id = Database.getInvoices().size() + 1;
+
+        Invoice invoice = new Invoice(
+                id,
+                workOrderId,
+                LocalDate.now(),
+                0.0
+        );
 
         for (Integer serviceItemId : workOrder.getServiceItemIds()) {
             ServiceItem serviceItem = findServiceItem(serviceItemId);
 
             if (serviceItem != null) {
-                amount += serviceItem.getPrice();
+                InvoiceLine line = new InvoiceLine(serviceItem.getId(), serviceItem.getName(), serviceItem.getPrice());
+                invoice.addLine(line);
+
             }
         }
-
+        double amount = invoice.getAmount();
         double discount = 0.0;
 
         Booking booking = findBooking(workOrder.getBookingId());
@@ -358,15 +360,6 @@ public class GarageSystem {
         if (discount > amount) {
             discount = amount;
         }
-
-        int id = Database.getInvoices().size() + 1;
-
-        Invoice invoice = new Invoice(
-                id,
-                workOrderId,
-                LocalDate.now(),
-                amount
-        );
 
         invoice.setDiscount(discount);
 

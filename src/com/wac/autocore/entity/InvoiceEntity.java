@@ -1,10 +1,9 @@
 package com.wac.autocore.entity;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 // Databasrepresentation av en faktura.
 @Entity
@@ -31,6 +30,10 @@ public class InvoiceEntity {
 
     @Column(name = "paid")
     private boolean paid;
+
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinColumn(name = "invoice_id")
+    private List<InvoiceLineEntity> lines = new ArrayList<>();
 
     // Hibernate behöver en tom konstruktor.
     public InvoiceEntity() {
@@ -90,5 +93,13 @@ public class InvoiceEntity {
 
     public void setPaid(boolean paid) {
         this.paid = paid;
+    }
+
+    public List<InvoiceLineEntity> getLines() {
+        return lines;
+    }
+
+    public void setLines(List<InvoiceLineEntity> lines) {
+        this.lines = lines;
     }
 }
