@@ -199,8 +199,7 @@ public class GarageSystem {
     }
 
     public WorkOrder createWorkOrder(int bookingId,
-                                     int mechanicId,
-                                     int... serviceItemIds) {
+                                     int mechanicId) {
 
         Booking booking = findBooking(bookingId);
 
@@ -221,15 +220,6 @@ public class GarageSystem {
             return null;
         }
 
-        for (int serviceItemId : serviceItemIds) {
-            if (findServiceItem(serviceItemId) == null) {
-                System.out.println(
-                        "Service item with ID " + serviceItemId + " does not exist."
-                );
-                return null;
-            }
-        }
-
         int id = Database.getWorkOrders().size() + 1;
 
         WorkOrder workOrder = new WorkOrder(
@@ -238,8 +228,8 @@ public class GarageSystem {
                 mechanicId
         );
 
-        for (int serviceItemId : serviceItemIds) {
-            workOrder.addServiceItem(serviceItemId);
+        for( ServiceItem serviceItem : booking.getServices()) {
+            workOrder.addServiceItem(serviceItem.getId());
         }
 
         Database.getWorkOrders().add(workOrder);
