@@ -2,8 +2,10 @@ package com.wac.autocore.repository;
 
 import com.wac.autocore.data.HibernateUtil;
 import com.wac.autocore.entity.InvoiceEntity;
+import com.wac.autocore.entity.InvoiceLineEntity;
 import com.wac.autocore.model.Invoice;
 
+import com.wac.autocore.model.InvoiceLine;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 
@@ -47,7 +49,30 @@ public class InvoiceRepository {
         entity.setTotalAmount(invoice.getTotalAmount());
         entity.setPaid(invoice.isPaid());
 
+        //    Kopiera varje fakturarad till en InvoiceLineEntity.
+        //    Loop eftersom en faktura kan ha 0, 1 eller många rader.
+        for (InvoiceLine invoiceLine : invoice.getLines()) {
+            InvoiceLineEntity lineEntity = new InvoiceLineEntity();
+
+            lineEntity.setId(invoiceLine.getId());
+            lineEntity.setServiceItemId(invoiceLine.getServiceItemId());
+            lineEntity.setServiceName(invoiceLine.getServiceName());
+            lineEntity.setPrice(invoiceLine.getPrice());
+            lineEntity.setDiscount(invoiceLine.getDiscount());
+            lineEntity.setFinalPrice(invoiceLine.getFinalPrice());
+
+            // Raden måste ligga i fakturans lista, annars sparas den inte (cascade).
+            entity.getLines().add(lineEntity);
+        }
+
         save(entity);
+
+        //    Skicka tillbaka id:n som databasen gav raderna till modellen,
+        //    så att raderna uppdateras (inte dubbleras) nästa gång fakturan sparas.
+        for (int i = 0; i < entity.getLines().size(); i++) {
+            int generatedId = entity.getLines().get(i).getId();
+            invoice.getLines().get(i).setId(generatedId);
+        }
     }
 
     public List<InvoiceEntity> findAll() {
@@ -93,6 +118,19 @@ public class InvoiceRepository {
                     entity.getInvoiceDate(),
                     entity.getAmount()
             );
+
+            // Hämta fakturans rader från databasen och lägg dem på modellen.
+            // Gamla fakturor har inga rader → loopen körs inte och amount från databasen behålls.
+            for (InvoiceLineEntity lineEntity : entity.getLines()) {
+                InvoiceLine line = new InvoiceLine(lineEntity.getServiceItemId(),lineEntity.getServiceName(),lineEntity.getPrice());
+
+                // Id behövs så att raden uppdateras (inte dubbleras) om fakturan sparas igen.
+                line.setId(lineEntity.getId());
+                line.setDiscount(lineEntity.getDiscount());
+
+                // addLine lägger till raden och räknar om fakturans summa.
+                invoice.addLine(line);
+            }
 
             invoice.setDiscount(entity.getDiscount());
             invoice.setPaid(entity.isPaid());
