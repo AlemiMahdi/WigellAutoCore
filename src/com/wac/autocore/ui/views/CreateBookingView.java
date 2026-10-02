@@ -22,6 +22,7 @@ import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 import javafx.scene.control.ListCell;
 import javafx.collections.ObservableList;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,6 +32,11 @@ import javafx.scene.control.ListView;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
+
+import javafx.collections.ListChangeListener;
+
+import java.util.Locale;
+import java.util.Observable;
 
 
 // Formulär för att boka in ett fordon: välj fordon, datum, mekaniker och skriv en beskrivning.
@@ -66,42 +72,59 @@ public class CreateBookingView {
         mechanicCombo.setConverter(mechanicConverter());
         UiKit.keepPromptWhenCleared(mechanicCombo);
 
-        List<ServiceItem> selectedServices = new ArrayList<>();
+        ObservableList<ServiceItem> selectedServices = FXCollections.observableArrayList();
+        durationField.setEditable(false);
+        durationField.setText("0");
+
+        Label totalPriceLabel = new Label();
+
+        Runnable updateTotals = () -> {
+            int totalMinutes = selectedServices.stream().mapToInt(ServiceItem::getEstimatedMinutes).sum();
+
+            double totalPrice = selectedServices.stream().mapToDouble(ServiceItem::getPrice).sum();
+
+            durationField.setText(String.valueOf(totalMinutes));
+            totalPriceLabel.setText(String.format(Locale.ROOT, "%.2f", totalPrice));
+        };
+
+        selectedServices.addListener((ListChangeListener<ServiceItem>) change -> updateTotals.run());
+        updateTotals.run();
+
         ListView<ServiceItem> serviceList = new ListView<>(
-            FXCollections.observableArrayList(Database.getServiceItems())
+                FXCollections.observableArrayList(Database.getServiceItems())
         );
-        
+
         serviceList.setPrefHeight(150);
         serviceList.setCellFactory(listView -> new javafx.scene.control.ListCell<ServiceItem>() {
 
-        private final CheckBox checkBox = new CheckBox();
+            private final CheckBox checkBox = new CheckBox();
 
-        @Override
-        protected void updateItem(ServiceItem service, boolean empty) {
-            super.updateItem(service, empty);
+            @Override
+            protected void updateItem(ServiceItem service, boolean empty) {
+                super.updateItem(service, empty);
 
-            if (empty || service == null) {
-                setGraphic(null);
-                return;
-            }
-
-            checkBox.setText(
-                    service.getName()
-                            + " – " + service.getPrice() + " kr"
-                            + " – " + service.getEstimatedMinutes() + " min"
-            );
-
-            checkBox.setSelected(selectedServices.contains(service));
-
-            checkBox.setOnAction(event -> {
-                if (checkBox.isSelected()) {
-                    if (!selectedServices.contains(service)) {
-                        selectedServices.add(service);
-                    }
-                } else {
-                    selectedServices.remove(service);
+                if (empty || service == null) {
+                    setGraphic(null);
+                    return;
                 }
-            });
+
+                checkBox.setText(
+                        service.getName()
+                                + " – " + service.getPrice() + " kr"
+                                + " – " + service.getEstimatedMinutes() + " min"
+                );
+
+                checkBox.setSelected(selectedServices.contains(service));
+
+                checkBox.setOnAction(event -> {
+                    if (checkBox.isSelected()) {
+                        if (!selectedServices.contains(service)) {
+                            selectedServices.add(service);
+                        }
+                    } else {
+                        selectedServices.remove(service);
+                    }
+                });
 
                 setGraphic(checkBox);
             }
@@ -164,7 +187,10 @@ public class CreateBookingView {
             }
 
             if (selectedServices.isEmpty()) {
-                UiKit.showError(messageLabel, "Select at least one service");
+                UiKit.showError(
+                        messageLabel,
+                        language.text("createBooking.selectService").get()
+                );
                 return;
             }
 
@@ -228,7 +254,8 @@ public class CreateBookingView {
                         UiKit.formField(language.text("createBooking.durationLabel"), durationField),
                         UiKit.formField(language.text("bookings.mechanic"), mechanicCombo)
                 ),
-                UiKit.formField("Services", serviceList),
+                UiKit.formField(language.text("createBooking.services"), serviceList),
+                UiKit.formField(language.text("createBooking.totalPrice"), totalPriceLabel),
                 UiKit.formField(language.text("bookings.description"), descriptionField),
                 createButton,
                 messageLabel
