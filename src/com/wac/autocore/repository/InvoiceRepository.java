@@ -36,8 +36,9 @@ public class InvoiceRepository {
         }
     }
 
-    // Omvandlar originalets Invoice till InvoiceEntity och sparar den.
-    public void save(Invoice invoice) {
+    // Översätter en Invoice (med rader) till en InvoiceEntity.
+    // Används av både save och PaymentRepository, så översättningen bara finns på ett ställe.
+    public InvoiceEntity toEntity(Invoice invoice) {
 
         InvoiceEntity entity = new InvoiceEntity();
 
@@ -64,6 +65,16 @@ public class InvoiceRepository {
             // Raden måste ligga i fakturans lista, annars sparas den inte (cascade).
             entity.getLines().add(lineEntity);
         }
+        return entity;
+
+
+    }
+
+    // Omvandlar originalets Invoice till InvoiceEntity och sparar den.
+    public void save(Invoice invoice) {
+
+        // Översätt fakturan (med alla rader) till en entity som Hibernate kan spara.
+        InvoiceEntity entity = toEntity(invoice);
 
         save(entity);
 
