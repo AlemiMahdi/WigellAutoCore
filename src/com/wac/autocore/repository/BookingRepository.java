@@ -152,18 +152,8 @@ public class BookingRepository {
             );
 
             booking.setStatus(entity.getStatus());
-            
-            List<ServiceItem> services = new ArrayList<>();
-            for (ServiceItemEntity serviceEntity : entity.getServices()) {
-                ServiceItem service = new ServiceItem(
-                    serviceEntity.getId(), 
-                    serviceEntity.getName(), 
-                    serviceEntity.getDescription(), 
-                    serviceEntity.getPrice(), 
-                    serviceEntity.getEstimatedMinutes()
-                );
-                services.add(service);
-            }
+
+            List<ServiceItem> services = getServiceItems(entity);
             booking.setServices(services);
             bookings.add(booking);
         }
@@ -180,7 +170,7 @@ public class BookingRepository {
                 if (entity == null) {
                     return null;
                 }
-                Booking Booking = new Booking(
+                Booking booking = new Booking(
                         entity.getId(),
                         entity.getVehicleId(),
                         entity.getDate(),
@@ -188,19 +178,9 @@ public class BookingRepository {
                         entity.getDurationMinutes(),
                         entity.getDescription()
                 );
-                List<ServiceItem> serviceList = new ArrayList<>();
-                for (ServiceItemEntity serviceItems : entity.getServices()) {
-                    ServiceItem service = new ServiceItem(
-                            serviceItems.getId(),
-                            serviceItems.getName(),
-                            serviceItems.getDescription(),
-                            serviceItems.getPrice(),
-                            serviceItems.getEstimatedMinutes()
-                    );
-                    serviceList.add(service);
-                }
+                List<ServiceItem> serviceList = getServiceItems(entity);
                 booking.setServices(serviceList);
-                return Booking;
+                return booking;
             } catch (RuntimeException e) {
                 if (transaction.isActive()) {
                     transaction.rollback();
@@ -208,6 +188,21 @@ public class BookingRepository {
                 throw e;
             }
         }
+    }
+
+    private List<ServiceItem> getServiceItems(BookingEntity entity) {
+        List<ServiceItem> serviceList = new ArrayList<>();
+        for (ServiceItemEntity serviceItems : entity.getServices()) {
+            ServiceItem service = new ServiceItem(
+                    serviceItems.getId(),
+                    serviceItems.getName(),
+                    serviceItems.getDescription(),
+                    serviceItems.getPrice(),
+                    serviceItems.getEstimatedMinutes()
+            );
+            serviceList.add(service);
+        }
+        return serviceList;
     }
 
     public boolean hasOverlappingBooking(

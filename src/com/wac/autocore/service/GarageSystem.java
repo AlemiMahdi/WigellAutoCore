@@ -10,10 +10,13 @@ import com.wac.autocore.model.Payment;
 import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.model.Vehicle;
 import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.repository.BookingRepository;
 
 import java.time.LocalDate;
 
 public class GarageSystem {
+
+    private final BookingRepository bookingRepository = new BookingRepository();
 
     public void showCustomers() {
         System.out.println();
@@ -325,22 +328,32 @@ public class GarageSystem {
         }
 
         //hitta bokning kopplad till arbetsorder
-        BookingEntity booking = findBooking(workOrder.getBookingId());
-
+        Booking booking = findBooking(workOrder.getBookingId());
 
         double amount = 0.0;
 
         for (Integer serviceItemId : workOrder.getServiceItemIds()) {
-            ServiceItem serviceItem = findServiceItem(serviceItemId);
+            ServiceItem history = null;
+            if (booking != null) {
+                for (ServiceItem service : booking.getServices()) {
+                    if(service.getId() == serviceItemId){
+                        history = service;
+                        break;
+                    }
+                }
+            }
 
-            if (serviceItem != null) {
-                amount += serviceItem.getPrice();
+            if (history != null) {
+                amount += history.getPrice();
+            } else {
+                ServiceItem current = findServiceItem(serviceItemId);
+                if(current != null) {
+                    amount += current.getPrice();
+                }
             }
         }
 
         double discount = 0.0;
-
-        Booking booking = findBooking(workOrder.getBookingId());
 
         if (booking != null) {
             Vehicle vehicle = findVehicle(booking.getVehicleId());
@@ -483,9 +496,7 @@ public class GarageSystem {
             if (booking.getId() == id) {
                 return booking;
             }
-        }
-
-        return null;
+        } return null;
     }
 
     private Mechanic findMechanic(int id) {
