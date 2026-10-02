@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 public class Invoice {
 
@@ -80,11 +82,13 @@ public class Invoice {
         this.paid = paid;
 
     }
+
     public void addLine(InvoiceLine invoiceLine) {
 
         lines.add(invoiceLine);
         calculateAmountFromLines();
     }
+
     public List<InvoiceLine> getLines() {
         return Collections.unmodifiableList(lines);
     }
@@ -94,12 +98,50 @@ public class Invoice {
     }
 
     private void calculateAmountFromLines() {
-         double sum = 0.0;
-         for (InvoiceLine line : lines) {
-             sum += line.getFinalPrice();
-         }
-         amount = sum;
-         calculateTotalAmount();
+        double sum = 0.0;
+        for (InvoiceLine line : lines) {
+            sum += line.getPrice();
+        }
+        amount = sum;
+        calculateTotalAmount();
+    }
+
+    // FÖrdelar fakturans rabatt mellan raderna. Anropas när en ny faktura fått sin totala rabatt.
+    public void distributeDiscountToLines() {
+        if (lines.isEmpty()) {
+            return;
+        }
+
+        BigDecimal totalPrice = BigDecimal.ZERO;
+        for (InvoiceLine line : lines) {
+            BigDecimal price = BigDecimal.valueOf(line.getPrice()).setScale(2, RoundingMode.UNNECESSARY);
+
+            if (price.signum() < 0) {
+                throw new IllegalArgumentException("Price cannot be negative");
+            }
+            totalPrice = totalPrice.add(price);
+        }
+
+        BigDecimal totalDiscount = BigDecimal.valueOf(discount).setScale(2, RoundingMode.HALF_UP).max(BigDecimal.ZERO).min(totalPrice);
+
+        BigDecimal accumalatedPrice = BigDecimal.ZERO;
+        BigDecimal allocatedDiscount = BigDecimal.ZERO;
+
+        for (InvoiceLine line : lines) {
+            accumalatedPrice = accumalatedPrice.add(BigDecimal.valueOf(line.getPrice())
+            );
+
+            BigDecimal accumalatedDiscount = totalPrice.signum() == 0 ? BigDecimal.ZERO : totalDiscount.multiply(accumalatedPrice).divide(totalPrice, 2, RoundingMode.HALF_UP);
+            BigDecimal lineDiscount = accumalatedDiscount.subtract(totalDiscount);
+
+            line.setDiscount(lineDiscount.doubleValue());
+            allocatedDiscount = accumalatedDiscount;
+        }
+
+        amount = totalPrice.doubleValue();
+        discount = totalDiscount.doubleValue();
+        calculateTotalAmount();
+
     }
 
     @Override
