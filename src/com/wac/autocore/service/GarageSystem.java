@@ -1,6 +1,7 @@
 package com.wac.autocore.service;
 
 import com.wac.autocore.data.Database;
+import com.wac.autocore.entity.BookingEntity;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.Customer;
 import com.wac.autocore.model.Invoice;
@@ -322,6 +323,10 @@ public class GarageSystem {
             System.out.println("Invoice can only be created for a completed work order.");
             return null;
         }
+
+        //hitta bokning kopplad till arbetsorder
+        BookingEntity booking = findBooking(workOrder.getBookingId());
+
 
         double amount = 0.0;
 

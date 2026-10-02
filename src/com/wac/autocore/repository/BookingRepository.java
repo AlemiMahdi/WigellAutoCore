@@ -3,7 +3,9 @@ package com.wac.autocore.repository;
 
 import com.wac.autocore.data.HibernateUtil;
 import com.wac.autocore.entity.BookingEntity;
+import com.wac.autocore.entity.ServiceItemEntity;
 import com.wac.autocore.model.Booking;
+import com.wac.autocore.model.ServiceItem;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 
@@ -137,6 +139,46 @@ public class BookingRepository {
             bookings.add(booking);
         }
         return bookings;
+    }
+
+    public Booking findById(int id) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Transaction  transaction = session.beginTransaction();
+            try {
+                BookingEntity entity = session.get(BookingEntity.class, id);
+                transaction.commit();
+
+                if (entity == null) {
+                    return null;
+                }
+                Booking Booking = new Booking(
+                        entity.getId(),
+                        entity.getVehicleId(),
+                        entity.getDate(),
+                        entity.getStartTime(),
+                        entity.getDurationMinutes(),
+                        entity.getDescription()
+                );
+                List<ServiceItem> serviceList = new ArrayList<>();
+                for (ServiceItemEntity serviceItems : entity.getServices()) {
+                    ServiceItem service = new ServiceItem(
+                            serviceItems.getId(),
+                            serviceItems.getName(),
+                            serviceItems.getDescription(),
+                            serviceItems.getPrice(),
+                            serviceItems.getEstimatedMinutes()
+                    );
+                    serviceList.add(service);
+                }
+                booking.setServices(serviceList);
+                return Booking;
+            } catch (RuntimeException e) {
+                if (transaction.isActive()) {
+                    transaction.rollback();
+                }
+                throw e;
+            }
+        }
     }
 
     public boolean hasOverlappingBooking(
