@@ -7,6 +7,7 @@ import com.wac.autocore.ui.language.LanguageManager;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
@@ -114,6 +115,12 @@ public class ShowInvoiceView {
 
         UiKit.styleTable(lineTable);
 
+        Label sumLabel = new Label();
+        Label invoiceDiscountLabel = new Label();
+        Label totalLabel = new Label();
+        VBox summaryBox = new VBox(4, sumLabel, invoiceDiscountLabel, totalLabel);
+        summaryBox.setAlignment(Pos.TOP_RIGHT);
+
         // När användaren klickar på en faktura visas dess rader i radtabellen.
         // addListener körs automatiskt varje gång valet ändras (Observer-mönstret).
         // newInvoice är null när ingen faktura är vald, därför kontrolleras det först.
@@ -121,10 +128,17 @@ public class ShowInvoiceView {
             if (newInvoice != null) {
                 ObservableList<InvoiceLine> lines = FXCollections.observableArrayList(newInvoice.getLines());
                 lineTable.setItems(lines);
+
+                // Visar hur slutbeloppet räknas: summa rader - fakturarabatt = totalbelopp.
+                // Beloppen hämtas från fakturan, som redan har räknat ut dem.
+                sumLabel.setText(language.text("invoiceLine.sum").get() + ": " + formatSek(newInvoice.getAmount()));
+                invoiceDiscountLabel.setText(language.text("invoiceLine.invoiceDiscount").get() + ": " + formatSek(newInvoice.getDiscount()));
+                totalLabel.setText(language.text("invoices.total").get() + ": " + formatSek(newInvoice.getTotalAmount()));
+
             }
         });
 
-        VBox view = new VBox(24, UiKit.pageHeader(language.text("invoices.title"), newInvoiceButton), table, lineTable);
+        VBox view = new VBox(24, UiKit.pageHeader(language.text("invoices.title"), newInvoiceButton), table, lineTable, summaryBox);
         return view;
     }
 
