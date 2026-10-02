@@ -2,6 +2,7 @@ package com.wac.autocore.ui;
 
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Invoice;
+import com.wac.autocore.model.InvoiceLine;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -11,6 +12,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.VBox;
+
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -82,7 +84,47 @@ public class ShowInvoiceView {
 
         UiKit.styleTable(table);
 
-        VBox view = new VBox(24, UiKit.pageHeader(language.text("invoices.title"), newInvoiceButton), table);
+        TableView<InvoiceLine> lineTable = new TableView<>();
+
+        TableColumn<InvoiceLine, String> serviceCol = new TableColumn<>("Service");
+        serviceCol.setCellValueFactory(cellData ->
+                new SimpleStringProperty(cellData.getValue().getServiceName()));
+
+        TableColumn<InvoiceLine, String> priceLineCol = new TableColumn<>("Price");
+        priceLineCol.setCellValueFactory(cellData ->
+                new SimpleStringProperty(formatSek(cellData.getValue().getPrice())));
+        priceLineCol.getStyleClass().add("cell-right");
+
+        TableColumn<InvoiceLine, String> discountLineCol = new TableColumn<>("Discount");
+        discountLineCol.setCellValueFactory(cellData ->
+                new SimpleStringProperty(formatSek(cellData.getValue().getDiscount())));
+        discountLineCol.getStyleClass().addAll("cell-right", "cell-muted");
+
+        TableColumn<InvoiceLine, String> finalPriceLineCol = new TableColumn<>("Final price");
+        finalPriceLineCol.setCellValueFactory(cellData ->
+                new SimpleStringProperty(formatSek(cellData.getValue().getFinalPrice())));
+        finalPriceLineCol.getStyleClass().addAll("cell-right", "cell-strong");
+
+        serviceCol.textProperty().bind(language.text("invoiceLine.service"));
+        priceLineCol.textProperty().bind(language.text("invoiceLine.price"));
+        discountLineCol.textProperty().bind(language.text("invoiceLine.discount"));
+        finalPriceLineCol.textProperty().bind(language.text("invoiceLine.finalPrice"));
+
+        lineTable.getColumns().addAll(serviceCol, priceLineCol, discountLineCol, finalPriceLineCol);
+
+        UiKit.styleTable(lineTable);
+
+        // När användaren klickar på en faktura visas dess rader i radtabellen.
+        // addListener körs automatiskt varje gång valet ändras (Observer-mönstret).
+        // newInvoice är null när ingen faktura är vald, därför kontrolleras det först.
+        table.getSelectionModel().selectedItemProperty().addListener((observable, oldInvoice, newInvoice) -> {
+            if (newInvoice != null) {
+                ObservableList<InvoiceLine> lines = FXCollections.observableArrayList(newInvoice.getLines());
+                lineTable.setItems(lines);
+            }
+        });
+
+        VBox view = new VBox(24, UiKit.pageHeader(language.text("invoices.title"), newInvoiceButton), table, lineTable);
         return view;
     }
 
@@ -92,15 +134,19 @@ public class ShowInvoiceView {
     }
 
     /**
-     * Formaterar ett belopp som i designen: "3 495 SEK".
-     * Mellanslag som tusentalsavgränsare, decimaler bara när de behövs
-     * (t.ex. efter 10 % VIP-rabatt: "1 305,5 SEK").
-     * Används även av CreateInvoiceView, ShowPaymentsView och ProcessPaymentView.
+     * Gör om ett belopp till text i svenskt format med "SEK" på slutet.
+     * Mellanslag (' ') mellan tusental, komma (',') som decimaltecken
+     * och decimaler bara när de behövs.
+     * # betyder "visa siffran om den finns", och 0 betyder "visa alltid en siffra".
+     * Exempel: 3495.0 blir "3 495 SEK" och 1305.5 blir "1 305,5 SEK".
+     *
+     * Används av alla vyer som visar belopp, så att de ser likadana ut.
      */
     public static String formatSek(double amount) {
         DecimalFormatSymbols symbols = new DecimalFormatSymbols();
         symbols.setGroupingSeparator(' ');
         symbols.setDecimalSeparator(',');
+        // Mallen för hur talet ska se ut.
         DecimalFormat format = new DecimalFormat("#,##0.##", symbols);
         return format.format(amount) + " SEK";
     }
