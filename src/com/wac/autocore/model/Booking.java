@@ -2,6 +2,8 @@ package com.wac.autocore.model;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Booking {
 
@@ -12,6 +14,7 @@ public class Booking {
     private String status;
     private LocalTime startTime;
     private int durationMinutes;
+    private List<ServiceItem> services = new ArrayList();
 
     public Booking(int id, int vehicleId, LocalDate date, String description) {
         this.id = id;
@@ -87,6 +90,9 @@ public class Booking {
     public void setDurationMinutes(int durationMinutes) {
         this.durationMinutes = durationMinutes;
     }
+
+    public List<ServiceItem> getServices () { return services; }
+    public void setServices (List<ServiceItem> services) { this.services = services; }
 
     @Override
     public String toString() {
