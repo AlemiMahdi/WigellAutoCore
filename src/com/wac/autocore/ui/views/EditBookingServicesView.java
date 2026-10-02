@@ -11,6 +11,9 @@ import javafx.scene.control.*;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import java.util.Locale;
+import javafx.scene.control.ListCell;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 
 public class EditBookingServicesView {
 
@@ -55,14 +58,34 @@ public class EditBookingServicesView {
                 bookingComboBox.valueProperty().isNull()
         );
 
-        serviceList.setCellFactory(list -> new ListCell<ServiceItem>() {
-            @Override
-            protected void updateItem(ServiceItem item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty || item == null
-                        ? null
-                        : item.getId() + " – " + item.getName());
-            }
+        serviceList.setCellFactory(list -> {
+            ListCell<ServiceItem> cell = new ListCell<ServiceItem>() {
+                @Override
+                protected void updateItem(ServiceItem service, boolean empty) {
+                    super.updateItem(service, empty);
+
+                    setText(empty || service == null
+                            ? null
+                            : service.getId() + " – " + service.getName());
+                }
+            };
+
+            cell.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
+                if (event.getButton() == MouseButton.PRIMARY && !cell.isEmpty()) {
+                    int index = cell.getIndex();
+
+                    if (serviceList.getSelectionModel().isSelected(index)) {
+                        serviceList.getSelectionModel().clearSelection(index);
+                    } else {
+                        serviceList.getSelectionModel().select(index);
+                    }
+
+                    serviceList.requestFocus();
+                    event.consume();
+                }
+            });
+
+            return cell;
         });
 
         Label emptyLabel = new Label();

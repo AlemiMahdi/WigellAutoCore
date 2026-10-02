@@ -1341,3 +1341,17 @@
     -fx-effect: null;
     -fx-stroke: null;
 }
+/* Kompakt UiKit-knapp med ikon */
+.primary-button.icon-button {
+    -fx-padding: 7;
+    -fx-min-width: 30;
+    -fx-pref-width: 30;
+    -fx-max-width: 30;
+    -fx-min-height: 30;
+    -fx-pref-height: 30;
+    -fx-max-height: 30;
+}
+
+.primary-button.icon-button .edit-pencil {
+    -fx-fill: -fx-text-fill;
+}

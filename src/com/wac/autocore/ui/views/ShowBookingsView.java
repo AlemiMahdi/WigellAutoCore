@@ -26,6 +26,10 @@ import java.util.HashMap;
 import java.util.Map;
 import javafx.scene.control.TableRow;
 import javafx.scene.input.MouseButton;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.Tooltip;
+import javafx.scene.control.Tooltip;
+import javafx.scene.shape.SVGPath;
 
 // Visar alla bokningar i en tabell: fordon, datum, mekaniker, beskrivning och status.
 public class ShowBookingsView {
@@ -163,27 +167,67 @@ public class ShowBookingsView {
 
         VBox root = new VBox(20, buildHeader(), table);
 
+        // Redigeringsknapp
+        TableColumn<Booking, Void> editColumn = new TableColumn<>();
+        editColumn.setSortable(false);
+        editColumn.setMinWidth(60);
+        editColumn.setPrefWidth(60);
+        editColumn.setMaxWidth(60);
+
+        editColumn.setCellFactory(column -> new TableCell<Booking, Void>() {
+            private final Button editButton = UiKit.primaryButton("");
+
+            {
+                SVGPath pencil = new SVGPath();
+                pencil.setContent(
+                        "M 1 10 L 1 13 L 4 13 L 11 6 L 8 3 Z "
+                                + "M 9 2 L 11 0 L 14 3 L 12 5 Z"
+                );
+                pencil.getStyleClass().add("edit-pencil");
+
+                editButton.setGraphic(pencil);
+                editButton.getStyleClass().add("icon-button");
+
+                Tooltip tooltip = new Tooltip();
+                tooltip.textProperty().bind(language.text("bookings.edit"));
+                editButton.setTooltip(tooltip);
+                editButton.accessibleTextProperty().bind(language.text("bookings.edit"));
+
+                editButton.setOnAction(event -> {
+                    int index = getIndex();
+
+                    if (index < 0 || index >= getTableView().getItems().size()) {
+                        return;
+                    }
+
+                    Booking booking = getTableView().getItems().get(index);
+
+                    if (booking != null) {
+                        openBookingEditor(root, booking);
+                    }
+                });
+
+                setAlignment(javafx.geometry.Pos.CENTER);
+            }
+
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(null);
+                setGraphic(empty ? null : editButton);
+            }
+        });
+
+        table.getColumns().add(editColumn);
+
 // Dubbelklick på en bokning öppnar formuläret.
         table.setRowFactory(tableView -> {
             TableRow<Booking> row = new TableRow<>();
-
             row.setOnMouseClicked(event -> {
                 if (event.getButton() == MouseButton.PRIMARY
                         && event.getClickCount() == 2
                         && !row.isEmpty()) {
-
-                    Booking selectedBooking = row.getItem();
-
-                    Button backButton = new Button();
-                    backButton.textProperty().bind(language.text("bookings.back"));
-                    backButton.setOnAction(backEvent ->
-                            Navigator.goTo("show-bookings")
-                    );
-
-                    VBox editView =
-                            new EditBookingServicesView().getView(selectedBooking);
-
-                    root.getChildren().setAll(backButton, editView);
+                    openBookingEditor(root, row.getItem());
                 }
             });
 
@@ -191,6 +235,19 @@ public class ShowBookingsView {
         });
 
         return root;
+    }
+
+    // Används av både pennknappen och dubbelklicket.
+    private void openBookingEditor(VBox root, Booking booking) {
+        Button backButton = UiKit.primaryButton("");
+        backButton.textProperty().bind(language.text("bookings.back"));
+
+        backButton.setOnAction(event ->
+                Navigator.goTo("show-bookings")
+        );
+
+        VBox editView = new EditBookingServicesView().getView(booking);
+        root.getChildren().setAll(backButton, editView);
     }
 
     // Rubrik med "+ New booking" till höger som hoppar till formuläret
