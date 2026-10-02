@@ -8,6 +8,8 @@ import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.ServiceItem;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
+import com.wac.autocore.entity.ServiceItemEntity;
+import com.wac.autocore.model.ServiceItem;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -71,6 +73,17 @@ public class BookingRepository {
                 entity.setStatus(booking.getStatus());
                 entity.setStartTime(booking.getStartTime());
                 entity.setDurationMinutes(booking.getDurationMinutes());
+                
+                List<ServiceItemEntity> serviceEntities = new ArrayList<>();
+                for (ServiceItem service : booking.getServices()) {
+                    ServiceItemEntity serviceEntity = 
+                        session.get( ServiceItemEntity.class, service.getId());
+                    
+                    if (serviceEntity != null) {
+                        serviceEntities.add(serviceEntity);
+                    }
+                }
+                entity.setServices(serviceEntities);
 
                 // Ändrar mekanikern bara när ett nytt val skickas in.
                 if (updateMechanic) {
@@ -100,7 +113,10 @@ public class BookingRepository {
 
             try {
                 List<BookingEntity> bookings =
-                        session.createQuery("from BookingEntity order by id",
+                        session.createQuery(
+                            "select distinct b from BookingEntity b " +
+                            "left join fetch b.services " +
+                            "order by b.id ",
                                 BookingEntity.class
                         ).getResultList();
                 transaction.commit();
@@ -136,6 +152,19 @@ public class BookingRepository {
             );
 
             booking.setStatus(entity.getStatus());
+            
+            List<ServiceItem> services = new ArrayList<>();
+            for (ServiceItemEntity serviceEntity : entity.getServices()) {
+                ServiceItem service = new ServiceItem(
+                    serviceEntity.getId(), 
+                    serviceEntity.getName(), 
+                    serviceEntity.getDescription(), 
+                    serviceEntity.getPrice(), 
+                    serviceEntity.getEstimatedMinutes()
+                );
+                services.add(service);
+            }
+            booking.setServices(services);
             bookings.add(booking);
         }
         return bookings;
