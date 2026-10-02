@@ -690,6 +690,7 @@ public class AutoCoreApp extends Application {
         // (Scrollningen sköts av innehållsytans ScrollPane.)
         showView(new DashboardView());
     }
+    
 
     public static void main(String[] args) {
         launch(args);
