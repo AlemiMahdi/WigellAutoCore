@@ -4,9 +4,16 @@ package com.wac.autocore.entity;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.Table;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
+import javax.persistence.ManyToMany;
+
 
 @Entity
 @Table(name = "bookings")
@@ -35,6 +42,14 @@ public class BookingEntity {
 
     @Column (name = "duration_minutes")
     private Integer durationMinutes;
+
+    @ManyToMany 
+    @JoinTable (
+        name = "booking_services",
+        joinColumns = @JoinColumn (name = "booking_id"),
+        inverseJoinColumns = @JoinColumn (name = "service_id")
+    )
+    private List<ServiceItemEntity> services = new ArrayList<>(); 
 
     public BookingEntity() {}
 
@@ -72,7 +87,8 @@ public class BookingEntity {
     public Integer getDurationMinutes () { return durationMinutes; }
     public void setDurationMinutes (Integer duration_minutes ) { this.durationMinutes = duration_minutes; }
 
-    
+    public List<ServiceItemEntity> getServices () { return  services;}
+    public void setServices ( List<ServiceItemEntity> services) { this.services = services; }
 
 
 
