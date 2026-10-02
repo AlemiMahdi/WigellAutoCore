@@ -1,6 +1,9 @@
 package com.wac.autocore.model;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class Invoice {
 
@@ -11,6 +14,7 @@ public class Invoice {
     private double discount;
     private double totalAmount;
     private boolean paid;
+    private List<InvoiceLine> lines = new ArrayList<>();
 
     public Invoice(int id, int workOrderId, LocalDate invoiceDate, double amount) {
         this.id = id;
@@ -74,10 +78,28 @@ public class Invoice {
 
     public void setPaid(boolean paid) {
         this.paid = paid;
+
+    }
+    public void addLine(InvoiceLine invoiceLine) {
+
+        lines.add(invoiceLine);
+        calculateAmountFromLines();
+    }
+    public List<InvoiceLine> getLines() {
+        return Collections.unmodifiableList(lines);
     }
 
     private void calculateTotalAmount() {
         this.totalAmount = amount - discount;
+    }
+
+    private void calculateAmountFromLines() {
+         double sum = 0.0;
+         for (InvoiceLine line : lines) {
+             sum += line.getFinalPrice();
+         }
+         amount = sum;
+         calculateTotalAmount();
     }
 
     @Override

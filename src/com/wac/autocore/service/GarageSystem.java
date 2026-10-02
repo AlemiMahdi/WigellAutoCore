@@ -1,22 +1,11 @@
 package com.wac.autocore.service;
 
 import com.wac.autocore.data.Database;
-import com.wac.autocore.entity.BookingEntity;
-import com.wac.autocore.model.Booking;
-import com.wac.autocore.model.Customer;
-import com.wac.autocore.model.Invoice;
-import com.wac.autocore.model.Mechanic;
-import com.wac.autocore.model.Payment;
-import com.wac.autocore.model.ServiceItem;
-import com.wac.autocore.model.Vehicle;
-import com.wac.autocore.model.WorkOrder;
-import com.wac.autocore.repository.BookingRepository;
+import com.wac.autocore.model.*;
 
 import java.time.LocalDate;
 
 public class GarageSystem {
-
-    private final BookingRepository bookingRepository = new BookingRepository();
 
     public void showCustomers() {
         System.out.println();
@@ -203,8 +192,7 @@ public class GarageSystem {
     }
 
     public WorkOrder createWorkOrder(int bookingId,
-                                     int mechanicId,
-                                     int... serviceItemIds) {
+                                     int mechanicId) {
 
         Booking booking = findBooking(bookingId);
 
@@ -225,15 +213,6 @@ public class GarageSystem {
             return null;
         }
 
-        for (int serviceItemId : serviceItemIds) {
-            if (findServiceItem(serviceItemId) == null) {
-                System.out.println(
-                        "Service item with ID " + serviceItemId + " does not exist."
-                );
-                return null;
-            }
-        }
-
         int id = Database.getWorkOrders().size() + 1;
 
         WorkOrder workOrder = new WorkOrder(
@@ -242,8 +221,8 @@ public class GarageSystem {
                 mechanicId
         );
 
-        for (int serviceItemId : serviceItemIds) {
-            workOrder.addServiceItem(serviceItemId);
+        for( ServiceItem serviceItem : booking.getServices()) {
+            workOrder.addServiceItem(serviceItem.getId());
         }
 
         Database.getWorkOrders().add(workOrder);
@@ -327,33 +306,28 @@ public class GarageSystem {
             return null;
         }
 
-        //hitta bokning kopplad till arbetsorder
-        Booking booking = findBooking(workOrder.getBookingId());
+        int id = Database.getInvoices().size() + 1;
 
-        double amount = 0.0;
+        Invoice invoice = new Invoice(
+                id,
+                workOrderId,
+                LocalDate.now(),
+                0.0
+        );
 
         for (Integer serviceItemId : workOrder.getServiceItemIds()) {
-            ServiceItem history = null;
-            if (booking != null) {
-                for (ServiceItem service : booking.getServices()) {
-                    if(service.getId() == serviceItemId){
-                        history = service;
-                        break;
-                    }
-                }
-            }
+            ServiceItem serviceItem = findServiceItem(serviceItemId);
 
-            if (history != null) {
-                amount += history.getPrice();
-            } else {
-                ServiceItem current = findServiceItem(serviceItemId);
-                if(current != null) {
-                    amount += current.getPrice();
-                }
+            if (serviceItem != null) {
+                InvoiceLine line = new InvoiceLine(serviceItem.getId(), serviceItem.getName(), serviceItem.getPrice());
+                invoice.addLine(line);
+
             }
         }
-
+        double amount = invoice.getAmount();
         double discount = 0.0;
+
+        Booking booking = findBooking(workOrder.getBookingId());
 
         if (booking != null) {
             Vehicle vehicle = findVehicle(booking.getVehicleId());
@@ -386,15 +360,6 @@ public class GarageSystem {
         if (discount > amount) {
             discount = amount;
         }
-
-        int id = Database.getInvoices().size() + 1;
-
-        Invoice invoice = new Invoice(
-                id,
-                workOrderId,
-                LocalDate.now(),
-                amount
-        );
 
         invoice.setDiscount(discount);
 
@@ -496,7 +461,9 @@ public class GarageSystem {
             if (booking.getId() == id) {
                 return booking;
             }
-        } return null;
+        }
+
+        return null;
     }
 
     private Mechanic findMechanic(int id) {

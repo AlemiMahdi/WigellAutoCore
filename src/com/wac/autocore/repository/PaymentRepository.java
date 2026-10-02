@@ -127,16 +127,10 @@ public class PaymentRepository {
             paymentEntity.setPaymentDate(payment.getPaymentDate());
             paymentEntity.setSuccessful(payment.isSuccessful());
 
-
-            InvoiceEntity invoiceEntity = new InvoiceEntity();
-
-            invoiceEntity.setId(invoice.getId());
-            invoiceEntity.setWorkOrderId(invoice.getWorkOrderId());
-            invoiceEntity.setInvoiceDate(invoice.getInvoiceDate());
-            invoiceEntity.setAmount(invoice.getAmount());
-            invoiceEntity.setDiscount(invoice.getDiscount());
-            invoiceEntity.setTotalAmount(invoice.getTotalAmount());
-            invoiceEntity.setPaid(invoice.isPaid());
+            // Samma översättning som InvoiceRepository använder, så att
+            // fakturans rader följer med och inte kopplas bort vid betalning.
+            InvoiceRepository invoiceRepository = new InvoiceRepository();
+            InvoiceEntity invoiceEntity = invoiceRepository.toEntity(invoice);
 
 
             session.saveOrUpdate(paymentEntity);
