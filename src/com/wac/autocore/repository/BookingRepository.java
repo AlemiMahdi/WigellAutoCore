@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import com.wac.autocore.entity.WorkOrderEntity;
 
 public class BookingRepository {
 
@@ -174,6 +175,19 @@ public class BookingRepository {
         LocalTime startTime,
         int durationMinutes) {
 
+        return hasOverlappingBooking(
+                mechanicId, date, startTime, durationMinutes, null
+        );
+    }
+
+    // Används vid redigering för att undanta den egna bokningen.
+    public boolean hasOverlappingBooking(
+            int mechanicId,
+            LocalDate date,
+            LocalTime startTime,
+            int durationMinutes,
+            Integer excludedBookingId) {
+
     LocalDateTime newStart =
             LocalDateTime.of(date, startTime);
 
@@ -181,6 +195,12 @@ public class BookingRepository {
             newStart.plusMinutes(durationMinutes);
 
     for (BookingEntity entity : findAll()) {
+
+        // Jämför inte bokningen med sig själv.
+        if (excludedBookingId != null
+                && entity.getId() == excludedBookingId.intValue()) {
+            continue;
+        }
 
         // Bokningen måste tillhöra samma mekaniker.
         if (entity.getMechanicId() == null ||
@@ -219,4 +239,158 @@ public class BookingRepository {
 
     return false;
 }
+    public int updateBookingServices(
+            int bookingId,
+            List<Integer> serviceIds) {
+
+        try (Session session =
+                     HibernateUtil.getSessionFactory().openSession()) {
+
+            Transaction transaction = session.beginTransaction();
+
+            try {
+                BookingEntity booking =
+                        session.get(BookingEntity.class, bookingId);
+
+                if (booking == null) {
+                    throw new IllegalArgumentException(
+                            "editBookingServices.notFound"
+                    );
+                }
+
+                // Endast bokningar där arbetet inte har börjat får ändras.
+                if (!"BOOKED".equals(booking.getStatus())
+                        && !"WORK_ORDER_CREATED".equals(booking.getStatus())) {
+                    throw new IllegalArgumentException(
+                            "editBookingServices.locked"
+                    );
+                }
+
+                List<WorkOrderEntity> workOrders = session.createQuery(
+                        "from WorkOrderEntity where bookingId = :bookingId",
+                        WorkOrderEntity.class
+                ).setParameter("bookingId", bookingId).getResultList();
+
+                for (WorkOrderEntity order : workOrders) {
+                    if (!"CREATED".equals(order.getStatus())) {
+                        throw new IllegalArgumentException(
+                                "editBookingServices.locked"
+                        );
+                    }
+                }
+
+                if (serviceIds == null || serviceIds.isEmpty()) {
+                    throw new IllegalArgumentException(
+                            "editBookingServices.selectService"
+                    );
+                }
+
+                List<ServiceItemEntity> services = new ArrayList<>();
+                List<Integer> uniqueIds = new ArrayList<>();
+                int totalMinutes = 0;
+
+                for (Integer serviceId : serviceIds) {
+                    if (serviceId == null) {
+                        throw new IllegalArgumentException(
+                                "editBookingServices.serviceMissing"
+                        );
+                    }
+
+                    if (uniqueIds.contains(serviceId)) {
+                        continue;
+                    }
+
+                    ServiceItemEntity service =
+                            session.get(ServiceItemEntity.class, serviceId);
+
+                    if (service == null) {
+                        throw new IllegalArgumentException(
+                                "editBookingServices.serviceMissing"
+                        );
+                    }
+
+                    if (service.getEstimatedMinutes() <= 0) {
+                        throw new IllegalArgumentException(
+                                "editBookingServices.invalidDuration"
+                        );
+                    }
+
+                    services.add(service);
+                    uniqueIds.add(serviceId);
+                    totalMinutes = Math.addExact(
+                            totalMinutes, service.getEstimatedMinutes()
+                    );
+                }
+
+                if (booking.getDate() == null
+                        || booking.getStartTime() == null) {
+                    throw new IllegalArgumentException(
+                            "editBookingServices.missingTime"
+                    );
+                }
+
+                // Kontrollerar andra bokningar i samma session.
+                if (booking.getMechanicId() != null) {
+                    List<BookingEntity> otherBookings = session.createQuery(
+                                    "from BookingEntity "
+                                            + "where mechanicId = :mechanicId "
+                                            + "and id <> :bookingId",
+                                    BookingEntity.class
+                            )
+                            .setParameter("mechanicId", booking.getMechanicId())
+                            .setParameter("bookingId", bookingId)
+                            .getResultList();
+
+                    LocalDateTime newStart = LocalDateTime.of(
+                            booking.getDate(), booking.getStartTime()
+                    );
+                    LocalDateTime newEnd =
+                            newStart.plusMinutes(totalMinutes);
+
+                    for (BookingEntity other : otherBookings) {
+                        if (other.getDate() == null
+                                || other.getStartTime() == null
+                                || other.getDurationMinutes() == null
+                                || other.getDurationMinutes() <= 0) {
+                            continue;
+                        }
+
+                        LocalDateTime otherStart = LocalDateTime.of(
+                                other.getDate(), other.getStartTime()
+                        );
+                        LocalDateTime otherEnd = otherStart.plusMinutes(
+                                other.getDurationMinutes()
+                        );
+
+                        if (newStart.isBefore(otherEnd)
+                                && newEnd.isAfter(otherStart)) {
+                            throw new IllegalArgumentException(
+                                    "editBookingServices.overlap"
+                            );
+                        }
+                    }
+                }
+
+                // Alla ändringar sparas i samma transaktion.
+                booking.getServices().clear();
+                booking.getServices().addAll(services);
+                booking.setDurationMinutes(totalMinutes);
+
+                for (WorkOrderEntity order : workOrders) {
+                    order.getServiceItemIds().clear();
+                    order.getServiceItemIds().addAll(uniqueIds);
+                }
+
+                transaction.commit();
+                return totalMinutes;
+
+            } catch (RuntimeException exception) {
+                if (transaction.isActive()) {
+                    transaction.rollback();
+                }
+                throw exception;
+            }
+        }
+    }
+
 }
