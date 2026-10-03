@@ -362,6 +362,7 @@ public class GarageSystem {
         }
 
         invoice.setDiscount(discount);
+        invoice.distributeDiscountToLines();
 
         Database.getInvoices().add(invoice);
 
