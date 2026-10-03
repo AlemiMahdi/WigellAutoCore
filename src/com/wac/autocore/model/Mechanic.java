@@ -1,12 +1,32 @@
 package com.wac.autocore.model;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+@Entity
+@Table(name = "mechanics")
 public class Mechanic {
 
+    @Id
     private int id;
+
+    @Column(name = "name")
     private String name;
+
+    @Column(name = "phone")
     private String phone;
+
+    @Column(name = "specialization")
     private String specialization;
+
+    @Column(name = "available")
     private boolean available;
+
+    // Hibernate behöver en tom konstruktor.
+    public Mechanic() {
+    }
 
     public Mechanic(int id, String name, String phone, String specialization) {
         this.id = id;
