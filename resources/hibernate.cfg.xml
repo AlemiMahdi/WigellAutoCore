@@ -17,8 +17,8 @@
         <mapping class="com.wac.autocore.model.Vehicle"/>
         <mapping class="com.wac.autocore.model.ServiceItem"/>
         <mapping class="com.wac.autocore.model.Mechanic"/>
-        <mapping class="com.wac.autocore.entity.InvoiceEntity"/>
-        <mapping class="com.wac.autocore.entity.InvoiceLineEntity"/>
+        <mapping class="com.wac.autocore.model.Invoice"/>
+        <mapping class="com.wac.autocore.model.InvoiceLine"/>
         <mapping class="com.wac.autocore.model.Payment"/>
         <mapping class="com.wac.autocore.model.Booking"/>
         <mapping class="com.wac.autocore.model.WorkOrder"/>

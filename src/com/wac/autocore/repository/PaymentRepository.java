@@ -1,7 +1,6 @@
 package com.wac.autocore.repository;
 
 import com.wac.autocore.data.HibernateUtil;
-import com.wac.autocore.entity.InvoiceEntity;
 import com.wac.autocore.model.Invoice;
 import com.wac.autocore.model.Payment;
 
@@ -20,7 +19,9 @@ public class PaymentRepository {
             Transaction transaction = session.beginTransaction();
 
             try {
+
                 session.saveOrUpdate(payment);
+
                 transaction.commit();
 
             } catch (RuntimeException exception) {
@@ -80,16 +81,8 @@ public class PaymentRepository {
 
             try {
 
-                // Invoice använder fortfarande InvoiceEntity.
-                // Den delen refaktoreras senare.
-                InvoiceRepository invoiceRepository =
-                        new InvoiceRepository();
-
-                InvoiceEntity invoiceEntity =
-                        invoiceRepository.toEntity(invoice);
-
                 session.saveOrUpdate(payment);
-                session.saveOrUpdate(invoiceEntity);
+                session.saveOrUpdate(invoice);
 
                 transaction.commit();
 

@@ -1,20 +1,16 @@
 package com.wac.autocore.repository;
 
 import com.wac.autocore.data.HibernateUtil;
-import com.wac.autocore.entity.InvoiceEntity;
-import com.wac.autocore.entity.InvoiceLineEntity;
 import com.wac.autocore.model.Invoice;
 
-import com.wac.autocore.model.InvoiceLine;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class InvoiceRepository {
 
-    public void save(InvoiceEntity invoice) {
+    public void save(Invoice invoice) {
 
         try (Session session =
                      HibernateUtil.getSessionFactory().openSession()) {
@@ -22,7 +18,9 @@ public class InvoiceRepository {
             Transaction transaction = session.beginTransaction();
 
             try {
+
                 session.saveOrUpdate(invoice);
+
                 transaction.commit();
 
             } catch (RuntimeException exception) {
@@ -36,57 +34,7 @@ public class InvoiceRepository {
         }
     }
 
-    // Översätter en Invoice (med rader) till en InvoiceEntity.
-    // Används av både save och PaymentRepository, så översättningen bara finns på ett ställe.
-    public InvoiceEntity toEntity(Invoice invoice) {
-
-        InvoiceEntity entity = new InvoiceEntity();
-
-        entity.setId(invoice.getId());
-        entity.setWorkOrderId(invoice.getWorkOrderId());
-        entity.setInvoiceDate(invoice.getInvoiceDate());
-        entity.setAmount(invoice.getAmount());
-        entity.setDiscount(invoice.getDiscount());
-        entity.setTotalAmount(invoice.getTotalAmount());
-        entity.setPaid(invoice.isPaid());
-
-        //    Kopiera varje fakturarad till en InvoiceLineEntity.
-        //    Loop eftersom en faktura kan ha 0, 1 eller många rader.
-        for (InvoiceLine invoiceLine : invoice.getLines()) {
-            InvoiceLineEntity lineEntity = new InvoiceLineEntity();
-
-            lineEntity.setId(invoiceLine.getId());
-            lineEntity.setServiceItemId(invoiceLine.getServiceItemId());
-            lineEntity.setServiceName(invoiceLine.getServiceName());
-            lineEntity.setPrice(invoiceLine.getPrice());
-            lineEntity.setDiscount(invoiceLine.getDiscount());
-            lineEntity.setFinalPrice(invoiceLine.getFinalPrice());
-
-            // Raden måste ligga i fakturans lista, annars sparas den inte (cascade).
-            entity.getLines().add(lineEntity);
-        }
-        return entity;
-
-
-    }
-
-    // Omvandlar originalets Invoice till InvoiceEntity och sparar den.
-    public void save(Invoice invoice) {
-
-        // Översätt fakturan (med alla rader) till en entity som Hibernate kan spara.
-        InvoiceEntity entity = toEntity(invoice);
-
-        save(entity);
-
-        //    Skicka tillbaka id:n som databasen gav raderna till modellen,
-        //    så att raderna uppdateras (inte dubbleras) nästa gång fakturan sparas.
-        for (int i = 0; i < entity.getLines().size(); i++) {
-            int generatedId = entity.getLines().get(i).getId();
-            invoice.getLines().get(i).setId(generatedId);
-        }
-    }
-
-    public List<InvoiceEntity> findAll() {
+    public List<Invoice> findAll() {
 
         try (Session session =
                      HibernateUtil.getSessionFactory().openSession()) {
@@ -95,10 +43,12 @@ public class InvoiceRepository {
 
             try {
 
-                List<InvoiceEntity> invoices =
+                List<Invoice> invoices =
                         session.createQuery(
-                                "from InvoiceEntity order by id",
-                                InvoiceEntity.class
+                                "select distinct i from Invoice i " +
+                                        "left join fetch i.lines " +
+                                        "order by i.id",
+                                Invoice.class
                         ).getResultList();
 
                 transaction.commit();
@@ -116,39 +66,7 @@ public class InvoiceRepository {
         }
     }
 
-    // Hämtar databasens entities som originalets Invoice-objekt.
     public List<Invoice> findAllInvoices() {
-
-        List<Invoice> invoices = new ArrayList<>();
-
-        for (InvoiceEntity entity : findAll()) {
-
-            Invoice invoice = new Invoice(
-                    entity.getId(),
-                    entity.getWorkOrderId(),
-                    entity.getInvoiceDate(),
-                    entity.getAmount()
-            );
-
-            // Hämta fakturans rader från databasen och lägg dem på modellen.
-            // Gamla fakturor har inga rader → loopen körs inte och amount från databasen behålls.
-            for (InvoiceLineEntity lineEntity : entity.getLines()) {
-                InvoiceLine line = new InvoiceLine(lineEntity.getServiceItemId(),lineEntity.getServiceName(),lineEntity.getPrice());
-
-                // Id behövs så att raden uppdateras (inte dubbleras) om fakturan sparas igen.
-                line.setId(lineEntity.getId());
-                line.setDiscount(lineEntity.getDiscount());
-
-                // addLine lägger till raden och räknar om fakturans summa.
-                invoice.addLine(line);
-            }
-
-            invoice.setDiscount(entity.getDiscount());
-            invoice.setPaid(entity.isPaid());
-
-            invoices.add(invoice);
-        }
-
-        return invoices;
+        return findAll();
     }
 }

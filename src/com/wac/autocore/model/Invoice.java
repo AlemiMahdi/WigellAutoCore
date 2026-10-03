@@ -1,22 +1,61 @@
 package com.wac.autocore.model;
 
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@Entity
+@Table(name = "invoices")
 public class Invoice {
 
+    @Id
     private int id;
+
+    @Column(name = "work_order_id")
     private int workOrderId;
+
+    @Column(name = "invoice_date")
     private LocalDate invoiceDate;
+
+    @Column(name = "amount")
     private double amount;
+
+    @Column(name = "discount")
     private double discount;
+
+    @Column(name = "total_amount")
     private double totalAmount;
+
+    @Column(name = "paid")
     private boolean paid;
+
+    @OneToMany(
+            cascade = CascadeType.ALL,
+            fetch = FetchType.EAGER
+    )
+    @JoinColumn(name = "invoice_id")
     private List<InvoiceLine> lines = new ArrayList<>();
 
-    public Invoice(int id, int workOrderId, LocalDate invoiceDate, double amount) {
+    // Hibernate behöver en tom konstruktor.
+    public Invoice() {
+    }
+
+    public Invoice(
+            int id,
+            int workOrderId,
+            LocalDate invoiceDate,
+            double amount
+    ) {
         this.id = id;
         this.workOrderId = workOrderId;
         this.invoiceDate = invoiceDate;
@@ -78,13 +117,13 @@ public class Invoice {
 
     public void setPaid(boolean paid) {
         this.paid = paid;
-
     }
-    public void addLine(InvoiceLine invoiceLine) {
 
+    public void addLine(InvoiceLine invoiceLine) {
         lines.add(invoiceLine);
         calculateAmountFromLines();
     }
+
     public List<InvoiceLine> getLines() {
         return Collections.unmodifiableList(lines);
     }
@@ -94,12 +133,15 @@ public class Invoice {
     }
 
     private void calculateAmountFromLines() {
-         double sum = 0.0;
-         for (InvoiceLine line : lines) {
-             sum += line.getFinalPrice();
-         }
-         amount = sum;
-         calculateTotalAmount();
+
+        double sum = 0.0;
+
+        for (InvoiceLine line : lines) {
+            sum += line.getFinalPrice();
+        }
+
+        amount = sum;
+        calculateTotalAmount();
     }
 
     @Override

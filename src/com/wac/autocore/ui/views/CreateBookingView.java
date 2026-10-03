@@ -20,11 +20,8 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
-import javafx.scene.control.ListCell;
 import javafx.collections.ObservableList;
-
 import java.util.ArrayList;
-import java.util.List;
 
 import com.wac.autocore.model.ServiceItem;
 import javafx.scene.control.ListView;
@@ -32,11 +29,8 @@ import javafx.scene.control.ListView;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
-
 import javafx.collections.ListChangeListener;
-
 import java.util.Locale;
-import java.util.Observable;
 
 
 // Formulär för att boka in ett fordon: välj fordon, datum, mekaniker och skriv en beskrivning.
