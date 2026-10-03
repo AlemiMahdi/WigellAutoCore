@@ -8,7 +8,6 @@ import com.wac.autocore.model.ServiceItem;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import com.wac.autocore.entity.ServiceItemEntity;
-import com.wac.autocore.model.ServiceItem;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -65,7 +64,7 @@ public class BookingRepository {
                     entity = new BookingEntity();
                     entity.setId(booking.getId());
                 }
-                List<InvoiceLineEntity> frozenLines = convertToFrozenLines(booking.getServices());
+                List<InvoiceLineEntity> frozenLines = convertToFrozenLines(booking.getServices(), entity);
 
                 entity.setVehicleId(booking.getVehicleId());
                 entity.setDate(booking.getDate());
@@ -96,7 +95,7 @@ public class BookingRepository {
         }
     }
 
-    public List<InvoiceLineEntity> convertToFrozenLines(List<ServiceItem> services) {
+    public List<InvoiceLineEntity> convertToFrozenLines(List<ServiceItem> services, BookingEntity bookingEntity) {
         List<InvoiceLineEntity> lineEntities = new ArrayList<>();
 
         for (ServiceItem service : services) {
@@ -107,6 +106,7 @@ public class BookingRepository {
             lineEntity.setDiscount(0.0); // Radrabatt är 0 enligt WAC-38
             lineEntity.setFinalPrice(service.getPrice()); // finalPrice fryses här!
 
+            lineEntity.setBooking(bookingEntity);
             lineEntities.add(lineEntity);
         }
 

@@ -47,8 +47,7 @@ public class BookingEntity {
     )
     private List<ServiceItemEntity> services = new ArrayList<>();
 
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    @JoinColumn(name = "booking_id")
+    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<InvoiceLineEntity> lines = new ArrayList<>();
 
     public BookingEntity() {}

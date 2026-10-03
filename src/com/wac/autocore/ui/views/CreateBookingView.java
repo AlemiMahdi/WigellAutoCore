@@ -210,8 +210,9 @@ public class CreateBookingView {
                 return;
             }
 
-            List<InvoiceLineEntity> previewLines = bookingRepository.convertToFrozenLines(new ArrayList<>(selectedServices));
-            booking.addFrozenPrice((InvoiceLine) previewLines);
+            List<InvoiceLineEntity> previewLines = bookingRepository.convertToFrozenLines(new ArrayList<>(selectedServices), null);
+            booking.addFrozenPrice(previewLines);
+
 
             booking.setServices(new ArrayList<>(selectedServices));
             booking.setStartTime(startTime);

@@ -1,5 +1,7 @@
 package com.wac.autocore.model;
 
+import com.wac.autocore.entity.InvoiceLineEntity;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -102,9 +104,18 @@ public class Booking {
     }
 
     // En smidig hjälpmetod för att lägga till en enskild rad
-    public void addFrozenPrice(InvoiceLine line) {
-        this.frozenPrice.add(line);
-    }
+    public void addFrozenPrice(List<InvoiceLineEntity> lines) {
+        if (lines == null) return;
+
+        for (InvoiceLineEntity entity : lines) {
+            InvoiceLine domainLine = new InvoiceLine(
+                    entity.getServiceItemId(),
+                    entity.getServiceName(),
+                    entity.getPrice()
+            );
+            this.frozenPrice.add(domainLine);
+        }
+        }
     public List<InvoiceLine> getFrozenPrice() { return frozenPrice; }
 
     @Override
