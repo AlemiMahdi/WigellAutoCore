@@ -132,7 +132,7 @@ public class Invoice {
             );
 
             BigDecimal accumalatedDiscount = totalPrice.signum() == 0 ? BigDecimal.ZERO : totalDiscount.multiply(accumalatedPrice).divide(totalPrice, 2, RoundingMode.HALF_UP);
-            BigDecimal lineDiscount = accumalatedDiscount.subtract(totalDiscount);
+            BigDecimal lineDiscount = accumalatedDiscount.subtract(allocatedDiscount);
 
             line.setDiscount(lineDiscount.doubleValue());
             allocatedDiscount = accumalatedDiscount;
