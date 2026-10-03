@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.persistence.ManyToMany;
 
+import com.wac.autocore.model.ServiceItem;
+
 
 @Entity
 @Table(name = "bookings")
@@ -49,7 +51,7 @@ public class BookingEntity {
         joinColumns = @JoinColumn (name = "booking_id"),
         inverseJoinColumns = @JoinColumn (name = "service_id")
     )
-    private List<ServiceItemEntity> services = new ArrayList<>(); 
+    private List<ServiceItem> services = new ArrayList<>(); 
 
     public BookingEntity() {}
 
@@ -87,8 +89,8 @@ public class BookingEntity {
     public Integer getDurationMinutes () { return durationMinutes; }
     public void setDurationMinutes (Integer duration_minutes ) { this.durationMinutes = duration_minutes; }
 
-    public List<ServiceItemEntity> getServices () { return  services;}
-    public void setServices ( List<ServiceItemEntity> services) { this.services = services; }
+    public List<ServiceItem> getServices () { return  services;}
+    public void setServices ( List<ServiceItem> services) { this.services = services; }
 
 
 

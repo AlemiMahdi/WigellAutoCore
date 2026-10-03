@@ -6,7 +6,6 @@ import com.wac.autocore.entity.BookingEntity;
 import com.wac.autocore.model.Booking;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
-import com.wac.autocore.entity.ServiceItemEntity;
 import com.wac.autocore.model.ServiceItem;
 
 import java.time.LocalDate;
@@ -73,10 +72,10 @@ public class BookingRepository {
                 entity.setStartTime(booking.getStartTime());
                 entity.setDurationMinutes(booking.getDurationMinutes());
                 
-                List<ServiceItemEntity> serviceEntities = new ArrayList<>();
+                List<ServiceItem> serviceEntities = new ArrayList<>();
                 for (ServiceItem service : booking.getServices()) {
-                    ServiceItemEntity serviceEntity = 
-                        session.get( ServiceItemEntity.class, service.getId());
+                    ServiceItem serviceEntity = 
+                        session.get( ServiceItem.class, service.getId());
                     
                     if (serviceEntity != null) {
                         serviceEntities.add(serviceEntity);
@@ -152,18 +151,7 @@ public class BookingRepository {
 
             booking.setStatus(entity.getStatus());
             
-            List<ServiceItem> services = new ArrayList<>();
-            for (ServiceItemEntity serviceEntity : entity.getServices()) {
-                ServiceItem service = new ServiceItem(
-                    serviceEntity.getId(), 
-                    serviceEntity.getName(), 
-                    serviceEntity.getDescription(), 
-                    serviceEntity.getPrice(), 
-                    serviceEntity.getEstimatedMinutes()
-                );
-                services.add(service);
-            }
-            booking.setServices(services);
+            booking.setServices(new ArrayList<>(entity.getServices()));
             bookings.add(booking);
         }
         return bookings;
@@ -285,7 +273,7 @@ public class BookingRepository {
                     );
                 }
 
-                List<ServiceItemEntity> services = new ArrayList<>();
+                List<ServiceItem> services = new ArrayList<>();
                 List<Integer> uniqueIds = new ArrayList<>();
                 int totalMinutes = 0;
 
@@ -300,8 +288,8 @@ public class BookingRepository {
                         continue;
                     }
 
-                    ServiceItemEntity service =
-                            session.get(ServiceItemEntity.class, serviceId);
+                    ServiceItem service =
+                            session.get(ServiceItem.class, serviceId);
 
                     if (service == null) {
                         throw new IllegalArgumentException(
