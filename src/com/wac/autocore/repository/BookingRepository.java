@@ -1,9 +1,9 @@
 package com.wac.autocore.repository;
 
 import com.wac.autocore.data.HibernateUtil;
-import com.wac.autocore.entity.WorkOrderEntity;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.ServiceItem;
+import com.wac.autocore.model.WorkOrder;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;
@@ -30,12 +30,14 @@ public class BookingRepository {
             Integer mechanicId,
             boolean updateMechanic
     ) {
+
         try (Session session =
                      HibernateUtil.getSessionFactory().openSession()) {
 
             Transaction transaction = session.beginTransaction();
 
             try {
+
                 // Hämtar befintlig bokning så extra uppgifter bevaras.
                 Booking existingBooking =
                         session.get(Booking.class, booking.getId());
@@ -105,11 +107,12 @@ public class BookingRepository {
             Transaction transaction = session.beginTransaction();
 
             try {
+
                 List<Booking> bookings =
                         session.createQuery(
                                 "select distinct b from Booking b " +
-                                "left join fetch b.services " +
-                                "order by b.id",
+                                        "left join fetch b.services " +
+                                        "order by b.id",
                                 Booking.class
                         ).getResultList();
 
@@ -137,6 +140,7 @@ public class BookingRepository {
             LocalTime startTime,
             int durationMinutes
     ) {
+
         return hasOverlappingBooking(
                 mechanicId,
                 date,
@@ -217,6 +221,7 @@ public class BookingRepository {
             Transaction transaction = session.beginTransaction();
 
             try {
+
                 Booking booking =
                         session.get(Booking.class, bookingId);
 
@@ -237,16 +242,16 @@ public class BookingRepository {
                     );
                 }
 
-                List<WorkOrderEntity> workOrders =
+                List<WorkOrder> workOrders =
                         session.createQuery(
-                                "from WorkOrderEntity " +
-                                "where bookingId = :bookingId",
-                                WorkOrderEntity.class
+                                "from WorkOrder " +
+                                        "where bookingId = :bookingId",
+                                WorkOrder.class
                         )
                         .setParameter("bookingId", bookingId)
                         .getResultList();
 
-                for (WorkOrderEntity order : workOrders) {
+                for (WorkOrder order : workOrders) {
 
                     if (!"CREATED".equals(order.getStatus())) {
                         throw new IllegalArgumentException(
@@ -319,8 +324,8 @@ public class BookingRepository {
                     List<Booking> otherBookings =
                             session.createQuery(
                                     "from Booking " +
-                                    "where mechanicId = :mechanicId " +
-                                    "and id <> :bookingId",
+                                            "where mechanicId = :mechanicId " +
+                                            "and id <> :bookingId",
                                     Booking.class
                             )
                             .setParameter(
@@ -376,7 +381,7 @@ public class BookingRepository {
                 booking.getServices().addAll(services);
                 booking.setDurationMinutes(totalMinutes);
 
-                for (WorkOrderEntity order : workOrders) {
+                for (WorkOrder order : workOrders) {
                     order.getServiceItemIds().clear();
                     order.getServiceItemIds().addAll(uniqueIds);
                 }
