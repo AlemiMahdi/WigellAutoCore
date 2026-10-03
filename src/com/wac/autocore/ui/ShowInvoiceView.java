@@ -131,15 +131,15 @@ public class ShowInvoiceView {
 
         UiKit.styleTable(lineTable);
 
-        // Kortet till höger: status, att betala, delsumma och rabatt.
+        // Kortet till höger: status, totalbelopp, delsumma och rabatt.
         // Etiketterna skapas tomma här och fylls i när en faktura väljs.
 
         // Plats för badgen (Betald/Obetald). Badgen byts ut vid varje klick.
         HBox statusHolder = new HBox();
 
-        // "Att betala" med det stora beloppet under
+        // "Totalbelopp" med det stora beloppet under
         Label toPayTitle = new Label();
-        toPayTitle.textProperty().bind(language.text("invoiceLine.toPay"));
+        toPayTitle.textProperty().bind(language.text("invoices.total"));
         toPayTitle.getStyleClass().add("row-subtitle");
         Label toPayValue = new Label();
         toPayValue.getStyleClass().add("stat-value");
@@ -212,7 +212,7 @@ public class ShowInvoiceView {
 
                 // Fyller i kortet till höger.
                 // Badgen visar Betald eller Obetald.
-                // Att betala = Delsumma (summan av raderna) minus Rabatt.
+                // Totalbelopp = Delsumma (summan av raderna) minus Rabatt.
                 statusHolder.getChildren().setAll(UiKit.statusBadge(newInvoice.isPaid() ? "PAID" : "UNPAID"));
                 toPayValue.setText(formatSek(newInvoice.getTotalAmount()));
                 subtotalValue.setText(formatSek(newInvoice.getAmount()));
