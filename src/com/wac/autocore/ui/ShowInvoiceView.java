@@ -7,11 +7,14 @@ import com.wac.autocore.ui.language.LanguageManager;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.geometry.Pos;
+
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
 
@@ -85,41 +88,78 @@ public class ShowInvoiceView {
 
         UiKit.styleTable(table);
 
+        Label headingLabel = new Label();
+        headingLabel.getStyleClass().add("card-title");
+
+        Label dateTitle = new Label();
+        dateTitle.textProperty().bind(language.text("invoices.date"));
+        dateTitle.getStyleClass().add("row-subtitle");
+        Label dateValue = new Label();
+        dateValue.getStyleClass().add("row-title");
+        VBox dateBox = new VBox(2, dateTitle, dateValue);
+
+        Label workOrderTitle = new Label();
+        workOrderTitle.textProperty().bind(language.text("invoiceLine.workOrder"));
+        workOrderTitle.getStyleClass().add("row-subtitle");
+        Label workOrderValue = new Label();
+        workOrderValue.getStyleClass().add("row-title");
+        VBox workOrderBox = new VBox(2, workOrderTitle, workOrderValue);
+
+        HBox infoView = new HBox(60, dateBox, workOrderBox);
+
         TableView<InvoiceLine> lineTable = new TableView<>();
 
         TableColumn<InvoiceLine, String> serviceCol = new TableColumn<>("Service");
         serviceCol.setCellValueFactory(cellData ->
                 new SimpleStringProperty(cellData.getValue().getServiceName()));
 
-        TableColumn<InvoiceLine, String> priceLineCol = new TableColumn<>("Price");
-        priceLineCol.setCellValueFactory(cellData ->
-                new SimpleStringProperty(formatSek(cellData.getValue().getPrice())));
-        priceLineCol.getStyleClass().add("cell-right");
-
-        TableColumn<InvoiceLine, String> discountLineCol = new TableColumn<>("Discount");
-        discountLineCol.setCellValueFactory(cellData ->
-                new SimpleStringProperty(formatSek(cellData.getValue().getDiscount())));
-        discountLineCol.getStyleClass().addAll("cell-right", "cell-muted");
-
-        TableColumn<InvoiceLine, String> finalPriceLineCol = new TableColumn<>("Final price");
+        TableColumn<InvoiceLine, String> finalPriceLineCol = new TableColumn<>("Amount");
         finalPriceLineCol.setCellValueFactory(cellData ->
                 new SimpleStringProperty(formatSek(cellData.getValue().getFinalPrice())));
         finalPriceLineCol.getStyleClass().addAll("cell-right", "cell-strong");
 
         serviceCol.textProperty().bind(language.text("invoiceLine.service"));
-        priceLineCol.textProperty().bind(language.text("invoiceLine.price"));
-        discountLineCol.textProperty().bind(language.text("invoiceLine.discount"));
         finalPriceLineCol.textProperty().bind(language.text("invoiceLine.finalPrice"));
 
-        lineTable.getColumns().addAll(serviceCol, priceLineCol, discountLineCol, finalPriceLineCol);
+        lineTable.getColumns().addAll(serviceCol, finalPriceLineCol);
 
         UiKit.styleTable(lineTable);
 
-        Label sumLabel = new Label();
-        Label invoiceDiscountLabel = new Label();
-        Label totalLabel = new Label();
-        VBox summaryBox = new VBox(4, sumLabel, invoiceDiscountLabel, totalLabel);
-        summaryBox.setAlignment(Pos.TOP_RIGHT);
+        // Kortet till höger: status, att betala, delsumma och rabatt.
+        // Etiketterna skapas tomma här och fylls i när en faktura väljs.
+
+        // Plats för badgen (Betald/Obetald). Badgen byts ut vid varje klick.
+        HBox statusHolder = new HBox();
+
+        // "Att betala" med det stora beloppet under
+        Label toPayTitle = new Label();
+        toPayTitle.textProperty().bind(language.text("invoiceLine.toPay"));
+        toPayTitle.getStyleClass().add("row-subtitle");
+        Label toPayValue = new Label();
+        toPayValue.getStyleClass().add("stat-value");
+
+        // Raden "Delsumma". Spacern växer och trycker beloppet till höger.
+        Label subtotalTitle = new Label();
+        subtotalTitle.textProperty().bind(language.text("invoiceLine.sum"));
+        subtotalTitle.getStyleClass().add("row-subtitle");
+        Label subtotalValue = new Label();
+        subtotalValue.getStyleClass().add("row-title");
+        Region subtotalSpacer = new Region();
+        HBox.setHgrow(subtotalSpacer, Priority.ALWAYS);
+        HBox subtotalRow = new HBox(subtotalTitle, subtotalSpacer, subtotalValue);
+
+        // Raden "Rabatt", byggd på samma sätt som Delsumma
+        Label discountTitle = new Label();
+        discountTitle.textProperty().bind(language.text("invoiceLine.invoiceDiscount"));
+        discountTitle.getStyleClass().add("row-subtitle");
+        Label discountValue = new Label();
+        discountValue.getStyleClass().add("row-title");
+        Region discountSpacer = new Region();
+        HBox.setHgrow(discountSpacer, Priority.ALWAYS);
+        HBox discountRow = new HBox(discountTitle, discountSpacer, discountValue);
+
+        // UiKit.card ger samma ram och bakgrund som andra kort i appen
+        VBox summaryCard = UiKit.card(statusHolder, toPayTitle, toPayValue, subtotalRow, discountRow);
 
         // När användaren klickar på en faktura visas dess rader i radtabellen.
         // addListener körs automatiskt varje gång valet ändras (Observer-mönstret).
@@ -129,17 +169,42 @@ public class ShowInvoiceView {
                 ObservableList<InvoiceLine> lines = FXCollections.observableArrayList(newInvoice.getLines());
                 lineTable.setItems(lines);
 
-                // Visar hur slutbeloppet räknas: summa rader - fakturarabatt = totalbelopp.
-                // Beloppen hämtas från fakturan, som redan har räknat ut dem.
-                sumLabel.setText(language.text("invoiceLine.sum").get() + ": " + formatSek(newInvoice.getAmount()));
-                invoiceDiscountLabel.setText(language.text("invoiceLine.invoiceDiscount").get() + ": " + formatSek(newInvoice.getDiscount()));
-                totalLabel.setText(language.text("invoices.total").get() + ": " + formatSek(newInvoice.getTotalAmount()));
+                // Fyller i rubriken och infobandet för den valda fakturan.
+                // Rubriken blir t.ex. "Faktura WO-13".
+                // workOrderCode gör om arbetsorderns id till "WO-13".
+                headingLabel.setText(language.text("invoiceLine.heading").get() + " " + workOrderCode(newInvoice.getWorkOrderId()));
+                dateValue.setText(String.valueOf(newInvoice.getInvoiceDate()));
+                workOrderValue.setText(workOrderCode(newInvoice.getWorkOrderId()));
+
+                // Fyller i kortet till höger.
+                // Badgen visar Betald eller Obetald.
+                // Att betala = Delsumma (summan av raderna) minus Rabatt.
+                statusHolder.getChildren().setAll(UiKit.statusBadge(newInvoice.isPaid() ? "PAID" : "UNPAID"));
+                toPayValue.setText(formatSek(newInvoice.getTotalAmount()));
+                subtotalValue.setText(formatSek(newInvoice.getAmount()));
+                discountValue.setText("-" + formatSek(newInvoice.getDiscount()));
 
             }
         });
 
-        VBox view = new VBox(24, UiKit.pageHeader(language.text("invoices.title"), newInvoiceButton), table, lineTable, summaryBox);
+        // Rubrik "Utförda tjänster" ovanför radtabellen
+        Label linesTitle = new Label();
+        linesTitle.textProperty().bind(language.text("invoiceLine.title"));
+        linesTitle.getStyleClass().add("row-title");
+
+        // Tabellen till vänster växer, kortet till höger har fast bredd
+        VBox linesBox = new VBox(8, linesTitle, lineTable);
+        HBox.setHgrow(linesBox, Priority.ALWAYS);
+        summaryCard.setPrefWidth(280);
+        HBox contentRow = new HBox(16, linesBox, summaryCard);
+
+        // Hela detaljvyn i ett kort: rubrik, infoband och innehåll
+        VBox detailCard = UiKit.card(headingLabel, infoView, contentRow);
+
+
+        VBox view = new VBox(24, UiKit.pageHeader(language.text("invoices.title"), newInvoiceButton), table, detailCard);
         return view;
+
     }
 
     /** "WO-<id>" – samma sätt att skriva arbetsorder-nummer på alla fakturasidor. */
