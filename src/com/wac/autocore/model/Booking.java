@@ -1,20 +1,57 @@
 package com.wac.autocore.model;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
+import javax.persistence.Table;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
+@Entity
+@Table(name = "bookings")
 public class Booking {
 
+    @Id
     private int id;
+
+    @Column(name = "vehicle_id")
     private int vehicleId;
+
+    @Column(name = "booking_date")
     private LocalDate date;
+
+    @Column(name = "description")
     private String description;
+
+    @Column(name = "status")
     private String status;
+
+    @Column(name = "start_time")
     private LocalTime startTime;
+
+    @Column(name = "duration_minutes")
     private int durationMinutes;
-    private List<ServiceItem> services = new ArrayList();
+
+    @ManyToMany
+    @JoinTable(
+            name = "booking_services",
+            joinColumns = @JoinColumn(name = "booking_id"),
+            inverseJoinColumns = @JoinColumn(name = "service_id")
+    )
+    private List<ServiceItem> services = new ArrayList<>();
+
+    @Column(name = "mechanic_id")
+    private Integer mechanicId;
+
+    // Hibernate behöver en tom konstruktor.
+    public Booking() {
+    }
 
     public Booking(int id, int vehicleId, LocalDate date, String description) {
         this.id = id;
@@ -24,8 +61,14 @@ public class Booking {
         this.status = "BOOKED";
     }
 
-    public Booking(int id, int vehicleId, LocalDate date, LocalTime startTime, int durationMinutes, String description) {
-
+    public Booking(
+            int id,
+            int vehicleId,
+            LocalDate date,
+            LocalTime startTime,
+            int durationMinutes,
+            String description
+    ) {
         this.id = id;
         this.vehicleId = vehicleId;
         this.date = date;
@@ -76,7 +119,7 @@ public class Booking {
     }
 
     public LocalTime getStartTime() {
-    return startTime;
+        return startTime;
     }
 
     public void setStartTime(LocalTime startTime) {
@@ -91,8 +134,21 @@ public class Booking {
         this.durationMinutes = durationMinutes;
     }
 
-    public List<ServiceItem> getServices () { return services; }
-    public void setServices (List<ServiceItem> services) { this.services = services; }
+    public List<ServiceItem> getServices() {
+        return services;
+    }
+
+    public void setServices(List<ServiceItem> services) {
+        this.services = services;
+    }
+
+    public Integer getMechanicId() {
+        return mechanicId;
+    }
+
+    public void setMechanicId(Integer mechanicId) {
+        this.mechanicId = mechanicId;
+    }
 
     @Override
     public String toString() {

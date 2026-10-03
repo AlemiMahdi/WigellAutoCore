@@ -1,39 +1,21 @@
 package com.wac.autocore.repository;
 
-
 import com.wac.autocore.data.HibernateUtil;
-import com.wac.autocore.entity.BookingEntity;
+import com.wac.autocore.entity.WorkOrderEntity;
 import com.wac.autocore.model.Booking;
+import com.wac.autocore.model.ServiceItem;
+
 import org.hibernate.Session;
 import org.hibernate.Transaction;
-import com.wac.autocore.model.ServiceItem;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-import com.wac.autocore.entity.WorkOrderEntity;
 
 public class BookingRepository {
 
-    public void save(BookingEntity bookingEntity) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Transaction transaction = session.beginTransaction();
-
-            try {
-                session.saveOrUpdate(bookingEntity);
-                transaction.commit();
-            } catch (RuntimeException e) {
-                if (transaction.isActive()) {
-                    transaction.rollback();
-                }
-                throw e;
-            }
-        }
-    }
-
-    // Sparar bokningen och behåller eventuell befintlig mekaniker.
     public void save(Booking booking) {
         saveBooking(booking, null, false);
     }
@@ -54,117 +36,113 @@ public class BookingRepository {
             Transaction transaction = session.beginTransaction();
 
             try {
-                // Hämtar befintlig entity så extra uppgifter bevaras.
-                BookingEntity entity =
-                        session.get(BookingEntity.class, booking.getId());
+                // Hämtar befintlig bokning så extra uppgifter bevaras.
+                Booking existingBooking =
+                        session.get(Booking.class, booking.getId());
 
-                boolean isNew = entity == null;
+                boolean isNew = existingBooking == null;
 
                 if (isNew) {
-                    entity = new BookingEntity();
-                    entity.setId(booking.getId());
+                    existingBooking = new Booking();
+                    existingBooking.setId(booking.getId());
                 }
 
-                entity.setVehicleId(booking.getVehicleId());
-                entity.setDate(booking.getDate());
-                entity.setDescription(booking.getDescription());
-                entity.setStatus(booking.getStatus());
-                entity.setStartTime(booking.getStartTime());
-                entity.setDurationMinutes(booking.getDurationMinutes());
-                
-                List<ServiceItem> serviceEntities = new ArrayList<>();
+                existingBooking.setVehicleId(booking.getVehicleId());
+                existingBooking.setDate(booking.getDate());
+                existingBooking.setDescription(booking.getDescription());
+                existingBooking.setStatus(booking.getStatus());
+                existingBooking.setStartTime(booking.getStartTime());
+                existingBooking.setDurationMinutes(
+                        booking.getDurationMinutes()
+                );
+
+                // Hämtar ServiceItem från samma Hibernate-session.
+                List<ServiceItem> serviceItems = new ArrayList<>();
+
                 for (ServiceItem service : booking.getServices()) {
-                    ServiceItem serviceEntity = 
-                        session.get( ServiceItem.class, service.getId());
-                    
-                    if (serviceEntity != null) {
-                        serviceEntities.add(serviceEntity);
+
+                    ServiceItem serviceItem =
+                            session.get(
+                                    ServiceItem.class,
+                                    service.getId()
+                            );
+
+                    if (serviceItem != null) {
+                        serviceItems.add(serviceItem);
                     }
                 }
-                entity.setServices(serviceEntities);
+
+                existingBooking.setServices(serviceItems);
 
                 // Ändrar mekanikern bara när ett nytt val skickas in.
                 if (updateMechanic) {
-                    entity.setMechanicId(mechanicId);
+                    existingBooking.setMechanicId(mechanicId);
                 }
 
                 if (isNew) {
-                    session.save(entity);
+                    session.save(existingBooking);
                 }
 
                 // Befintliga entities uppdateras automatiskt av Hibernate.
                 transaction.commit();
 
             } catch (RuntimeException exception) {
+
                 if (transaction.isActive()) {
                     transaction.rollback();
                 }
+
                 throw exception;
             }
         }
     }
 
-    public List<BookingEntity> findAll() {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+    public List<Booking> findAll() {
+
+        try (Session session =
+                     HibernateUtil.getSessionFactory().openSession()) {
 
             Transaction transaction = session.beginTransaction();
 
             try {
-                List<BookingEntity> bookings =
+                List<Booking> bookings =
                         session.createQuery(
-                            "select distinct b from BookingEntity b " +
-                            "left join fetch b.services " +
-                            "order by b.id ",
-                                BookingEntity.class
+                                "select distinct b from Booking b " +
+                                "left join fetch b.services " +
+                                "order by b.id",
+                                Booking.class
                         ).getResultList();
+
                 transaction.commit();
                 return bookings;
-            } catch (RuntimeException e) {
+
+            } catch (RuntimeException exception) {
+
                 if (transaction.isActive()) {
                     transaction.rollback();
                 }
-                throw e;
+
+                throw exception;
             }
         }
-
     }
 
     public List<Booking> findAllBookings() {
-
-        List<Booking> bookings = new ArrayList<>();
-
-        for (BookingEntity entity : findAll()) {
-
-            int durationMinutes =
-            entity.getDurationMinutes() == null
-                    ? 0
-                    : entity.getDurationMinutes();
-
-            Booking booking = new Booking(
-                    entity.getId(),
-                    entity.getVehicleId(),
-                    entity.getDate(),
-                    entity.getStartTime(),
-                    durationMinutes,
-                    entity.getDescription()
-            );
-
-            booking.setStatus(entity.getStatus());
-            
-            booking.setServices(new ArrayList<>(entity.getServices()));
-            bookings.add(booking);
-        }
-        return bookings;
+        return findAll();
     }
 
     public boolean hasOverlappingBooking(
-        int mechanicId,
-        LocalDate date,
-        LocalTime startTime,
-        int durationMinutes) {
-
+            int mechanicId,
+            LocalDate date,
+            LocalTime startTime,
+            int durationMinutes
+    ) {
         return hasOverlappingBooking(
-                mechanicId, date, startTime, durationMinutes, null
+                mechanicId,
+                date,
+                startTime,
+                durationMinutes,
+                null
         );
     }
 
@@ -174,62 +152,64 @@ public class BookingRepository {
             LocalDate date,
             LocalTime startTime,
             int durationMinutes,
-            Integer excludedBookingId) {
+            Integer excludedBookingId
+    ) {
 
-    LocalDateTime newStart =
-            LocalDateTime.of(date, startTime);
+        LocalDateTime newStart =
+                LocalDateTime.of(date, startTime);
 
-    LocalDateTime newEnd =
-            newStart.plusMinutes(durationMinutes);
+        LocalDateTime newEnd =
+                newStart.plusMinutes(durationMinutes);
 
-    for (BookingEntity entity : findAll()) {
+        for (Booking booking : findAll()) {
 
-        // Jämför inte bokningen med sig själv.
-        if (excludedBookingId != null
-                && entity.getId() == excludedBookingId.intValue()) {
-            continue;
+            // Jämför inte bokningen med sig själv.
+            if (excludedBookingId != null
+                    && booking.getId() == excludedBookingId.intValue()) {
+                continue;
+            }
+
+            // Bokningen måste tillhöra samma mekaniker.
+            if (booking.getMechanicId() == null
+                    || booking.getMechanicId() != mechanicId) {
+                continue;
+            }
+
+            // Äldre bokningar kan sakna tid.
+            if (booking.getDate() == null
+                    || booking.getStartTime() == null
+                    || booking.getDurationMinutes() <= 0) {
+                continue;
+            }
+
+            LocalDateTime existingStart =
+                    LocalDateTime.of(
+                            booking.getDate(),
+                            booking.getStartTime()
+                    );
+
+            LocalDateTime existingEnd =
+                    existingStart.plusMinutes(
+                            booking.getDurationMinutes()
+                    );
+
+            boolean overlaps =
+                    newStart.isBefore(existingEnd)
+                            &&
+                    newEnd.isAfter(existingStart);
+
+            if (overlaps) {
+                return true;
+            }
         }
 
-        // Bokningen måste tillhöra samma mekaniker.
-        if (entity.getMechanicId() == null ||
-                entity.getMechanicId() != mechanicId) {
-            continue;
-        }
-
-        // Äldre bokningar kan sakna tid/längd.
-        if (entity.getDate() == null ||
-        entity.getStartTime() == null ||
-        entity.getDurationMinutes() == null ||
-        entity.getDurationMinutes() <= 0) {
-            continue;
-        }
-
-        LocalDateTime existingStart =
-                LocalDateTime.of(
-                        entity.getDate(),
-                        entity.getStartTime()
-                );
-
-        LocalDateTime existingEnd =
-                existingStart.plusMinutes(
-                        entity.getDurationMinutes()
-                );
-
-        boolean overlaps =
-                newStart.isBefore(existingEnd)
-                        &&
-                newEnd.isAfter(existingStart);
-
-        if (overlaps) {
-            return true;
-        }
+        return false;
     }
 
-    return false;
-}
     public int updateBookingServices(
             int bookingId,
-            List<Integer> serviceIds) {
+            List<Integer> serviceIds
+    ) {
 
         try (Session session =
                      HibernateUtil.getSessionFactory().openSession()) {
@@ -237,8 +217,8 @@ public class BookingRepository {
             Transaction transaction = session.beginTransaction();
 
             try {
-                BookingEntity booking =
-                        session.get(BookingEntity.class, bookingId);
+                Booking booking =
+                        session.get(Booking.class, bookingId);
 
                 if (booking == null) {
                     throw new IllegalArgumentException(
@@ -248,18 +228,26 @@ public class BookingRepository {
 
                 // Endast bokningar där arbetet inte har börjat får ändras.
                 if (!"BOOKED".equals(booking.getStatus())
-                        && !"WORK_ORDER_CREATED".equals(booking.getStatus())) {
+                        && !"WORK_ORDER_CREATED".equals(
+                                booking.getStatus()
+                        )) {
+
                     throw new IllegalArgumentException(
                             "editBookingServices.locked"
                     );
                 }
 
-                List<WorkOrderEntity> workOrders = session.createQuery(
-                        "from WorkOrderEntity where bookingId = :bookingId",
-                        WorkOrderEntity.class
-                ).setParameter("bookingId", bookingId).getResultList();
+                List<WorkOrderEntity> workOrders =
+                        session.createQuery(
+                                "from WorkOrderEntity " +
+                                "where bookingId = :bookingId",
+                                WorkOrderEntity.class
+                        )
+                        .setParameter("bookingId", bookingId)
+                        .getResultList();
 
                 for (WorkOrderEntity order : workOrders) {
+
                     if (!"CREATED".equals(order.getStatus())) {
                         throw new IllegalArgumentException(
                                 "editBookingServices.locked"
@@ -275,9 +263,11 @@ public class BookingRepository {
 
                 List<ServiceItem> services = new ArrayList<>();
                 List<Integer> uniqueIds = new ArrayList<>();
+
                 int totalMinutes = 0;
 
                 for (Integer serviceId : serviceIds) {
+
                     if (serviceId == null) {
                         throw new IllegalArgumentException(
                                 "editBookingServices.serviceMissing"
@@ -289,7 +279,10 @@ public class BookingRepository {
                     }
 
                     ServiceItem service =
-                            session.get(ServiceItem.class, serviceId);
+                            session.get(
+                                    ServiceItem.class,
+                                    serviceId
+                            );
 
                     if (service == null) {
                         throw new IllegalArgumentException(
@@ -305,13 +298,16 @@ public class BookingRepository {
 
                     services.add(service);
                     uniqueIds.add(serviceId);
+
                     totalMinutes = Math.addExact(
-                            totalMinutes, service.getEstimatedMinutes()
+                            totalMinutes,
+                            service.getEstimatedMinutes()
                     );
                 }
 
                 if (booking.getDate() == null
                         || booking.getStartTime() == null) {
+
                     throw new IllegalArgumentException(
                             "editBookingServices.missingTime"
                     );
@@ -319,39 +315,55 @@ public class BookingRepository {
 
                 // Kontrollerar andra bokningar i samma session.
                 if (booking.getMechanicId() != null) {
-                    List<BookingEntity> otherBookings = session.createQuery(
-                                    "from BookingEntity "
-                                            + "where mechanicId = :mechanicId "
-                                            + "and id <> :bookingId",
-                                    BookingEntity.class
+
+                    List<Booking> otherBookings =
+                            session.createQuery(
+                                    "from Booking " +
+                                    "where mechanicId = :mechanicId " +
+                                    "and id <> :bookingId",
+                                    Booking.class
                             )
-                            .setParameter("mechanicId", booking.getMechanicId())
-                            .setParameter("bookingId", bookingId)
+                            .setParameter(
+                                    "mechanicId",
+                                    booking.getMechanicId()
+                            )
+                            .setParameter(
+                                    "bookingId",
+                                    bookingId
+                            )
                             .getResultList();
 
-                    LocalDateTime newStart = LocalDateTime.of(
-                            booking.getDate(), booking.getStartTime()
-                    );
+                    LocalDateTime newStart =
+                            LocalDateTime.of(
+                                    booking.getDate(),
+                                    booking.getStartTime()
+                            );
+
                     LocalDateTime newEnd =
                             newStart.plusMinutes(totalMinutes);
 
-                    for (BookingEntity other : otherBookings) {
+                    for (Booking other : otherBookings) {
+
                         if (other.getDate() == null
                                 || other.getStartTime() == null
-                                || other.getDurationMinutes() == null
                                 || other.getDurationMinutes() <= 0) {
                             continue;
                         }
 
-                        LocalDateTime otherStart = LocalDateTime.of(
-                                other.getDate(), other.getStartTime()
-                        );
-                        LocalDateTime otherEnd = otherStart.plusMinutes(
-                                other.getDurationMinutes()
-                        );
+                        LocalDateTime otherStart =
+                                LocalDateTime.of(
+                                        other.getDate(),
+                                        other.getStartTime()
+                                );
+
+                        LocalDateTime otherEnd =
+                                otherStart.plusMinutes(
+                                        other.getDurationMinutes()
+                                );
 
                         if (newStart.isBefore(otherEnd)
                                 && newEnd.isAfter(otherStart)) {
+
                             throw new IllegalArgumentException(
                                     "editBookingServices.overlap"
                             );
@@ -370,15 +382,17 @@ public class BookingRepository {
                 }
 
                 transaction.commit();
+
                 return totalMinutes;
 
             } catch (RuntimeException exception) {
+
                 if (transaction.isActive()) {
                     transaction.rollback();
                 }
+
                 throw exception;
             }
         }
     }
-
 }

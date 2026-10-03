@@ -20,7 +20,7 @@
         <mapping class="com.wac.autocore.entity.InvoiceEntity"/>
         <mapping class="com.wac.autocore.entity.InvoiceLineEntity"/>
         <mapping class="com.wac.autocore.entity.PaymentEntity"/>
-        <mapping class="com.wac.autocore.entity.BookingEntity"/>
+        <mapping class="com.wac.autocore.model.Booking"/>
         <mapping class="com.wac.autocore.entity.WorkOrderEntity"/>
 
 
