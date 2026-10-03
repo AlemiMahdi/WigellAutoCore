@@ -1,20 +1,18 @@
 package com.wac.autocore.repository;
 
 import com.wac.autocore.data.HibernateUtil;
-import com.wac.autocore.entity.PaymentEntity;
-import com.wac.autocore.model.Payment;
 import com.wac.autocore.entity.InvoiceEntity;
 import com.wac.autocore.model.Invoice;
+import com.wac.autocore.model.Payment;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class PaymentRepository {
 
-    public void save(PaymentEntity payment) {
+    public void save(Payment payment) {
 
         try (Session session =
                      HibernateUtil.getSessionFactory().openSession()) {
@@ -36,22 +34,7 @@ public class PaymentRepository {
         }
     }
 
-    // Omvandlar originalets Payment till PaymentEntity och sparar den.
-    public void save(Payment payment) {
-
-        PaymentEntity entity = new PaymentEntity();
-
-        entity.setId(payment.getId());
-        entity.setInvoiceId(payment.getInvoiceId());
-        entity.setAmount(payment.getAmount());
-        entity.setPaymentType(payment.getPaymentType());
-        entity.setPaymentDate(payment.getPaymentDate());
-        entity.setSuccessful(payment.isSuccessful());
-
-        save(entity);
-    }
-
-    public List<PaymentEntity> findAll() {
+    public List<Payment> findAll() {
 
         try (Session session =
                      HibernateUtil.getSessionFactory().openSession()) {
@@ -60,10 +43,10 @@ public class PaymentRepository {
 
             try {
 
-                List<PaymentEntity> payments =
+                List<Payment> payments =
                         session.createQuery(
-                                "from PaymentEntity order by id",
-                                PaymentEntity.class
+                                "from Payment order by id",
+                                Payment.class
                         ).getResultList();
 
                 transaction.commit();
@@ -81,71 +64,43 @@ public class PaymentRepository {
         }
     }
 
-    // Hämtar databasens entities som originalets Payment-objekt.
     public List<Payment> findAllPayments() {
-
-        List<Payment> payments = new ArrayList<>();
-
-        for (PaymentEntity entity : findAll()) {
-
-            Payment payment = new Payment(
-                    entity.getId(),
-                    entity.getInvoiceId(),
-                    entity.getAmount(),
-                    entity.getPaymentType()
-            );
-
-            // Konstruktor sätter tiden till "nu",
-            // därför återställer vi den sparade tiden från databasen.
-            payment.setPaymentDate(entity.getPaymentDate());
-
-            payment.setSuccessful(
-                    entity.isSuccessful()
-            );
-
-            payments.add(payment);
-        }
-
-        return payments;
+        return findAll();
     }
 
-    public void savePaymentAndInvoice(Payment payment, Invoice invoice) {
+    public void savePaymentAndInvoice(
+            Payment payment,
+            Invoice invoice
+    ) {
 
-    try (Session session =
-                 HibernateUtil.getSessionFactory().openSession()) {
+        try (Session session =
+                     HibernateUtil.getSessionFactory().openSession()) {
 
-        Transaction transaction = session.beginTransaction();
+            Transaction transaction = session.beginTransaction();
 
-        try {
+            try {
 
-            PaymentEntity paymentEntity = new PaymentEntity();
+                // Invoice använder fortfarande InvoiceEntity.
+                // Den delen refaktoreras senare.
+                InvoiceRepository invoiceRepository =
+                        new InvoiceRepository();
 
-            paymentEntity.setId(payment.getId());
-            paymentEntity.setInvoiceId(payment.getInvoiceId());
-            paymentEntity.setAmount(payment.getAmount());
-            paymentEntity.setPaymentType(payment.getPaymentType());
-            paymentEntity.setPaymentDate(payment.getPaymentDate());
-            paymentEntity.setSuccessful(payment.isSuccessful());
+                InvoiceEntity invoiceEntity =
+                        invoiceRepository.toEntity(invoice);
 
-            // Samma översättning som InvoiceRepository använder, så att
-            // fakturans rader följer med och inte kopplas bort vid betalning.
-            InvoiceRepository invoiceRepository = new InvoiceRepository();
-            InvoiceEntity invoiceEntity = invoiceRepository.toEntity(invoice);
+                session.saveOrUpdate(payment);
+                session.saveOrUpdate(invoiceEntity);
 
+                transaction.commit();
 
-            session.saveOrUpdate(paymentEntity);
-            session.saveOrUpdate(invoiceEntity);
+            } catch (RuntimeException exception) {
 
-            transaction.commit();
+                if (transaction.isActive()) {
+                    transaction.rollback();
+                }
 
-        } catch (RuntimeException exception) {
-
-            if (transaction.isActive()) {
-                transaction.rollback();
+                throw exception;
             }
-
-            throw exception;
         }
     }
-}
 }

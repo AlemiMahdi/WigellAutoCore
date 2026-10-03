@@ -1,17 +1,44 @@
 package com.wac.autocore.model;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
 import java.time.LocalDateTime;
 
+@Entity
+@Table(name = "payments")
 public class Payment {
 
+    @Id
     private int id;
+
+    @Column(name = "invoice_id")
     private int invoiceId;
+
+    @Column(name = "amount")
     private double amount;
+
+    @Column(name = "payment_type")
     private String paymentType;
+
+    @Column(name = "payment_date")
     private LocalDateTime paymentDate;
+
+    @Column(name = "successful")
     private boolean successful;
 
-    public Payment(int id, int invoiceId, double amount, String paymentType) {
+    // Hibernate behöver en tom konstruktor.
+    public Payment() {
+    }
+
+    public Payment(
+            int id,
+            int invoiceId,
+            double amount,
+            String paymentType
+    ) {
         this.id = id;
         this.invoiceId = invoiceId;
         this.amount = amount;
@@ -75,6 +102,7 @@ public class Payment {
                 " | Amount: " + amount + " SEK" +
                 " | Payment type: " + paymentType +
                 " | Date: " + paymentDate +
-                " | Successful: " + (successful ? "Yes" : "No");
+                " | Successful: " +
+                (successful ? "Yes" : "No");
     }
 }
