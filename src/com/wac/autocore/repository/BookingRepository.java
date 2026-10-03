@@ -2,19 +2,18 @@ package com.wac.autocore.repository;
 
 
 import com.wac.autocore.data.HibernateUtil;
-import com.wac.autocore.entity.BookingEntity;
+import com.wac.autocore.entity.*;
 import com.wac.autocore.model.Booking;
+import com.wac.autocore.model.ServiceItem;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import com.wac.autocore.entity.ServiceItemEntity;
-import com.wac.autocore.model.ServiceItem;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-import com.wac.autocore.entity.WorkOrderEntity;
 
 public class BookingRepository {
 
@@ -65,6 +64,7 @@ public class BookingRepository {
                     entity = new BookingEntity();
                     entity.setId(booking.getId());
                 }
+                List<InvoiceLineEntity> frozenLines = convertToFrozenLines(booking.getServices(), entity);
 
                 entity.setVehicleId(booking.getVehicleId());
                 entity.setDate(booking.getDate());
@@ -72,17 +72,7 @@ public class BookingRepository {
                 entity.setStatus(booking.getStatus());
                 entity.setStartTime(booking.getStartTime());
                 entity.setDurationMinutes(booking.getDurationMinutes());
-                
-                List<ServiceItemEntity> serviceEntities = new ArrayList<>();
-                for (ServiceItem service : booking.getServices()) {
-                    ServiceItemEntity serviceEntity = 
-                        session.get( ServiceItemEntity.class, service.getId());
-                    
-                    if (serviceEntity != null) {
-                        serviceEntities.add(serviceEntity);
-                    }
-                }
-                entity.setServices(serviceEntities);
+                entity.setLines(frozenLines);
 
                 // Ändrar mekanikern bara när ett nytt val skickas in.
                 if (updateMechanic) {
@@ -103,6 +93,24 @@ public class BookingRepository {
                 throw exception;
             }
         }
+    }
+
+    public List<InvoiceLineEntity> convertToFrozenLines(List<ServiceItem> services, BookingEntity bookingEntity) {
+        List<InvoiceLineEntity> lineEntities = new ArrayList<>();
+
+        for (ServiceItem service : services) {
+            InvoiceLineEntity lineEntity = new InvoiceLineEntity();
+            lineEntity.setServiceItemId(service.getId());
+            lineEntity.setServiceName(service.getName());
+            lineEntity.setPrice(service.getPrice());
+            lineEntity.setDiscount(0.0); // Radrabatt är 0 enligt WAC-38
+            lineEntity.setFinalPrice(service.getPrice()); // finalPrice fryses här!
+
+            lineEntity.setBooking(bookingEntity);
+            lineEntities.add(lineEntity);
+        }
+
+        return lineEntities;
     }
 
     public List<BookingEntity> findAll() {
@@ -151,22 +159,57 @@ public class BookingRepository {
             );
 
             booking.setStatus(entity.getStatus());
-            
-            List<ServiceItem> services = new ArrayList<>();
-            for (ServiceItemEntity serviceEntity : entity.getServices()) {
-                ServiceItem service = new ServiceItem(
-                    serviceEntity.getId(), 
-                    serviceEntity.getName(), 
-                    serviceEntity.getDescription(), 
-                    serviceEntity.getPrice(), 
-                    serviceEntity.getEstimatedMinutes()
-                );
-                services.add(service);
-            }
+
+            List<ServiceItem> services = getServiceItems(entity);
             booking.setServices(services);
             bookings.add(booking);
         }
         return bookings;
+    }
+
+    public Booking findById(int id) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Transaction  transaction = session.beginTransaction();
+            try {
+                BookingEntity entity = session.get(BookingEntity.class, id);
+                transaction.commit();
+
+                if (entity == null) {
+                    return null;
+                }
+                Booking booking = new Booking(
+                        entity.getId(),
+                        entity.getVehicleId(),
+                        entity.getDate(),
+                        entity.getStartTime(),
+                        entity.getDurationMinutes(),
+                        entity.getDescription()
+                );
+                List<ServiceItem> serviceList = getServiceItems(entity);
+                booking.setServices(serviceList);
+                return booking;
+            } catch (RuntimeException e) {
+                if (transaction.isActive()) {
+                    transaction.rollback();
+                }
+                throw e;
+            }
+        }
+    }
+
+    private List<ServiceItem> getServiceItems(BookingEntity entity) {
+        List<ServiceItem> serviceList = new ArrayList<>();
+        for (ServiceItemEntity serviceItems : entity.getServices()) {
+            ServiceItem service = new ServiceItem(
+                    serviceItems.getId(),
+                    serviceItems.getName(),
+                    serviceItems.getDescription(),
+                    serviceItems.getPrice(),
+                    serviceItems.getEstimatedMinutes()
+            );
+            serviceList.add(service);
+        }
+        return serviceList;
     }
 
     public boolean hasOverlappingBooking(

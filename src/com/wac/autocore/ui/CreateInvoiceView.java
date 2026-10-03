@@ -7,6 +7,7 @@ import com.wac.autocore.model.Invoice;
 import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.model.Vehicle;
 import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.service.GarageSystem;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.geometry.Pos;
@@ -30,6 +31,7 @@ public class CreateInvoiceView {
         LanguageManager language = LanguageManager.getInstance();
         GarageSystem garageSystem = new GarageSystem();
         InvoiceRepository invoiceRepository = new InvoiceRepository();
+        BookingRepository bookingRepository = new BookingRepository();
 
 
         // --- Arbetsorder ---
@@ -85,7 +87,9 @@ public class CreateInvoiceView {
                 amountField.clear();
                 totalValue.setText(ShowInvoiceView.formatSek(0));
             } else {
-                double amount = sumServicePrices(selected);
+                Booking booking = bookingRepository.findById(selected.getBookingId());
+
+                double amount = sumServicePrices(selected, booking);
                 amountField.setText(ShowInvoiceView.formatSek(amount));
                 totalValue.setText(ShowInvoiceView.formatSek(amount));
             }
@@ -206,12 +210,27 @@ public class CreateInvoiceView {
     }
 
     // Samma summa som GarageSystem.createInvoice räknar fram (före rabatt)
-    private static double sumServicePrices(WorkOrder workOrder) {
+    //Lägga till att kolla efter specifika bokningens tjänst
+    private static double sumServicePrices(WorkOrder workOrder, Booking booking) {
         double sum = 0.0;
         for (Integer serviceItemId : workOrder.getServiceItemIds()) {
-            for (ServiceItem serviceItem : Database.getServiceItems()) {
-                if (serviceItem.getId() == serviceItemId) {
-                    sum += serviceItem.getPrice();
+            ServiceItem history = null;
+
+            if(booking != null) {
+                for(ServiceItem serviceItem : booking.getServices()) {
+                    if(serviceItem.getId() == serviceItemId) {
+                        history = serviceItem;
+                        break;
+                    }
+                }
+            } if (history != null) {
+                sum+=history.getPrice();
+            }
+            else {
+                for (ServiceItem serviceItem : Database.getServiceItems()) {
+                    if (serviceItem.getId() == serviceItemId) {
+                        sum += serviceItem.getPrice();
+                    }
                 }
             }
         }

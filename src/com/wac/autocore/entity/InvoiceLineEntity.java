@@ -25,6 +25,10 @@ public class InvoiceLineEntity {
     @Column(name = "final_price")
     private double finalPrice;
 
+    @ManyToOne
+    @JoinColumn(name = "booking_id")
+    private BookingEntity booking;
+
     public InvoiceLineEntity() {}
 
     public int getId() {
@@ -74,4 +78,8 @@ public class InvoiceLineEntity {
     public void setFinalPrice(double finalPrice) {
         this.finalPrice = finalPrice;
     }
+
+    public BookingEntity getBooking() { return booking; }
+
+    public void setBooking(BookingEntity booking) { this.booking = booking; }
 }

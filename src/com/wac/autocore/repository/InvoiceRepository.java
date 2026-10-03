@@ -1,8 +1,10 @@
 package com.wac.autocore.repository;
 
 import com.wac.autocore.data.HibernateUtil;
+import com.wac.autocore.entity.BookingEntity;
 import com.wac.autocore.entity.InvoiceEntity;
 import com.wac.autocore.entity.InvoiceLineEntity;
+import com.wac.autocore.entity.WorkOrderEntity;
 import com.wac.autocore.model.Invoice;
 
 import com.wac.autocore.model.InvoiceLine;
@@ -50,23 +52,38 @@ public class InvoiceRepository {
         entity.setTotalAmount(invoice.getTotalAmount());
         entity.setPaid(invoice.isPaid());
 
-        //    Kopiera varje fakturarad till en InvoiceLineEntity.
-        //    Loop eftersom en faktura kan ha 0, 1 eller många rader.
-        for (InvoiceLine invoiceLine : invoice.getLines()) {
-            InvoiceLineEntity lineEntity = new InvoiceLineEntity();
+        // HÄMTA BOKNINGEN FRÅN DATABASEN SÅ ATT VI KAN LÄNKA RADERNA KORREKT
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            // Hitta arbetsordern för att få tag i boknings-id
+            WorkOrderEntity workOrderEntity =
+                    session.get(WorkOrderEntity.class, invoice.getWorkOrderId());
 
-            lineEntity.setId(invoiceLine.getId());
-            lineEntity.setServiceItemId(invoiceLine.getServiceItemId());
-            lineEntity.setServiceName(invoiceLine.getServiceName());
-            lineEntity.setPrice(invoiceLine.getPrice());
-            lineEntity.setDiscount(invoiceLine.getDiscount());
-            lineEntity.setFinalPrice(invoiceLine.getFinalPrice());
+            BookingEntity bookingEntity = null;
+            if (workOrderEntity != null) {
+                bookingEntity = session.get(BookingEntity.class, workOrderEntity.getBookingId());
+            }
 
-            // Raden måste ligga i fakturans lista, annars sparas den inte (cascade).
-            entity.getLines().add(lineEntity);
+            //    Kopiera varje fakturarad till en InvoiceLineEntity.
+            //    Loop eftersom en faktura kan ha 0, 1 eller många rader.
+            for (InvoiceLine invoiceLine : invoice.getLines()) {
+                InvoiceLineEntity lineEntity = new InvoiceLineEntity();
+
+                lineEntity.setId(invoiceLine.getId());
+                lineEntity.setServiceItemId(invoiceLine.getServiceItemId());
+                lineEntity.setServiceName(invoiceLine.getServiceName());
+                lineEntity.setPrice(invoiceLine.getPrice());
+                lineEntity.setDiscount(invoiceLine.getDiscount());
+                lineEntity.setFinalPrice(invoiceLine.getFinalPrice());
+
+                if (bookingEntity != null) {
+                    lineEntity.setBooking(bookingEntity);
+                }
+
+                // Raden måste ligga i fakturans lista, annars sparas den inte (cascade).
+                entity.getLines().add(lineEntity);
+            }
+            return entity;
         }
-        return entity;
-
 
     }
 
