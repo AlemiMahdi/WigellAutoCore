@@ -109,6 +109,12 @@ public class ShowInvoiceView {
 
         TableView<InvoiceLine> lineTable = new TableView<>();
 
+        // Text som visas när fakturan saknar rader (gamla fakturor).
+        // Måste sättas före UiKit.styleTable, annars visas standardtexten.
+        Label noLinesLabel = UiKit.emptyText("");
+        noLinesLabel.textProperty().bind(language.text("invoiceLine.noLines"));
+        lineTable.setPlaceholder(noLinesLabel);
+
         TableColumn<InvoiceLine, String> serviceCol = new TableColumn<>("Service");
         serviceCol.setCellValueFactory(cellData ->
                 new SimpleStringProperty(cellData.getValue().getServiceName()));
@@ -161,11 +167,39 @@ public class ShowInvoiceView {
         // UiKit.card ger samma ram och bakgrund som andra kort i appen
         VBox summaryCard = UiKit.card(statusHolder, toPayTitle, toPayValue, subtotalRow, discountRow);
 
+        // Rubrik "Utförda tjänster" ovanför radtabellen
+        Label linesTitle = new Label();
+        linesTitle.textProperty().bind(language.text("invoiceLine.title"));
+        linesTitle.getStyleClass().add("row-title");
+
+        // Tabellen till vänster växer, kortet till höger har fast bredd
+        VBox linesBox = new VBox(8, linesTitle, lineTable);
+        HBox.setHgrow(linesBox, Priority.ALWAYS);
+        summaryCard.setPrefWidth(280);
+        HBox contentRow = new HBox(16, linesBox, summaryCard);
+
+        // Hela detaljvyn i ett kort: rubrik, infoband och innehåll
+        VBox detailCard = UiKit.card(headingLabel, infoView, contentRow);
+
+        // Tipstext som visas tills en faktura väljs
+        Label selectHint = UiKit.emptyText("");
+        selectHint.textProperty().bind(language.text("invoiceLine.selectInvoice"));
+
+        // Kortet är dolt tills en faktura väljs
+        detailCard.setVisible(false);
+        detailCard.setManaged(false);
+
         // När användaren klickar på en faktura visas dess rader i radtabellen.
         // addListener körs automatiskt varje gång valet ändras (Observer-mönstret).
         // newInvoice är null när ingen faktura är vald, därför kontrolleras det först.
         table.getSelectionModel().selectedItemProperty().addListener((observable, oldInvoice, newInvoice) -> {
             if (newInvoice != null) {
+                // Visa kortet och dölj tipstexten
+                detailCard.setVisible(true);
+                detailCard.setManaged(true);
+                selectHint.setVisible(false);
+                selectHint.setManaged(false);
+
                 ObservableList<InvoiceLine> lines = FXCollections.observableArrayList(newInvoice.getLines());
                 lineTable.setItems(lines);
 
@@ -187,22 +221,7 @@ public class ShowInvoiceView {
             }
         });
 
-        // Rubrik "Utförda tjänster" ovanför radtabellen
-        Label linesTitle = new Label();
-        linesTitle.textProperty().bind(language.text("invoiceLine.title"));
-        linesTitle.getStyleClass().add("row-title");
-
-        // Tabellen till vänster växer, kortet till höger har fast bredd
-        VBox linesBox = new VBox(8, linesTitle, lineTable);
-        HBox.setHgrow(linesBox, Priority.ALWAYS);
-        summaryCard.setPrefWidth(280);
-        HBox contentRow = new HBox(16, linesBox, summaryCard);
-
-        // Hela detaljvyn i ett kort: rubrik, infoband och innehåll
-        VBox detailCard = UiKit.card(headingLabel, infoView, contentRow);
-
-
-        VBox view = new VBox(24, UiKit.pageHeader(language.text("invoices.title"), newInvoiceButton), table, detailCard);
+        VBox view = new VBox(24, UiKit.pageHeader(language.text("invoices.title"), newInvoiceButton), table, selectHint, detailCard);
         return view;
 
     }
