@@ -15,6 +15,7 @@ public class Booking {
     private LocalTime startTime;
     private int durationMinutes;
     private List<ServiceItem> services = new ArrayList();
+    private List<InvoiceLine> frozenPrice = new ArrayList<>();
 
     public Booking(int id, int vehicleId, LocalDate date, String description) {
         this.id = id;
@@ -93,6 +94,11 @@ public class Booking {
 
     public List<ServiceItem> getServices () { return services; }
     public void setServices (List<ServiceItem> services) { this.services = services; }
+
+    public void addFrozenPrice(InvoiceLine line) {
+        this.frozenPrice.add(line);
+    }
+    public  List<InvoiceLine> getFrozenPrice() { return frozenPrice; }
 
     @Override
     public String toString() {
