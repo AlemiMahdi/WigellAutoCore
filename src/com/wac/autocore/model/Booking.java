@@ -23,6 +23,7 @@ public class Booking {
         this.date = date;
         this.description = description;
         this.status = "BOOKED";
+        this.frozenPrice = new ArrayList<>();
     }
 
     public Booking(int id, int vehicleId, LocalDate date, LocalTime startTime, int durationMinutes, String description) {
@@ -34,6 +35,7 @@ public class Booking {
         this.durationMinutes = durationMinutes;
         this.description = description;
         this.status = "BOOKED";
+        this.frozenPrice = new ArrayList<>();
     }
 
     public int getId() {
@@ -95,10 +97,15 @@ public class Booking {
     public List<ServiceItem> getServices () { return services; }
     public void setServices (List<ServiceItem> services) { this.services = services; }
 
+    public void setFrozenPrice(List<InvoiceLine> frozenLines) {
+        this.frozenPrice = frozenLines;
+    }
+
+    // En smidig hjälpmetod för att lägga till en enskild rad
     public void addFrozenPrice(InvoiceLine line) {
         this.frozenPrice.add(line);
     }
-    public  List<InvoiceLine> getFrozenPrice() { return frozenPrice; }
+    public List<InvoiceLine> getFrozenPrice() { return frozenPrice; }
 
     @Override
     public String toString() {
