@@ -93,5 +93,7 @@ public class BookingEntity {
     public List<InvoiceLineEntity> getLines() {
         return lines;
     }
-
+    public void setLines(List<InvoiceLineEntity> lines) {
+        this.lines = lines;
+    }
 }

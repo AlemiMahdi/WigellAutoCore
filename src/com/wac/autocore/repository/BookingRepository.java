@@ -2,8 +2,7 @@ package com.wac.autocore.repository;
 
 
 import com.wac.autocore.data.HibernateUtil;
-import com.wac.autocore.entity.BookingEntity;
-import com.wac.autocore.entity.ServiceItemEntity;
+import com.wac.autocore.entity.*;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.ServiceItem;
 import org.hibernate.Session;
@@ -16,7 +15,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-import com.wac.autocore.entity.WorkOrderEntity;
 
 public class BookingRepository {
 
@@ -67,6 +65,7 @@ public class BookingRepository {
                     entity = new BookingEntity();
                     entity.setId(booking.getId());
                 }
+                List<InvoiceLineEntity> frozenLines = convertToFrozenLines(booking.getServices());
 
                 entity.setVehicleId(booking.getVehicleId());
                 entity.setDate(booking.getDate());
@@ -74,17 +73,7 @@ public class BookingRepository {
                 entity.setStatus(booking.getStatus());
                 entity.setStartTime(booking.getStartTime());
                 entity.setDurationMinutes(booking.getDurationMinutes());
-                
-                List<ServiceItemEntity> serviceEntities = new ArrayList<>();
-                for (ServiceItem service : booking.getServices()) {
-                    ServiceItemEntity serviceEntity = 
-                        session.get( ServiceItemEntity.class, service.getId());
-                    
-                    if (serviceEntity != null) {
-                        serviceEntities.add(serviceEntity);
-                    }
-                }
-                entity.setServices(serviceEntities);
+                entity.setLines(frozenLines);
 
                 // Ändrar mekanikern bara när ett nytt val skickas in.
                 if (updateMechanic) {
@@ -105,6 +94,23 @@ public class BookingRepository {
                 throw exception;
             }
         }
+    }
+
+    public List<InvoiceLineEntity> convertToFrozenLines(List<ServiceItem> services) {
+        List<InvoiceLineEntity> lineEntities = new ArrayList<>();
+
+        for (ServiceItem service : services) {
+            InvoiceLineEntity lineEntity = new InvoiceLineEntity();
+            lineEntity.setServiceItemId(service.getId());
+            lineEntity.setServiceName(service.getName());
+            lineEntity.setPrice(service.getPrice());
+            lineEntity.setDiscount(0.0); // Radrabatt är 0 enligt WAC-38
+            lineEntity.setFinalPrice(service.getPrice()); // finalPrice fryses här!
+
+            lineEntities.add(lineEntity);
+        }
+
+        return lineEntities;
     }
 
     public List<BookingEntity> findAll() {

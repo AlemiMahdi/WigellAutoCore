@@ -1,6 +1,7 @@
 package com.wac.autocore.ui.views;
 
 import com.wac.autocore.data.Database;
+import com.wac.autocore.entity.InvoiceLineEntity;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.Mechanic;
 import com.wac.autocore.model.Vehicle;
@@ -211,6 +212,8 @@ public class CreateBookingView {
                 UiKit.showError(messageLabel, language.text("createBooking.createError").get());
                 return;
             }
+
+            List<InvoiceLineEntity> previewLines = bookingRepository.convertToFrozenLines(new ArrayList<>(selectedServices));
 
             booking.setServices(new ArrayList<>(selectedServices));
             booking.setStartTime(startTime);
