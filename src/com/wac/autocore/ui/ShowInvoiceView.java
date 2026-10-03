@@ -86,7 +86,7 @@ public class ShowInvoiceView {
         Collections.reverse(data);
         table.setItems(data);
 
-        UiKit.styleTable(table);
+        UiKit.styleTable(table, 8);
 
         Label headingLabel = new Label();
         headingLabel.getStyleClass().add("card-title");

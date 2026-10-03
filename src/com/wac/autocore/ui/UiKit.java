@@ -452,6 +452,18 @@ public final class UiKit {
         fitHeightToRows(table);
     }
 
+    // Begränsar antalet synliga rader. Resten nås med scroller
+    public static void styleTable(TableView<?> table, int maxVisibleRows) {
+        if (maxVisibleRows < 2) {
+            throw new IllegalArgumentException(
+                    "maxVisibleRows must be at least 2"
+            );
+        }
+
+        table.getProperties().put("maxVisibleRows", maxVisibleRows);
+        styleTable(table);
+    }
+
     // Räknar om tabellens höjd varje gång listan ändras
     // (eller byts ut med setItems).
     private static <S> void fitHeightToRows(TableView<S> table) {
@@ -477,6 +489,12 @@ public final class UiKit {
         int rows = items == null ? 0 : items.size();
         // En tom tabell får plats för två rader så att placeholder-texten syns
         int visibleRows = Math.max(rows, 2);
+
+        Object limit = table.getProperties().get("maxVisibleRows");
+
+        if (limit instanceof Integer) {
+            visibleRows = Math.min(visibleRows, (Integer) limit);
+        }
         // + 4 = ram och inre marginal (1 px runt om) plus lite luft
         double height = TABLE_HEADER_HEIGHT + visibleRows * TABLE_ROW_HEIGHT + 4;
 
