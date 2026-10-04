@@ -1,18 +1,16 @@
 package com.wac.autocore.repository;
 
 import com.wac.autocore.data.HibernateUtil;
-import com.wac.autocore.entity.InvoiceEntity;
 import com.wac.autocore.model.Invoice;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class InvoiceRepository {
 
-    public void save(InvoiceEntity invoice) {
+    public void save(Invoice invoice) {
 
         try (Session session =
                      HibernateUtil.getSessionFactory().openSession()) {
@@ -20,7 +18,10 @@ public class InvoiceRepository {
             Transaction transaction = session.beginTransaction();
 
             try {
+
+                // InvoiceLine sparas automatiskt genom cascade från Invoice.
                 session.saveOrUpdate(invoice);
+
                 transaction.commit();
 
             } catch (RuntimeException exception) {
@@ -34,23 +35,7 @@ public class InvoiceRepository {
         }
     }
 
-    // Omvandlar originalets Invoice till InvoiceEntity och sparar den.
-    public void save(Invoice invoice) {
-
-        InvoiceEntity entity = new InvoiceEntity();
-
-        entity.setId(invoice.getId());
-        entity.setWorkOrderId(invoice.getWorkOrderId());
-        entity.setInvoiceDate(invoice.getInvoiceDate());
-        entity.setAmount(invoice.getAmount());
-        entity.setDiscount(invoice.getDiscount());
-        entity.setTotalAmount(invoice.getTotalAmount());
-        entity.setPaid(invoice.isPaid());
-
-        save(entity);
-    }
-
-    public List<InvoiceEntity> findAll() {
+    public List<Invoice> findAll() {
 
         try (Session session =
                      HibernateUtil.getSessionFactory().openSession()) {
@@ -59,10 +44,12 @@ public class InvoiceRepository {
 
             try {
 
-                List<InvoiceEntity> invoices =
+                List<Invoice> invoices =
                         session.createQuery(
-                                "from InvoiceEntity order by id",
-                                InvoiceEntity.class
+                                "select distinct i from Invoice i " +
+                                        "left join fetch i.lines " +
+                                        "order by i.id",
+                                Invoice.class
                         ).getResultList();
 
                 transaction.commit();
@@ -80,26 +67,7 @@ public class InvoiceRepository {
         }
     }
 
-    // Hämtar databasens entities som originalets Invoice-objekt.
     public List<Invoice> findAllInvoices() {
-
-        List<Invoice> invoices = new ArrayList<>();
-
-        for (InvoiceEntity entity : findAll()) {
-
-            Invoice invoice = new Invoice(
-                    entity.getId(),
-                    entity.getWorkOrderId(),
-                    entity.getInvoiceDate(),
-                    entity.getAmount()
-            );
-
-            invoice.setDiscount(entity.getDiscount());
-            invoice.setPaid(entity.isPaid());
-
-            invoices.add(invoice);
-        }
-
-        return invoices;
+        return findAll();
     }
 }

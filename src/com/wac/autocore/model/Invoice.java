@@ -1,18 +1,63 @@
 package com.wac.autocore.model;
 
-import java.time.LocalDate;
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+@Entity
+@Table(name = "invoices")
 public class Invoice {
 
+    @Id
     private int id;
+
+    @Column(name = "work_order_id")
     private int workOrderId;
+
+    @Column(name = "invoice_date")
     private LocalDate invoiceDate;
+
+    @Column(name = "amount")
     private double amount;
+
+    @Column(name = "discount")
     private double discount;
+
+    @Column(name = "total_amount")
     private double totalAmount;
+
+    @Column(name = "paid")
     private boolean paid;
 
-    public Invoice(int id, int workOrderId, LocalDate invoiceDate, double amount) {
+    @OneToMany(
+            cascade = CascadeType.ALL,
+            fetch = FetchType.EAGER
+    )
+    @JoinColumn(name = "invoice_id")
+    private List<InvoiceLine> lines = new ArrayList<>();
+
+    // Hibernate behöver en tom konstruktor.
+    public Invoice() {
+    }
+
+    public Invoice(
+            int id,
+            int workOrderId,
+            LocalDate invoiceDate,
+            double amount
+    ) {
         this.id = id;
         this.workOrderId = workOrderId;
         this.invoiceDate = invoiceDate;
@@ -76,8 +121,87 @@ public class Invoice {
         this.paid = paid;
     }
 
+    public void addLine(InvoiceLine invoiceLine) {
+        lines.add(invoiceLine);
+        calculateAmountFromLines();
+    }
+
+    public List<InvoiceLine> getLines() {
+        return Collections.unmodifiableList(lines);
+    }
+
     private void calculateTotalAmount() {
         this.totalAmount = amount - discount;
+    }
+
+    private void calculateAmountFromLines() {
+        double sum = 0.0;
+
+        for (InvoiceLine line : lines) {
+            sum += line.getPrice();
+        }
+
+        amount = sum;
+        calculateTotalAmount();
+    }
+
+    // Fördelar fakturans totala rabatt proportionellt mellan fakturaraderna.
+    public void distributeDiscountToLines() {
+        if (lines.isEmpty()) {
+            return;
+        }
+
+        BigDecimal totalPrice = BigDecimal.ZERO;
+
+        for (InvoiceLine line : lines) {
+            BigDecimal price = BigDecimal
+                    .valueOf(line.getPrice())
+                    .setScale(2, RoundingMode.UNNECESSARY);
+
+            if (price.signum() < 0) {
+                throw new IllegalArgumentException("Price cannot be negative");
+            }
+
+            totalPrice = totalPrice.add(price);
+        }
+
+        BigDecimal totalDiscount = BigDecimal
+                .valueOf(discount)
+                .setScale(2, RoundingMode.HALF_UP)
+                .max(BigDecimal.ZERO)
+                .min(totalPrice);
+
+        BigDecimal accumulatedPrice = BigDecimal.ZERO;
+        BigDecimal allocatedDiscount = BigDecimal.ZERO;
+
+        for (InvoiceLine line : lines) {
+            accumulatedPrice = accumulatedPrice.add(
+                    BigDecimal.valueOf(line.getPrice())
+            );
+
+            BigDecimal accumulatedDiscount =
+                    totalPrice.signum() == 0
+                            ? BigDecimal.ZERO
+                            : totalDiscount
+                                    .multiply(accumulatedPrice)
+                                    .divide(
+                                            totalPrice,
+                                            2,
+                                            RoundingMode.HALF_UP
+                                    );
+
+            BigDecimal lineDiscount =
+                    accumulatedDiscount.subtract(allocatedDiscount);
+
+            line.setDiscount(lineDiscount.doubleValue());
+
+            allocatedDiscount = accumulatedDiscount;
+        }
+
+        amount = totalPrice.doubleValue();
+        discount = totalDiscount.doubleValue();
+
+        calculateTotalAmount();
     }
 
     @Override

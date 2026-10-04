@@ -1,13 +1,35 @@
 package com.wac.autocore.model;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+@Entity
+@Table(name = "vehicles")
 public class Vehicle {
 
+    @Id
     private int id;
+
+    @Column(name = "registration_number")
     private String registrationNumber;
+
+    @Column(name = "brand")
     private String brand;
+
+    @Column(name = "model")
     private String model;
+
+    @Column(name = "vehicle_year")
     private int year;
+
+    @Column(name = "customer_id")
     private int customerId;
+
+    // Hibernate kräver en tom konstruktor.
+    public Vehicle() {
+    }
 
     public Vehicle(int id, String registrationNumber, String brand,
                    String model, int year, int customerId) {

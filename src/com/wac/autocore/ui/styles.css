@@ -1286,3 +1286,72 @@
 .app-content .text-field.readonly-field {
     -fx-text-fill: -fx-text-secondary;
 }
+
+/* Utfällbara menygrupper */
+.app-sidebar .nav-section {
+    -fx-text-fill: -fx-text-muted;
+    -fx-font-size: 11px;
+    -fx-font-weight: normal;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+/* Klickbar kategorirubrik */
+.app-sidebar .nav-section > .title {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 6;
+    -fx-border-color: transparent;
+    -fx-padding: 8 6 4 6;
+    -fx-cursor: hand;
+}
+
+.app-sidebar .nav-section > .title:hover {
+    -fx-background-color: rgba(51, 64, 47, 0.06);
+}
+
+/* Pil utan bakgrund eller glöd */
+.app-sidebar .nav-section > .title > .arrow-button {
+    -fx-background-color: transparent;
+}
+
+.app-sidebar .nav-section > .title > .arrow-button > .arrow,
+.app-sidebar .nav-section:focused > .title > .arrow-button > .arrow {
+    -fx-background-color: -fx-text-muted;
+    -fx-background-insets: 0;
+    -fx-effect: null;
+}
+
+/* Gruppens menyval */
+.app-sidebar .nav-section > .content {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+}
+
+/* Egen rubriklabel med samma utseende efter klick */
+.app-sidebar .nav-section .nav-section-heading {
+    -fx-font-size: 11px;
+    -fx-font-weight: normal;
+    -fx-text-fill: -fx-text-muted;
+    -fx-effect: null;
+}
+
+.app-sidebar .nav-section .nav-section-heading > .text {
+    -fx-effect: null;
+    -fx-stroke: null;
+}
+/* Kompakt UiKit-knapp med ikon */
+.primary-button.icon-button {
+    -fx-padding: 7;
+    -fx-min-width: 30;
+    -fx-pref-width: 30;
+    -fx-max-width: 30;
+    -fx-min-height: 30;
+    -fx-pref-height: 30;
+    -fx-max-height: 30;
+}
+
+.primary-button.icon-button .edit-pencil {
+    -fx-fill: -fx-text-fill;
+}

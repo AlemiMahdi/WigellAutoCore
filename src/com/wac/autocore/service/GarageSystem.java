@@ -1,14 +1,7 @@
 package com.wac.autocore.service;
 
 import com.wac.autocore.data.Database;
-import com.wac.autocore.model.Booking;
-import com.wac.autocore.model.Customer;
-import com.wac.autocore.model.Invoice;
-import com.wac.autocore.model.Mechanic;
-import com.wac.autocore.model.Payment;
-import com.wac.autocore.model.ServiceItem;
-import com.wac.autocore.model.Vehicle;
-import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.model.*;
 
 import java.time.LocalDate;
 
@@ -199,8 +192,7 @@ public class GarageSystem {
     }
 
     public WorkOrder createWorkOrder(int bookingId,
-                                     int mechanicId,
-                                     int... serviceItemIds) {
+                                     int mechanicId) {
 
         Booking booking = findBooking(bookingId);
 
@@ -221,15 +213,6 @@ public class GarageSystem {
             return null;
         }
 
-        for (int serviceItemId : serviceItemIds) {
-            if (findServiceItem(serviceItemId) == null) {
-                System.out.println(
-                        "Service item with ID " + serviceItemId + " does not exist."
-                );
-                return null;
-            }
-        }
-
         int id = Database.getWorkOrders().size() + 1;
 
         WorkOrder workOrder = new WorkOrder(
@@ -238,8 +221,8 @@ public class GarageSystem {
                 mechanicId
         );
 
-        for (int serviceItemId : serviceItemIds) {
-            workOrder.addServiceItem(serviceItemId);
+        for( ServiceItem serviceItem : booking.getServices()) {
+            workOrder.addServiceItem(serviceItem.getId());
         }
 
         Database.getWorkOrders().add(workOrder);
@@ -323,30 +306,38 @@ public class GarageSystem {
             return null;
         }
 
-        double amount = 0.0;
-
-        for (Integer serviceItemId : workOrder.getServiceItemIds()) {
-            ServiceItem serviceItem = findServiceItem(serviceItemId);
-
-            if (serviceItem != null) {
-                amount += serviceItem.getPrice();
-            }
+        Booking booking = findBooking(workOrder.getBookingId());
+        if (booking == null) {
+            System.out.println("Booking for work order " + workOrderId + " does not exist.");
+            return null;
         }
 
-        double discount = 0.0;
+            int id = Database.getInvoices().size() + 1;
 
-        Booking booking = findBooking(workOrder.getBookingId());
+            Invoice invoice = new Invoice(
+                    id,
+                    workOrderId,
+                    LocalDate.now(),
+                    0.0
+            );
 
-        if (booking != null) {
+            for(InvoiceLine frozenLine : booking.getFrozenPrice()){
+                InvoiceLine line = new InvoiceLine(
+                        frozenLine.getServiceItemId(),
+                        frozenLine.getServiceName(),
+                        frozenLine.getPrice()
+                ); invoice.addLine(line);
+            }
+            double amount = invoice.getAmount();
+            double discount = 0.0;
+
             Vehicle vehicle = findVehicle(booking.getVehicleId());
-
             if (vehicle != null) {
                 Customer customer = findCustomer(vehicle.getCustomerId());
 
                 if (customer != null && customer.isVip()) {
                     discount += amount * 0.10;
                     System.out.println("VIP discount applied: 10%");
-                }
             }
         }
 
@@ -369,16 +360,8 @@ public class GarageSystem {
             discount = amount;
         }
 
-        int id = Database.getInvoices().size() + 1;
-
-        Invoice invoice = new Invoice(
-                id,
-                workOrderId,
-                LocalDate.now(),
-                amount
-        );
-
         invoice.setDiscount(discount);
+        invoice.distributeDiscountToLines();
 
         Database.getInvoices().add(invoice);
 
@@ -487,16 +470,6 @@ public class GarageSystem {
         for (Mechanic mechanic : Database.getMechanics()) {
             if (mechanic.getId() == id) {
                 return mechanic;
-            }
-        }
-
-        return null;
-    }
-
-    private ServiceItem findServiceItem(int id) {
-        for (ServiceItem serviceItem : Database.getServiceItems()) {
-            if (serviceItem.getId() == id) {
-                return serviceItem;
             }
         }
 

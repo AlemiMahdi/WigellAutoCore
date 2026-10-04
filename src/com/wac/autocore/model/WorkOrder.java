@@ -1,21 +1,54 @@
 package com.wac.autocore.model;
 
+import javax.persistence.CollectionTable;
+import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.Table;
+
 import java.util.ArrayList;
 import java.util.List;
 
+@Entity
+@Table(name = "work_orders")
 public class WorkOrder {
 
+    @Id
     private int id;
+
+    @Column(name = "booking_id")
     private int bookingId;
+
+    @Column(name = "mechanic_id")
     private int mechanicId;
-    private List<Integer> serviceItemIds;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "work_order_services",
+            joinColumns = @JoinColumn(name = "work_order_id")
+    )
+    @Column(name = "service_item_id")
+    private List<Integer> serviceItemIds = new ArrayList<>();
+
+    @Column(name = "status")
     private String status;
 
-    public WorkOrder(int id, int bookingId, int mechanicId) {
+    // Hibernate behöver en tom konstruktor.
+    public WorkOrder() {
+    }
+
+    public WorkOrder(
+            int id,
+            int bookingId,
+            int mechanicId
+    ) {
         this.id = id;
         this.bookingId = bookingId;
         this.mechanicId = mechanicId;
-        this.serviceItemIds = new ArrayList<Integer>();
+        this.serviceItemIds = new ArrayList<>();
         this.status = "CREATED";
     }
 
