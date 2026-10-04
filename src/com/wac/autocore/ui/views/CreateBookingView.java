@@ -1,7 +1,6 @@
 package com.wac.autocore.ui.views;
 
 import com.wac.autocore.data.Database;
-import com.wac.autocore.entity.InvoiceLineEntity;
 import com.wac.autocore.model.*;
 import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.service.GarageSystem;
@@ -19,22 +18,16 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
-import javafx.scene.control.ListCell;
 import javafx.collections.ObservableList;
-
 import java.util.ArrayList;
-import java.util.List;
 
 import javafx.scene.control.ListView;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
-
 import javafx.collections.ListChangeListener;
-
 import java.util.Locale;
-import java.util.Observable;
 
 
 // Formulär för att boka in ett fordon: välj fordon, datum, mekaniker och skriv en beskrivning.
@@ -209,10 +202,6 @@ public class CreateBookingView {
                 UiKit.showError(messageLabel, language.text("createBooking.createError").get());
                 return;
             }
-
-            List<InvoiceLineEntity> previewLines = bookingRepository.convertToFrozenEntity(new ArrayList<>(selectedServices), null);
-            booking.addFrozenPrice(previewLines);
-
 
             booking.setServices(new ArrayList<>(selectedServices));
             booking.setStartTime(startTime);

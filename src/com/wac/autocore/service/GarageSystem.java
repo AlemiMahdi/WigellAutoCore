@@ -476,16 +476,6 @@ public class GarageSystem {
         return null;
     }
 
-    private ServiceItem findServiceItem(int id) {
-        for (ServiceItem serviceItem : Database.getServiceItems()) {
-            if (serviceItem.getId() == id) {
-                return serviceItem;
-            }
-        }
-
-        return null;
-    }
-
     private WorkOrder findWorkOrder(int id) {
         for (WorkOrder workOrder : Database.getWorkOrders()) {
             if (workOrder.getId() == id) {

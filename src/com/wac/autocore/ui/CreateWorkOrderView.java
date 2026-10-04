@@ -17,8 +17,6 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
-import java.util.ArrayList;
-import java.util.List;
 
 //Formulär för att skapa arbetsordrar.
 public class CreateWorkOrderView  extends VBox {
