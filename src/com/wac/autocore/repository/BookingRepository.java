@@ -4,6 +4,7 @@ package com.wac.autocore.repository;
 import com.wac.autocore.data.HibernateUtil;
 import com.wac.autocore.entity.*;
 import com.wac.autocore.model.Booking;
+import com.wac.autocore.model.InvoiceLine;
 import com.wac.autocore.model.ServiceItem;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
@@ -64,7 +65,13 @@ public class BookingRepository {
                     entity = new BookingEntity();
                     entity.setId(booking.getId());
                 }
-                List<InvoiceLineEntity> frozenLines = convertToFrozenLines(booking.getServices(), entity);
+                if (entity.getLines() != null) {
+                    entity.getLines().clear();
+                }
+                if (entity.getLines() == null || entity.getLines().isEmpty()) {
+                    List<InvoiceLineEntity> lineEntities = convertToFrozenEntity(booking.getServices(), entity);
+                    entity.setLines(lineEntities);
+                }
 
                 entity.setVehicleId(booking.getVehicleId());
                 entity.setDate(booking.getDate());
@@ -72,7 +79,6 @@ public class BookingRepository {
                 entity.setStatus(booking.getStatus());
                 entity.setStartTime(booking.getStartTime());
                 entity.setDurationMinutes(booking.getDurationMinutes());
-                entity.setLines(frozenLines);
 
                 // Ändrar mekanikern bara när ett nytt val skickas in.
                 if (updateMechanic) {
@@ -95,7 +101,7 @@ public class BookingRepository {
         }
     }
 
-    public List<InvoiceLineEntity> convertToFrozenLines(List<ServiceItem> services, BookingEntity bookingEntity) {
+    public List<InvoiceLineEntity> convertToFrozenEntity(List<ServiceItem> services, BookingEntity bookingEntity) {
         List<InvoiceLineEntity> lineEntities = new ArrayList<>();
 
         for (ServiceItem service : services) {
@@ -122,7 +128,7 @@ public class BookingRepository {
                 List<BookingEntity> bookings =
                         session.createQuery(
                             "select distinct b from BookingEntity b " +
-                            "left join fetch b.services " +
+                            "left join fetch b.lines " +
                             "order by b.id ",
                                 BookingEntity.class
                         ).getResultList();
@@ -155,13 +161,12 @@ public class BookingRepository {
                     entity.getDate(),
                     entity.getStartTime(),
                     durationMinutes,
-                    entity.getDescription()
+                    entity.getDescription(),
+                    convertToFrozenPrice(entity.getLines())
             );
 
             booking.setStatus(entity.getStatus());
 
-            List<ServiceItem> services = getServiceItems(entity);
-            booking.setServices(services);
             bookings.add(booking);
         }
         return bookings;
@@ -183,10 +188,10 @@ public class BookingRepository {
                         entity.getDate(),
                         entity.getStartTime(),
                         entity.getDurationMinutes(),
-                        entity.getDescription()
+                        entity.getDescription(),
+                        convertToFrozenPrice(entity.getLines())
                 );
-                List<ServiceItem> serviceList = getServiceItems(entity);
-                booking.setServices(serviceList);
+
                 return booking;
             } catch (RuntimeException e) {
                 if (transaction.isActive()) {
@@ -197,20 +202,47 @@ public class BookingRepository {
         }
     }
 
-    private List<ServiceItem> getServiceItems(BookingEntity entity) {
-        List<ServiceItem> serviceList = new ArrayList<>();
-        for (ServiceItemEntity serviceItems : entity.getServices()) {
-            ServiceItem service = new ServiceItem(
-                    serviceItems.getId(),
-                    serviceItems.getName(),
-                    serviceItems.getDescription(),
-                    serviceItems.getPrice(),
-                    serviceItems.getEstimatedMinutes()
-            );
-            serviceList.add(service);
+    private List<InvoiceLine> convertToFrozenPrice(List<InvoiceLineEntity> entityLines) {
+        List<InvoiceLine> domainLines = new ArrayList<>();
+        if (entityLines == null) return domainLines;
+
+        boolean alreadyExists = false;
+        for (InvoiceLineEntity lineEntity : entityLines) {
+            for (InvoiceLine exist : domainLines) {
+                if(exist.getServiceItemId() == lineEntity.getServiceItemId()) {
+                    alreadyExists = true;
+                    break;
+                }
+            }
+            if(!alreadyExists) {
+                InvoiceLine line = new InvoiceLine(
+                        lineEntity.getServiceItemId(),
+                        lineEntity.getServiceName(),
+                        lineEntity.getPrice()
+                );
+                line.setId(lineEntity.getId());
+                line.setDiscount(lineEntity.getDiscount());
+
+                domainLines.add(line);
+            }
         }
-        return serviceList;
+        return domainLines;
     }
+
+//    private List<ServiceItem> getServiceItems(BookingEntity entity) {
+//        List<ServiceItem> serviceList = new ArrayList<>();
+//        for (ServiceItemEntity serviceItems : entity.getServices()) {
+//            ServiceItem service = new ServiceItem(
+//                    serviceItems.getId(),
+//                    serviceItems.getName(),
+//                    serviceItems.getDescription(),
+//                    serviceItems.getPrice(),
+//                    serviceItems.getEstimatedMinutes()
+//            );
+//            serviceList.add(service);
+//        }
+//        return serviceList;
+//    }
 
     public boolean hasOverlappingBooking(
         int mechanicId,

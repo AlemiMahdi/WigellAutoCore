@@ -2,11 +2,7 @@ package com.wac.autocore.ui;
 
 
 import com.wac.autocore.data.Database;
-import com.wac.autocore.model.Booking;
-import com.wac.autocore.model.Invoice;
-import com.wac.autocore.model.ServiceItem;
-import com.wac.autocore.model.Vehicle;
-import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.model.*;
 import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.service.GarageSystem;
 import com.wac.autocore.ui.language.LanguageManager;
@@ -213,20 +209,16 @@ public class CreateInvoiceView {
     //Lägga till att kolla efter specifika bokningens tjänst
     private static double sumServicePrices(WorkOrder workOrder, Booking booking) {
         double sum = 0.0;
-        for (Integer serviceItemId : workOrder.getServiceItemIds()) {
-            ServiceItem history = null;
 
             if(booking != null) {
-                for(ServiceItem serviceItem : booking.getServices()) {
-                    if(serviceItem.getId() == serviceItemId) {
-                        history = serviceItem;
-                        break;
-                    }
+                for (InvoiceLine frozenLine : booking.getFrozenPrice()){
+                    sum+= frozenLine.getPrice();
                 }
-            } if (history != null) {
-                sum+=history.getPrice();
-            }
+                return sum;
+
+                }
             else {
+                for (Integer serviceItemId : workOrder.getServiceItemIds()) {
                 for (ServiceItem serviceItem : Database.getServiceItems()) {
                     if (serviceItem.getId() == serviceItemId) {
                         sum += serviceItem.getPrice();

@@ -28,7 +28,7 @@ public class Booking {
         this.frozenPrice = new ArrayList<>();
     }
 
-    public Booking(int id, int vehicleId, LocalDate date, LocalTime startTime, int durationMinutes, String description) {
+    public Booking(int id, int vehicleId, LocalDate date, LocalTime startTime, int durationMinutes, String description, List<InvoiceLine> frozenPrice) {
 
         this.id = id;
         this.vehicleId = vehicleId;
@@ -37,7 +37,7 @@ public class Booking {
         this.durationMinutes = durationMinutes;
         this.description = description;
         this.status = "BOOKED";
-        this.frozenPrice = new ArrayList<>();
+        this.frozenPrice = frozenPrice;
     }
 
     public int getId() {

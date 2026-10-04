@@ -306,39 +306,38 @@ public class GarageSystem {
             return null;
         }
 
-        int id = Database.getInvoices().size() + 1;
-
-        Invoice invoice = new Invoice(
-                id,
-                workOrderId,
-                LocalDate.now(),
-                0.0
-        );
-
-        for (Integer serviceItemId : workOrder.getServiceItemIds()) {
-            ServiceItem serviceItem = findServiceItem(serviceItemId);
-
-            if (serviceItem != null) {
-                InvoiceLine line = new InvoiceLine(serviceItem.getId(), serviceItem.getName(), serviceItem.getPrice());
-                invoice.addLine(line);
-
-            }
-        }
-        double amount = invoice.getAmount();
-        double discount = 0.0;
-
         Booking booking = findBooking(workOrder.getBookingId());
+        if (booking == null) {
+            System.out.println("Booking for work order " + workOrderId + " does not exist.");
+            return null;
+        }
 
-        if (booking != null) {
+            int id = Database.getInvoices().size() + 1;
+
+            Invoice invoice = new Invoice(
+                    id,
+                    workOrderId,
+                    LocalDate.now(),
+                    0.0
+            );
+
+            for(InvoiceLine frozenLine : booking.getFrozenPrice()){
+                InvoiceLine line = new InvoiceLine(
+                        frozenLine.getServiceItemId(),
+                        frozenLine.getServiceName(),
+                        frozenLine.getPrice()
+                ); invoice.addLine(line);
+            }
+            double amount = invoice.getAmount();
+            double discount = 0.0;
+
             Vehicle vehicle = findVehicle(booking.getVehicleId());
-
             if (vehicle != null) {
                 Customer customer = findCustomer(vehicle.getCustomerId());
 
                 if (customer != null && customer.isVip()) {
                     discount += amount * 0.10;
                     System.out.println("VIP discount applied: 10%");
-                }
             }
         }
 
