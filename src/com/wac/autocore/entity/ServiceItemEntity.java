@@ -26,6 +26,8 @@ public class ServiceItemEntity {
     @Column (name = "estimated_minutes")
     private int estimatedMinutes;
 
+
+
     //Hibernate behöver en tom konstruktor
     public ServiceItemEntity(){}
 

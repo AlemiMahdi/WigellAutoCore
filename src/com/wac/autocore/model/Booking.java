@@ -1,5 +1,7 @@
 package com.wac.autocore.model;
 
+import com.wac.autocore.entity.InvoiceLineEntity;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -15,6 +17,7 @@ public class Booking {
     private LocalTime startTime;
     private int durationMinutes;
     private List<ServiceItem> services = new ArrayList();
+    private List<InvoiceLine> frozenPrice = new ArrayList<>();
 
     public Booking(int id, int vehicleId, LocalDate date, String description) {
         this.id = id;
@@ -22,9 +25,10 @@ public class Booking {
         this.date = date;
         this.description = description;
         this.status = "BOOKED";
+        this.frozenPrice = new ArrayList<>();
     }
 
-    public Booking(int id, int vehicleId, LocalDate date, LocalTime startTime, int durationMinutes, String description) {
+    public Booking(int id, int vehicleId, LocalDate date, LocalTime startTime, int durationMinutes, String description, List<InvoiceLine> frozenPrice) {
 
         this.id = id;
         this.vehicleId = vehicleId;
@@ -33,6 +37,7 @@ public class Booking {
         this.durationMinutes = durationMinutes;
         this.description = description;
         this.status = "BOOKED";
+        this.frozenPrice = frozenPrice;
     }
 
     public int getId() {
@@ -93,6 +98,25 @@ public class Booking {
 
     public List<ServiceItem> getServices () { return services; }
     public void setServices (List<ServiceItem> services) { this.services = services; }
+
+    public void setFrozenPrice(List<InvoiceLine> frozenLines) {
+        this.frozenPrice = frozenLines;
+    }
+
+    // En smidig hjälpmetod för att lägga till en enskild rad
+    public void addFrozenPrice(List<InvoiceLineEntity> lines) {
+        if (lines == null) return;
+
+        for (InvoiceLineEntity entity : lines) {
+            InvoiceLine domainLine = new InvoiceLine(
+                    entity.getServiceItemId(),
+                    entity.getServiceName(),
+                    entity.getPrice()
+            );
+            this.frozenPrice.add(domainLine);
+        }
+        }
+    public List<InvoiceLine> getFrozenPrice() { return frozenPrice; }
 
     @Override
     public String toString() {

@@ -1,18 +1,14 @@
 package com.wac.autocore.entity;
 
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.Table;
+import com.wac.autocore.model.InvoiceLine;
+
+import javax.persistence.*;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-import javax.persistence.ManyToMany;
 
 
 @Entity
@@ -49,7 +45,10 @@ public class BookingEntity {
         joinColumns = @JoinColumn (name = "booking_id"),
         inverseJoinColumns = @JoinColumn (name = "service_id")
     )
-    private List<ServiceItemEntity> services = new ArrayList<>(); 
+    private List<ServiceItemEntity> services = new ArrayList<>();
+
+    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    private List<InvoiceLineEntity> lines = new ArrayList<>();
 
     public BookingEntity() {}
 
@@ -90,6 +89,10 @@ public class BookingEntity {
     public List<ServiceItemEntity> getServices () { return  services;}
     public void setServices ( List<ServiceItemEntity> services) { this.services = services; }
 
-
-
+    public List<InvoiceLineEntity> getLines() {
+        return lines;
+    }
+    public void setLines(List<InvoiceLineEntity> lines) {
+        this.lines = lines;
+    }
 }
