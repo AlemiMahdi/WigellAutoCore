@@ -19,6 +19,7 @@ public class InvoiceRepository {
 
             try {
 
+                // InvoiceLine sparas automatiskt genom cascade från Invoice.
                 session.saveOrUpdate(invoice);
 
                 transaction.commit();

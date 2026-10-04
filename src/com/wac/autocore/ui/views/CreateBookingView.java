@@ -1,9 +1,7 @@
 package com.wac.autocore.ui.views;
 
 import com.wac.autocore.data.Database;
-import com.wac.autocore.model.Booking;
-import com.wac.autocore.model.Mechanic;
-import com.wac.autocore.model.Vehicle;
+import com.wac.autocore.model.*;
 import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.service.GarageSystem;
 import com.wac.autocore.ui.UiKit;
@@ -23,7 +21,6 @@ import javafx.util.StringConverter;
 import javafx.collections.ObservableList;
 import java.util.ArrayList;
 
-import com.wac.autocore.model.ServiceItem;
 import javafx.scene.control.ListView;
 
 import java.time.LocalDate;

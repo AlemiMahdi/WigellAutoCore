@@ -1,11 +1,14 @@
 package com.wac.autocore.model;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 import java.time.LocalDate;
@@ -49,6 +52,12 @@ public class Booking {
     @Column(name = "mechanic_id")
     private Integer mechanicId;
 
+    // Historiska priser för tjänsterna i bokningen.
+    // Sparas som snapshot så framtida prisändringar inte påverkar bokningen.
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinColumn(name = "booking_id")
+    private List<InvoiceLine> frozenPrice = new ArrayList<>();
+
     // Hibernate behöver en tom konstruktor.
     public Booking() {
     }
@@ -76,6 +85,27 @@ public class Booking {
         this.durationMinutes = durationMinutes;
         this.description = description;
         this.status = "BOOKED";
+    }
+
+    public Booking(
+            int id,
+            int vehicleId,
+            LocalDate date,
+            LocalTime startTime,
+            int durationMinutes,
+            String description,
+            List<InvoiceLine> frozenPrice
+    ) {
+        this.id = id;
+        this.vehicleId = vehicleId;
+        this.date = date;
+        this.startTime = startTime;
+        this.durationMinutes = durationMinutes;
+        this.description = description;
+        this.status = "BOOKED";
+        this.frozenPrice = frozenPrice != null
+                ? frozenPrice
+                : new ArrayList<>();
     }
 
     public int getId() {
@@ -148,6 +178,22 @@ public class Booking {
 
     public void setMechanicId(Integer mechanicId) {
         this.mechanicId = mechanicId;
+    }
+
+    public List<InvoiceLine> getFrozenPrice() {
+        return frozenPrice;
+    }
+
+    public void setFrozenPrice(List<InvoiceLine> frozenPrice) {
+        this.frozenPrice = frozenPrice != null
+                ? frozenPrice
+                : new ArrayList<>();
+    }
+
+    public void addFrozenPrice(InvoiceLine line) {
+        if (line != null) {
+            frozenPrice.add(line);
+        }
     }
 
     @Override

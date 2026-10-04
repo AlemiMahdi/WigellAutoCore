@@ -9,6 +9,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -133,14 +135,72 @@ public class Invoice {
     }
 
     private void calculateAmountFromLines() {
-
         double sum = 0.0;
 
         for (InvoiceLine line : lines) {
-            sum += line.getFinalPrice();
+            sum += line.getPrice();
         }
 
         amount = sum;
+        calculateTotalAmount();
+    }
+
+    // Fördelar fakturans totala rabatt proportionellt mellan fakturaraderna.
+    public void distributeDiscountToLines() {
+        if (lines.isEmpty()) {
+            return;
+        }
+
+        BigDecimal totalPrice = BigDecimal.ZERO;
+
+        for (InvoiceLine line : lines) {
+            BigDecimal price = BigDecimal
+                    .valueOf(line.getPrice())
+                    .setScale(2, RoundingMode.UNNECESSARY);
+
+            if (price.signum() < 0) {
+                throw new IllegalArgumentException("Price cannot be negative");
+            }
+
+            totalPrice = totalPrice.add(price);
+        }
+
+        BigDecimal totalDiscount = BigDecimal
+                .valueOf(discount)
+                .setScale(2, RoundingMode.HALF_UP)
+                .max(BigDecimal.ZERO)
+                .min(totalPrice);
+
+        BigDecimal accumulatedPrice = BigDecimal.ZERO;
+        BigDecimal allocatedDiscount = BigDecimal.ZERO;
+
+        for (InvoiceLine line : lines) {
+            accumulatedPrice = accumulatedPrice.add(
+                    BigDecimal.valueOf(line.getPrice())
+            );
+
+            BigDecimal accumulatedDiscount =
+                    totalPrice.signum() == 0
+                            ? BigDecimal.ZERO
+                            : totalDiscount
+                                    .multiply(accumulatedPrice)
+                                    .divide(
+                                            totalPrice,
+                                            2,
+                                            RoundingMode.HALF_UP
+                                    );
+
+            BigDecimal lineDiscount =
+                    accumulatedDiscount.subtract(allocatedDiscount);
+
+            line.setDiscount(lineDiscount.doubleValue());
+
+            allocatedDiscount = accumulatedDiscount;
+        }
+
+        amount = totalPrice.doubleValue();
+        discount = totalDiscount.doubleValue();
+
         calculateTotalAmount();
     }
 

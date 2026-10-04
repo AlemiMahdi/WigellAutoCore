@@ -2,6 +2,7 @@ package com.wac.autocore.repository;
 
 import com.wac.autocore.data.HibernateUtil;
 import com.wac.autocore.model.Booking;
+import com.wac.autocore.model.InvoiceLine;
 import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.model.WorkOrder;
 
@@ -76,6 +77,30 @@ public class BookingRepository {
 
                 existingBooking.setServices(serviceItems);
 
+                /*
+                 * WAC-39:
+                 * När bokningen skapas sparas en snapshot av tjänsternas
+                 * namn och pris. Snapshoten ska inte ändras när priset i
+                 * ServiceItem senare ändras.
+                 */
+                if (isNew) {
+
+                    List<InvoiceLine> frozenPrices = new ArrayList<>();
+
+                    for (ServiceItem service : serviceItems) {
+
+                        InvoiceLine frozenLine = new InvoiceLine(
+                                service.getId(),
+                                service.getName(),
+                                service.getPrice()
+                        );
+
+                        frozenPrices.add(frozenLine);
+                    }
+
+                    existingBooking.setFrozenPrice(frozenPrices);
+                }
+
                 // Ändrar mekanikern bara när ett nytt val skickas in.
                 if (updateMechanic) {
                     existingBooking.setMechanicId(mechanicId);
@@ -85,7 +110,7 @@ public class BookingRepository {
                     session.save(existingBooking);
                 }
 
-                // Befintliga entities uppdateras automatiskt av Hibernate.
+                // Befintliga objekt uppdateras automatiskt av Hibernate.
                 transaction.commit();
 
             } catch (RuntimeException exception) {
@@ -116,7 +141,13 @@ public class BookingRepository {
                                 Booking.class
                         ).getResultList();
 
+                // frozenPrice är EAGER och läses tillsammans med Booking.
+                for (Booking booking : bookings) {
+                    booking.getFrozenPrice().size();
+                }
+
                 transaction.commit();
+
                 return bookings;
 
             } catch (RuntimeException exception) {
@@ -132,6 +163,38 @@ public class BookingRepository {
 
     public List<Booking> findAllBookings() {
         return findAll();
+    }
+
+    public Booking findById(int id) {
+
+        try (Session session =
+                     HibernateUtil.getSessionFactory().openSession()) {
+
+            Transaction transaction = session.beginTransaction();
+
+            try {
+
+                Booking booking =
+                        session.get(Booking.class, id);
+
+                if (booking != null) {
+                    booking.getServices().size();
+                    booking.getFrozenPrice().size();
+                }
+
+                transaction.commit();
+
+                return booking;
+
+            } catch (RuntimeException exception) {
+
+                if (transaction.isActive()) {
+                    transaction.rollback();
+                }
+
+                throw exception;
+            }
+        }
     }
 
     public boolean hasOverlappingBooking(
@@ -380,6 +443,26 @@ public class BookingRepository {
                 booking.getServices().clear();
                 booking.getServices().addAll(services);
                 booking.setDurationMinutes(totalMinutes);
+
+                /*
+                 * Bokningens tjänster får ändras innan arbetet har börjat.
+                 * Därför uppdateras även historical-price-snapshoten.
+                 */
+                List<InvoiceLine> frozenPrices = new ArrayList<>();
+
+                for (ServiceItem service : services) {
+
+                    InvoiceLine frozenLine = new InvoiceLine(
+                            service.getId(),
+                            service.getName(),
+                            service.getPrice()
+                    );
+
+                    frozenPrices.add(frozenLine);
+                }
+
+                booking.getFrozenPrice().clear();
+                booking.getFrozenPrice().addAll(frozenPrices);
 
                 for (WorkOrder order : workOrders) {
                     order.getServiceItemIds().clear();
