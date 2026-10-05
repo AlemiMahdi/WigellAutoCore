@@ -45,7 +45,7 @@ public class ProcessPaymentView {
                 invoiceBox.getItems().add(invoice);
             }
         }
-        //invoiceBox.getItems().addAll(Database.getInvoices());
+        
         invoiceBox.promptTextProperty().bind(language.text(
                 invoiceBox.getItems().isEmpty() ? "processPayment.noInvoicesPrompt" : "processPayment.invoiceSelectPrompt"
         ));
