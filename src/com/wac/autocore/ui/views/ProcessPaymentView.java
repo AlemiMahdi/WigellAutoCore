@@ -40,7 +40,12 @@ public class ProcessPaymentView {
                 return null; // Används inte – listan går inte att skriva i
             }
         });
-        invoiceBox.getItems().addAll(Database.getInvoices());
+        for(Invoice invoice : Database.getInvoices()) {
+            if (!invoice.isPaid()) {
+                invoiceBox.getItems().add(invoice);
+            }
+        }
+        //invoiceBox.getItems().addAll(Database.getInvoices());
         invoiceBox.promptTextProperty().bind(language.text(
                 invoiceBox.getItems().isEmpty() ? "processPayment.noInvoicesPrompt" : "processPayment.invoiceSelectPrompt"
         ));
@@ -118,6 +123,11 @@ public class ProcessPaymentView {
                 return;
             }
 
+            //förhindra att faktura kan registreras igen
+            if (selectedInvoice.isPaid()) {
+                UiKit.showError(messageLabel, language.text("processPayment.alreadyPaid").get());
+                return;
+            }
             int invoiceId = selectedInvoice.getId();
 
 
@@ -183,6 +193,7 @@ public class ProcessPaymentView {
                         language.text("processPayment.success").get()
                 );
 
+                invoiceBox.getItems().remove(selectedInvoice);
                 invoiceBox.setValue(null);
                 paymentTypeBox.setValue(null);
 
