@@ -125,12 +125,20 @@ public class CreateInvoiceView {
 
                     invoiceRepository.save(invoice);
 
+                    double totalAmount = invoice.getTotalAmount();
+                    if (totalAmount == 0.0 && selectedWorkOrder != null) {
+                        Booking booking = bookingRepository.findById(selectedWorkOrder.getBookingId());
+                        totalAmount = sumServicePrices(selectedWorkOrder, booking);
+                        // Tips: Sätt summan på fakturan om den saknas: invoice.setTotalAmount(totalAmount);
+                    }
+
                     UiKit.showSuccess(statusLabel, language.text("createInvoice.successFor").get() + " "
                             + ShowInvoiceView.workOrderCode(workOrderId)
                             + ". " + language.text("createInvoice.totalLabel").get() + ": "
-                            + ShowInvoiceView.formatSek(invoice.getTotalAmount())
+                            + ShowInvoiceView.formatSek(totalAmount)
                     );
 
+                    workOrderBox.getItems().remove(selectedWorkOrder);
                     workOrderBox.setValue(null);
                     discoutField.clear();
 
