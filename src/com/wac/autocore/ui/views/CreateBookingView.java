@@ -207,6 +207,18 @@ public class CreateBookingView {
             booking.setStartTime(startTime);
             booking.setDurationMinutes(durationMinutes);
 
+            booking.setFrozenPrice(new ArrayList<>());
+
+            for (ServiceItem service : selectedServices) {
+                booking.addFrozenPrice(
+                    new InvoiceLine(
+                        service.getId(),
+                        service.getName(),
+                        service.getPrice()
+                    )
+                );
+            }
+
             try {
                 // Sparar bokningen i MySQL innan vi visar en bekräftelse.
                 bookingRepository.save(booking, mechanic.getId());
