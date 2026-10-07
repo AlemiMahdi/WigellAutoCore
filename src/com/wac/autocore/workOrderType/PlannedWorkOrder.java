@@ -15,6 +15,7 @@ public class PlannedWorkOrder implements WorkOrderTypeInterface{
         return order;
     }
 
+    //ifall de behövs, kan ta bort de sen annars, om man vill ha det på olika sätt
     @Override
     public void startWorkOrder(int workOrderId) {
 
