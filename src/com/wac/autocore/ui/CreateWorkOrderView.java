@@ -106,9 +106,9 @@ public class CreateWorkOrderView  extends VBox {
 
         getChildren().add(UiKit.formContainer(
                 UiKit.pageHeader(language.text("createWorkOrder.title"), null),
+                UiKit.formField(language.text("createWorkOrder.type"), typeComboBox),
                 UiKit.formField(language.text("createWorkOrder.bookingLabel"), bookingComboBox),
                 UiKit.formField(language.text("bookings.mechanic"), mechanicComboBox),
-                UiKit.formField(language.text("createWorkOrder.type"), typeComboBox),
                 saveButton,
                 feedbackLabel
         ));
