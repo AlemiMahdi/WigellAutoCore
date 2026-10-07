@@ -1,13 +1,8 @@
 package com.wac.autocore.model;
 
-import javax.persistence.CollectionTable;
-import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.Table;
+import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
+
+import javax.persistence.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +31,10 @@ public class WorkOrder {
     @Column(name = "status")
     private String status;
 
+    //@Enumerated(EnumType.STRING)
+    @Column(name = "work_order_type")
+    private WorkOrderTypeEnum type;
+
     // Hibernate behöver en tom konstruktor.
     public WorkOrder() {
     }
@@ -43,13 +42,15 @@ public class WorkOrder {
     public WorkOrder(
             int id,
             int bookingId,
-            int mechanicId
+            int mechanicId,
+            WorkOrderTypeEnum type
     ) {
         this.id = id;
         this.bookingId = bookingId;
         this.mechanicId = mechanicId;
         this.serviceItemIds = new ArrayList<>();
         this.status = "CREATED";
+        this.type = type;
     }
 
     public int getId() {
@@ -99,6 +100,10 @@ public class WorkOrder {
     public void removeServiceItem(int serviceItemId) {
         serviceItemIds.remove(Integer.valueOf(serviceItemId));
     }
+
+    public WorkOrderTypeEnum getType(){ return type; }
+
+    public void setType(WorkOrderTypeEnum type) { this.type = type;}
 
     @Override
     public String toString() {
