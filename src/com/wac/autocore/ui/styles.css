@@ -15,7 +15,7 @@
        OBS: namnen är kvar från det mörka temat. -fx-text-light betyder nu
        "huvudtextfärg" (mörk), så att vi inte behöver byta namn i hela filen. */
     -fx-sidebar-bg: #E4E9DC;                  /* Salvia */
-    -fx-header-bg: #56704A;                   /* Mossa mörk */
+    -fx-header-bg: #D3DEC8;                   /* Mjuk grön */
     -fx-accent: #56704A;                      /* Mossa mörk: knappar, aktivt menyval, staplar */
     -fx-accent-soft: rgba(107,138,94,0.16);   /* svag grön ton */
     -fx-accent-text: #3F5E35;                 /* grön text på svag grön ton */
@@ -48,24 +48,13 @@
 .app-header {
     -fx-background-color: -fx-header-bg;
     -fx-border-color: transparent transparent -fx-border transparent;
-    -fx-border-width: 0 0 1 0;
+    -fx-border-width: 0 0 4 0;
 }
 
-.app-header .app-title {
-    -fx-text-fill: #FFFFFF;
-    -fx-font-size: 26px;
-    -fx-font-weight: bold;
-}
-
-.app-header .app-subtitle {
-    -fx-text-fill: #E4E9DC;
-    -fx-font-size: 13px;
-}
-
-/* Språkväljaren i headern: genomskinlig med ljus ram */
+/* Språkväljaren i headern: genomskinlig med mörk ram */
 .app-header .language-menu {
     -fx-background-color: transparent;
-    -fx-border-color: #E4E9DC;
+    -fx-border-color: -fx-border;
     -fx-border-radius: 8;
     -fx-background-radius: 8;
     -fx-padding: 4 8 4 8;
@@ -74,15 +63,15 @@
 
 .app-header .language-menu:hover,
 .app-header .language-menu:showing {
-    -fx-background-color: rgba(255,255,255,0.12);
+    -fx-background-color: rgba(51,64,47,0.06);
 }
 
 .app-header .language-menu > .label {
-    -fx-text-fill: #FFFFFF;
+    -fx-text-fill: -fx-text-light;
 }
 
 .app-header .language-menu > .arrow-button > .arrow {
-    -fx-background-color: #FFFFFF;
+    -fx-background-color: -fx-text-light;
 }
 
 /* Visas bara om databasen inte gick att nå vid start */

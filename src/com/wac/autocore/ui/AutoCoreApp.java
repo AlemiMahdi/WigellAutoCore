@@ -11,10 +11,13 @@ import com.wac.autocore.ui.views.ProcessPaymentView;
 import com.wac.autocore.ui.views.ShowBookingsView;
 import com.wac.autocore.ui.views.ShowPaymentsView;
 import com.wac.autocore.ui.views.ShowWorkOrdersView;
+
 import javafx.application.Application;
 import javafx.application.Platform;
+
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -23,11 +26,13 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+
 import javafx.stage.Stage;
+
 import java.util.logging.Logger;
 import java.util.logging.Level;
-
-
 
 import java.util.HashMap;
 
@@ -105,6 +110,12 @@ public class AutoCoreApp extends Application {
         scene.getStylesheets().add(stylesheet.toExternalForm());
 
         primaryStage.setTitle("Wigell AutoCore");
+        // Appikonen i titelraden, aktivitetsfältet och Alt-Tab.
+        primaryStage.getIcons().addAll(
+                loadImage("/images/logo-gron-16.png"),
+                loadImage("/images/logo-gron-32.png"),
+                loadImage("/images/logo-gron-48.png"),
+                loadImage("/images/logo-gron-256.png"));
         primaryStage.setMinWidth(1100);
         primaryStage.setMinHeight(700);
         primaryStage.setScene(scene);
@@ -474,25 +485,35 @@ public class AutoCoreApp extends Application {
     // ------------------------------------------------------------
 
     private StackPane createHeader() {
-        Label title = new Label("WIGELL AUTOCORE");
-        title.getStyleClass().add("app-title");
-
-        Label subtitle = new Label();
-        subtitle.textProperty().bind(language.text("header.subtitle"));
-        subtitle.getStyleClass().add("app-subtitle");
-
-        // Rubrik och underrubrik ligger centrerade mitt i sidhuvudet
-        VBox titleBox = new VBox(4, title, subtitle);
-        titleBox.setAlignment(Pos.CENTER);
+        // Kundens logga visas centrerad i sidhuvudet
+        ImageView logo = new ImageView(loadImage("/images/logga-ljus-bakgrund@2x.png", 160));
+        logo.setPreserveRatio(true);
+        logo.setFitHeight(80);
+        logo.setSmooth(true);
+        logo.setAccessibleText("Wigell AutoCore");
 
         // Språkväljaren läggs ovanpå, men skjuts ut till höger kant
         MenuButton languageMenu = createLanguageMenu();
         StackPane.setAlignment(languageMenu, Pos.CENTER_RIGHT);
 
-        StackPane header = new StackPane(titleBox, languageMenu);
+        StackPane header = new StackPane(logo, languageMenu);
         header.getStyleClass().add("app-header");
         header.setPadding(new Insets(18));
         return header;
+    }
+
+    // Laddar en bild från resources i originalstorlek. Sökvägen ska börja med "/".
+    private Image loadImage(String path) {
+        return loadImage(path, 0);
+    }
+
+    // Laddar en bild och skalar den till en viss höjd vid inläsning (skarpare).
+    private Image loadImage(String path, double height) {
+        URL url = AutoCoreApp.class.getResource(path);
+        if (url == null) {
+            throw new IllegalStateException("Kunde inte hitta bilden " + path);
+        }
+        return new Image(url.toExternalForm(), 0, height, true, true);
     }
 
     /** Knapp med rullgardinsmeny för att byta språk (Svenska/English).*/
