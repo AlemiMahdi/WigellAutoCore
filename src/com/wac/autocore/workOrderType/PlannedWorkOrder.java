@@ -8,11 +8,11 @@ public class PlannedWorkOrder implements WorkOrderTypeInterface{
     public WorkOrder createWorkOrder(int bookingId, int mechanicId) {
 
         //Skapa variabel och sätt in type enum
-        //WorkOrder workOrder = new WorkOrder();
-        //order.setBookingId...
-        //order.setType(WorkOrderTypeEnum.PLANNED);
-        //return order;
-        return null;
+        WorkOrder order = new WorkOrder();
+        order.setBookingId(bookingId);
+        order.setMechanicId(mechanicId);
+        order.setType(WorkOrderTypeEnum.PLANNED);
+        return order;
     }
 
     @Override
