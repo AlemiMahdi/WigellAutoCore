@@ -122,6 +122,7 @@ public class AutoCoreApp extends Application {
             loadCustomers();
             loadVehicles();
             loadServiceItems();
+            loadServicePackages();
             loadMechanics();
             loadBookings();
             loadWorkOrders();
@@ -242,6 +243,12 @@ public class AutoCoreApp extends Application {
 
     }
 
+    private void loadServicePackages() {
+        ServicePackageRepository repository = new ServicePackageRepository();
+        List<ServicePackage> savedPackages = repository.findAll();
+        Database.getServicePackages().clear();
+        Database.getServicePackages().addAll(savedPackages);
+    }
     private void loadMechanics() {
 
         MechanicRepository repository =
@@ -561,6 +568,8 @@ public class AutoCoreApp extends Application {
 
         addNavSection(menuBox, "menu.section.servicesMechanics",
                 createNavItem("show-services", "menu.services", () -> showView(new ServiceView())),
+                createNavItem("create-service-package", "menu.createServicePackage",
+                        () -> showView(new CreateServicePackageView().getView())),
                 createNavItem("show-mechanics", "menu.mechanics", () -> showView(new MechanicView())),
                 createNavItem("mechanic-schedule", "menu.schedule", () -> showView(new MechanicScheduleView().getView())));
 
