@@ -40,11 +40,7 @@ public class ProcessPaymentView {
                 return null; // Används inte – listan går inte att skriva i
             }
         });
-        for(Invoice invoice : Database.getInvoices()) {
-            if (!invoice.isPaid()) {
-                invoiceBox.getItems().add(invoice);
-            }
-        }
+        refreshInvoiceTexts(invoiceBox);
 
         invoiceBox.promptTextProperty().bind(language.text(
                 invoiceBox.getItems().isEmpty() ? "processPayment.noInvoicesPrompt" : "processPayment.invoiceSelectPrompt"
@@ -249,7 +245,12 @@ public class ProcessPaymentView {
     // En ComboBox ritar inte om texterna av sig själv när ett objekt ändras
     // (här: paid blev true). Genom att lägga in samma objekt igen uppdateras de.
     private static void refreshInvoiceTexts(ComboBox<Invoice> invoiceBox) {
-        invoiceBox.getItems().setAll(Database.getInvoices());
+        invoiceBox.getItems().clear();
+        for(Invoice invoice : Database.getInvoices()) {
+            if(!invoice.isPaid()) {
+                invoiceBox.getItems().add(invoice);
+            }
+        }
     }
 
 }
