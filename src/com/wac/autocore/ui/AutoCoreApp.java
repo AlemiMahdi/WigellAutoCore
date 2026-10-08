@@ -486,17 +486,33 @@ public class AutoCoreApp extends Application {
 
     private StackPane createHeader() {
         // Kundens logga visas centrerad i sidhuvudet
-        ImageView logo = new ImageView(loadImage("/images/logga-ljus-bakgrund@2x.png", 160));
+        ImageView logo = new ImageView(loadImage("/images/logga-utan-underrubrik.png"));
         logo.setPreserveRatio(true);
-        logo.setFitHeight(80);
+        logo.setFitHeight(60);
         logo.setSmooth(true);
         logo.setAccessibleText("Wigell AutoCore");
+
+        // Underrubrik som text, så att den byter språk
+        Label subtitle = new Label();
+        subtitle.textProperty().bind(language.text("header.subtitle"));
+        subtitle.getStyleClass().add("app-subtitle");
+
+        // Loggan med underrubriken under. Paketet centreras i headern,
+        // men inuti ligger allt vänsterställt.
+        VBox brand = new VBox(4, logo, subtitle);
+        brand.setAlignment(Pos.CENTER_LEFT);
+        brand.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE); // brand blir inte bredare än loggan
+
+        // Lägg underrubriken tätt under "Wigell".
+        // Måtten är uppmätta i loggbilden (60 px hög): texten börjar 69 px in
+        // och det är tom yta under den. Ändras loggan måste måtten ändras.
+        VBox.setMargin(subtitle, new Insets(-19, 0, 0, 69));
 
         // Språkväljaren läggs ovanpå, men skjuts ut till höger kant
         MenuButton languageMenu = createLanguageMenu();
         StackPane.setAlignment(languageMenu, Pos.CENTER_RIGHT);
 
-        StackPane header = new StackPane(logo, languageMenu);
+        StackPane header = new StackPane(brand, languageMenu);
         header.getStyleClass().add("app-header");
         header.setPadding(new Insets(18));
         return header;

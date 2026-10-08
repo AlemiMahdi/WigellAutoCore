@@ -48,7 +48,13 @@
 .app-header {
     -fx-background-color: -fx-header-bg;
     -fx-border-color: transparent transparent -fx-border transparent;
-    -fx-border-width: 0 0 4 0;
+    -fx-border-width: 0 0 1 0;
+}
+
+.app-header .app-subtitle {
+    -fx-text-fill: -fx-text-secondary;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
 }
 
 /* Språkväljaren i headern: genomskinlig med mörk ram */
