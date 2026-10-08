@@ -1,5 +1,6 @@
 package com.wac.autocore.model;
 
+import com.wac.autocore.workOrderType.WorkOrderTypeConverter;
 import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
 
 import javax.persistence.*;
@@ -31,7 +32,7 @@ public class WorkOrder {
     @Column(name = "status")
     private String status;
 
-    //@Enumerated(EnumType.STRING)
+   @Convert(converter = WorkOrderTypeConverter.class)
     @Column(name = "work_order_type")
     private WorkOrderTypeEnum type;
 
