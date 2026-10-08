@@ -9,6 +9,7 @@ import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.repository.WorkOrderRepository;
 import com.wac.autocore.service.GarageSystem;
 import com.wac.autocore.ui.language.LanguageManager;
+import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
 import javafx.collections.FXCollections;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -37,6 +38,10 @@ public class CreateWorkOrderView  extends VBox {
         mechanicComboBox.setConverter(mechanicConverter());
         UiKit.keepPromptWhenCleared(mechanicComboBox);
 
+        ComboBox<WorkOrderTypeEnum> typeComboBox = new ComboBox<>(FXCollections.observableArrayList(WorkOrderTypeEnum.values()));
+        typeComboBox.setConverter(typeConverter());
+        typeComboBox.setValue(WorkOrderTypeEnum.PLANNED);
+
         Button saveButton = UiKit.primaryButton("Create work order");
         saveButton.textProperty().bind(language.text("createWorkOrder.title"));
 
@@ -49,8 +54,9 @@ public class CreateWorkOrderView  extends VBox {
         saveButton.setOnAction(event -> {
             Booking booking = bookingComboBox.getValue();
             Mechanic mechanic = mechanicComboBox.getValue();
+            WorkOrderTypeEnum selectedType = typeComboBox.getValue();
 
-            if (booking == null || mechanic == null){
+            if (booking == null || mechanic == null || selectedType == null) {
                 UiKit.showError(feedbackLabel, language.text("createWorkOrder.missingSelection").get());
 
                 return;
@@ -60,7 +66,7 @@ public class CreateWorkOrderView  extends VBox {
             String previousBookingStatus = booking.getStatus();
 
             //GarageSystem avgör om arbetsordern får skapas eller inte.
-            WorkOrder workOrder = garageSystem.createWorkOrder(booking.getId(), mechanic.getId());
+            WorkOrder workOrder = garageSystem.createWorkOrder(booking.getId(), mechanic.getId(), selectedType);
 
             if(workOrder == null){
                 if (!mechanic.isAvailable()){
@@ -94,12 +100,13 @@ public class CreateWorkOrderView  extends VBox {
             bookingComboBox.setValue(null);
             mechanicComboBox.getSelectionModel().clearSelection();
             mechanicComboBox.setValue(null);
-            
+            typeComboBox.setValue(WorkOrderTypeEnum.PLANNED);
 
         });
 
         getChildren().add(UiKit.formContainer(
                 UiKit.pageHeader(language.text("createWorkOrder.title"), null),
+                UiKit.formField(language.text("createWorkOrder.type"), typeComboBox),
                 UiKit.formField(language.text("createWorkOrder.bookingLabel"), bookingComboBox),
                 UiKit.formField(language.text("bookings.mechanic"), mechanicComboBox),
                 saveButton,
@@ -137,6 +144,25 @@ public class CreateWorkOrderView  extends VBox {
 
             @Override
             public Mechanic fromString(String text) {
+                return null;
+            }
+        };
+    }
+
+    private StringConverter<WorkOrderTypeEnum> typeConverter() {
+        return new StringConverter<WorkOrderTypeEnum>() {
+            @Override
+            public String toString(WorkOrderTypeEnum type) {
+                if (type == null) return "";
+                    switch(type) {
+                        case PLANNED: return language.text("workOrder.type.planned").get();
+                        case DROP_IN: return language.text("workOrder.type.dropIn").get();
+                        case COMPLAINT: return language.text("workOrder.type.complaint").get();
+                        default: return type.name().toLowerCase();
+                    }
+            }
+            @Override
+            public WorkOrderTypeEnum fromString(String string) {
                 return null;
             }
         };

@@ -2,6 +2,7 @@ package com.wac.autocore.service;
 
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
+import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
 
 import java.time.LocalDate;
 
@@ -192,7 +193,7 @@ public class GarageSystem {
     }
 
     public WorkOrder createWorkOrder(int bookingId,
-                                     int mechanicId) {
+                                     int mechanicId, WorkOrderTypeEnum type) {
 
         Booking booking = findBooking(bookingId);
 
@@ -218,7 +219,9 @@ public class GarageSystem {
         WorkOrder workOrder = new WorkOrder(
                 id,
                 bookingId,
-                mechanicId
+                mechanicId,
+                type
+
         );
 
         for( ServiceItem serviceItem : booking.getServices()) {
