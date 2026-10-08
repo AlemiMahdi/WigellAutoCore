@@ -64,6 +64,13 @@ public class CreateBookingView {
         UiKit.keepPromptWhenCleared(mechanicCombo);
 
         ObservableList<ServiceItem> selectedServices = FXCollections.observableArrayList();
+
+        ComboBox<ServicePackage> packageCombo = new ComboBox<>(
+            FXCollections.observableArrayList(Database.getServicePackages())
+        );
+        packageCombo.setPromptText("Select service package");
+        UiKit.keepPromptWhenCleared(packageCombo);
+
         durationField.setEditable(false);
         durationField.setText("0");
 
@@ -105,15 +112,23 @@ public class CreateBookingView {
                                 + " – " + service.getEstimatedMinutes() + " min"
                 );
 
-                checkBox.setSelected(selectedServices.contains(service));
+                checkBox.setSelected(
+                    selectedServices.stream()
+                        .anyMatch(selected -> selected.getId() == service.getId())
+                );
 
                 checkBox.setOnAction(event -> {
                     if (checkBox.isSelected()) {
-                        if (!selectedServices.contains(service)) {
+                        boolean alreadySelected = selectedServices.stream()
+                            .anyMatch(selected -> selected.getId() == service.getId());
+
+                        if (!alreadySelected) {
                             selectedServices.add(service);
                         }
                     } else {
-                        selectedServices.remove(service);
+                        selectedServices.removeIf(
+                            selected -> selected.getId() == service.getId()
+                        );
                     }
                 });
 
@@ -122,6 +137,16 @@ public class CreateBookingView {
         });
 
         TextArea descriptionField = new TextArea();
+
+        packageCombo.setOnAction(event -> {
+            ServicePackage selectedPackage = packageCombo.getValue();
+            if (selectedPackage == null) {
+                return;
+            }
+            selectedServices.setAll(selectedPackage.getServices());
+            serviceList.refresh();
+        });
+
         descriptionField.promptTextProperty().bind(language.text("createBooking.descriptionPrompt"));
         descriptionField.setPrefRowCount(3);
         descriptionField.setWrapText(true);
@@ -243,6 +268,8 @@ public class CreateBookingView {
             mechanicCombo.getSelectionModel().clearSelection();
             mechanicCombo.setValue(null);
             selectedServices.clear();
+            packageCombo.getSelectionModel().clearSelection();
+            packageCombo.setValue(null);
             serviceList.refresh();
         });
 
@@ -257,6 +284,7 @@ public class CreateBookingView {
                         UiKit.formField(language.text("createBooking.durationLabel"), durationField),
                         UiKit.formField(language.text("bookings.mechanic"), mechanicCombo)
                 ),
+                UiKit.formField("Service package", packageCombo),
                 UiKit.formField(language.text("createBooking.services"), serviceList),
                 UiKit.formField(language.text("createBooking.totalPrice"), totalPriceLabel),
                 UiKit.formField(language.text("bookings.description"), descriptionField),
