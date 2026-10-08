@@ -39,7 +39,7 @@ public class Booking {
     private LocalTime startTime;
 
     @Column(name = "duration_minutes")
-    private int durationMinutes;
+    private Integer durationMinutes;
 
     @ManyToMany
     @JoinTable(
@@ -157,7 +157,7 @@ public class Booking {
     }
 
     public int getDurationMinutes() {
-        return durationMinutes;
+        return durationMinutes == null ? 0 : durationMinutes;
     }
 
     public void setDurationMinutes(int durationMinutes) {
