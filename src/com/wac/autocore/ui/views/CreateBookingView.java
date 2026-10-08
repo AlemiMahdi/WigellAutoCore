@@ -36,6 +36,17 @@ public class CreateBookingView {
     private final LanguageManager language = LanguageManager.getInstance();
     private final GarageSystem garageSystem = new GarageSystem();
 
+    private final Booking sourceBooking;
+
+    // tomt formulär
+    public CreateBookingView() {
+        this(null);
+    }
+    // tidigare bokning som underlag
+    public CreateBookingView(Booking sourceBooking) {
+        this.sourceBooking = sourceBooking;
+    }
+
     public VBox getView() {
 
         // Fordonet väljs i en lista i stället för att skriva in ID:t för hand,
@@ -125,6 +136,28 @@ public class CreateBookingView {
         descriptionField.promptTextProperty().bind(language.text("createBooking.descriptionPrompt"));
         descriptionField.setPrefRowCount(3);
         descriptionField.setWrapText(true);
+
+        // Förifyller den nya bokningen utan att ändra originalet.
+        if (sourceBooking != null) {
+            vehicleCombo.getItems().stream()
+                    .filter(vehicle ->
+                            vehicle.getId() == sourceBooking.getVehicleId())
+                    .findFirst()
+                    .ifPresent(vehicleCombo::setValue);
+
+            // Matchar tjänster med ID mot den aktuella tjänstelistan.
+            for (ServiceItem service : serviceList.getItems()) {
+                boolean previouslySelected = sourceBooking.getServices().stream()
+                        .anyMatch(previous ->
+                                previous.getId() == service.getId());
+
+                if (previouslySelected) {
+                    selectedServices.add(service);
+                }
+            }
+
+            serviceList.refresh();
+        }
 
         Label messageLabel = UiKit.feedbackLabel();
 

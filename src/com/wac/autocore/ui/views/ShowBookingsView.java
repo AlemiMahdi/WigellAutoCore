@@ -29,6 +29,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.Map;
+import javafx.scene.Node;
 
 // Visar alla bokningar i en tabell: fordon, datum, mekaniker, beskrivning och status.
 public class ShowBookingsView {
@@ -401,6 +402,43 @@ public class ShowBookingsView {
         );
 
         table.getColumns().add(editColumn);
+
+        // Skapar en ny bokning med den markerade som underlag.
+        Button copyButton = UiKit.primaryButton("");
+        copyButton.textProperty().bind(language.text("bookings.copy"));
+        copyButton.disableProperty().bind(
+                table.getSelectionModel().selectedItemProperty().isNull()
+        );
+
+        copyButton.setOnAction(event -> {
+            Booking selectedBooking =
+                    table.getSelectionModel().getSelectedItem();
+
+            if (selectedBooking == null) {
+                return;
+            }
+
+            Button backButton = UiKit.primaryButton("");
+            backButton.textProperty().bind(language.text("bookings.back"));
+            backButton.setOnAction(backEvent ->
+                    Navigator.goTo("show-bookings"));
+
+            VBox createView =
+                    new CreateBookingView(selectedBooking).getView();
+
+            root.getChildren().setAll(backButton, createView);
+        });
+
+        // Samlar knapparna till höger i sidrubriken.
+        HBox header = (HBox) root.getChildren().get(0);
+
+        Node newBookingButton =
+                header.getChildren().remove(header.getChildren().size() - 1);
+
+        VBox bookingActions = new VBox(8, newBookingButton, copyButton);
+        bookingActions.setAlignment(javafx.geometry.Pos.TOP_RIGHT);
+
+        header.getChildren().add(bookingActions);
 
         // Dubbelklick på en bokning öppnar formuläret.
         table.setRowFactory(tableView -> {
