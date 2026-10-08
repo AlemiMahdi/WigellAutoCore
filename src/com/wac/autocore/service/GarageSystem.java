@@ -1,8 +1,10 @@
 package com.wac.autocore.service;
 
+import com.wac.autocore.DTO.WorkOrderDto;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
 import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
+import com.wac.autocore.workOrderType.WorkOrderTypeManager;
 
 import java.time.LocalDate;
 
@@ -192,49 +194,29 @@ public class GarageSystem {
         return booking;
     }
 
-    public WorkOrder createWorkOrder(int bookingId,
-                                     int mechanicId, WorkOrderTypeEnum type) {
+    public WorkOrder createWorkOrder(WorkOrderDto dto, WorkOrderTypeEnum type) {
 
-        Booking booking = findBooking(bookingId);
-
-        if (booking == null) {
-            System.out.println("Booking with ID " + bookingId + " does not exist.");
+        Mechanic mechanic = findMechanic(dto.getMechanicId());
+        if (mechanic == null || !mechanic.isAvailable()) {
+            System.out.println("Mechanic with ID " + mechanic + " does not exist or is not available.");
             return null;
         }
 
-        Mechanic mechanic = findMechanic(mechanicId);
-
-        if (mechanic == null) {
-            System.out.println("Mechanic with ID " + mechanicId + " does not exist.");
-            return null;
-        }
-
-        if (!mechanic.isAvailable()) {
-            System.out.println("Mechanic " + mechanic.getName() + " is not available.");
+        WorkOrderTypeManager manager = new WorkOrderTypeManager();
+        manager.setStrategy(type);
+        WorkOrder workOrder = manager.createWorkOrderType(dto);
+        if(workOrder == null) {
+            System.out.println("WorkOrder does not exist.");
             return null;
         }
 
         int id = Database.getWorkOrders().size() + 1;
+        workOrder.setId(id);
 
-        WorkOrder workOrder = new WorkOrder(
-                id,
-                bookingId,
-                mechanicId,
-                type
-
-        );
-
-        for( ServiceItem serviceItem : booking.getServices()) {
-            workOrder.addServiceItem(serviceItem.getId());
-        }
+               System.out.println("Work order created successfully.");
+               System.out.println(workOrder);
 
         Database.getWorkOrders().add(workOrder);
-
-        booking.setStatus("WORK_ORDER_CREATED");
-
-        System.out.println("Work order created successfully.");
-        System.out.println(workOrder);
-
         return workOrder;
     }
 
