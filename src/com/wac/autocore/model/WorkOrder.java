@@ -21,6 +21,9 @@ public class WorkOrder {
     @Column(name = "mechanic_id")
     private int mechanicId;
 
+    @Column (name = "original_work_order_id")
+    private Integer originalWorkOrderId;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
             name = "work_order_services",
@@ -105,6 +108,17 @@ public class WorkOrder {
     public WorkOrderTypeEnum getType(){ return type; }
 
     public void setType(WorkOrderTypeEnum type) { this.type = type;}
+
+    public Integer getOriginalWorkOrderId() { return originalWorkOrderId; }
+    public void setOriginalWorkOrderId( Integer originalworkOrderId) {
+        if (originalworkOrderId != null && originalworkOrderId == this.id) {
+            throw new IllegalArgumentException(
+                "A work order cannot reference itself"
+            );
+        }
+        this.originalWorkOrderId = originalworkOrderId;
+    }
+
 
     @Override
     public String toString() {

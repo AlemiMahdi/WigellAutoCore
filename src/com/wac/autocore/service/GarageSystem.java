@@ -214,7 +214,10 @@ public class GarageSystem {
             return null;
         }
 
-        int id = Database.getWorkOrders().size() + 1;
+        int id = Database.getWorkOrders().stream()
+                .mapToInt(WorkOrder::getId)
+                .max()
+                .orElse(0) + 1;
 
         WorkOrder workOrder = new WorkOrder(
                 id,
