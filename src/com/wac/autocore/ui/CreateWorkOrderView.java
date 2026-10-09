@@ -76,8 +76,12 @@ public class CreateWorkOrderView  extends VBox {
         serviceField.setVisible(false);
         serviceField.setManaged(false);
 
+        Label feedbackLabel = UiKit.feedbackLabel();
+
         typeComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
             boolean isDropIn = (newValue == WorkOrderTypeEnum.DROP_IN);
+        // Rensa felmeddelande vid byte av typ
+            feedbackLabel.setText("");
 
             vehicleField.setVisible(isDropIn);
             vehicleField.setManaged(isDropIn);
@@ -91,18 +95,15 @@ public class CreateWorkOrderView  extends VBox {
         Button saveButton = UiKit.primaryButton("Create work order");
         saveButton.textProperty().bind(language.text("createWorkOrder.title"));
 
-        Label feedbackLabel = UiKit.feedbackLabel();
-
         GarageSystem garageSystem = new GarageSystem();
         WorkOrderRepository workOrderRepository = new WorkOrderRepository();
         BookingRepository bookingRepository = new BookingRepository();
 
         saveButton.setOnAction(event -> {
-            Booking booking = bookingComboBox.getValue();
             Mechanic mechanic = mechanicComboBox.getValue();
             WorkOrderTypeEnum selectedType = typeComboBox.getValue();
 
-            if (booking == null || mechanic == null || selectedType == null) {
+            if (mechanic == null || selectedType == null) {
                 UiKit.showError(feedbackLabel, language.text("createWorkOrder.missingSelection").get());
 
                 return;
@@ -111,8 +112,8 @@ public class CreateWorkOrderView  extends VBox {
             WorkOrderDto dto = new WorkOrderDto();
             dto.setMechanicId(mechanic.getId());
 
-            // Sparar bokningens status ifall vi behöver återställa den.
-            String previousBookingStatus = booking.getStatus();
+            Booking booking = null;
+            String previousBookingStatus = null;
 
             if(selectedType == WorkOrderTypeEnum.DROP_IN){
                 Vehicle vehicle = vehicleComboBox.getValue();
@@ -154,19 +155,32 @@ public class CreateWorkOrderView  extends VBox {
 
             try {
                 // Sparar arbetsordern och bokningens nya status i MySQL.
-                workOrderRepository.save(workOrder);
                 if(booking != null) {
+                    workOrderRepository.save(workOrder);
                     bookingRepository.save(booking);
-
                 } else {
-                    Booking booked = Database.getBookings().get(booking.getId());
-                    bookingRepository.save(booked);
+                    Booking autoBooking = Database.getBookings().stream()
+                            .filter(b -> b.getVehicleId() == dto.getVehicleId() && "BOOKED".equals(b.getStatus()))
+                            .findFirst().orElse(null);
+                    if(autoBooking != null){
+                        bookingRepository.save(autoBooking);
+                        workOrder.setBookingId(autoBooking.getId());
+                        workOrderRepository.save(workOrder);
+                    }
+                }
+                if (!Database.getWorkOrders().contains(workOrder)) {
+                    Database.getWorkOrders().add(workOrder);
                 }
             } catch (RuntimeException exception) {
                 // Tar bort arbetsordern ur minnet och återställer bokningen
                 // om databassparandet misslyckas.
                 Database.getWorkOrders().remove(workOrder);
-                booking.setStatus(previousBookingStatus);
+                if(booking != null){
+                    booking.setStatus(previousBookingStatus);
+                } else {
+                    Database.getBookings().removeIf(b -> b.getVehicleId() == dto.getVehicleId() && "BOOKED".equals(b.getStatus()));
+                }
+
 
                 UiKit.showError(feedbackLabel, language.text("createWorkOrder.saveError").get());
                 exception.printStackTrace();
@@ -175,7 +189,7 @@ public class CreateWorkOrderView  extends VBox {
 
             UiKit.showSuccess(feedbackLabel, language.text("createWorkOrder.success").get());
 
-            //Jag tömmer valen efter registreringen har lyckats.
+            //tömmer valen efter registreringen har lyckats.
             bookingComboBox.getSelectionModel().clearSelection();
             bookingComboBox.setValue(null);
             mechanicComboBox.getSelectionModel().clearSelection();
@@ -189,11 +203,11 @@ public class CreateWorkOrderView  extends VBox {
 
         getChildren().add(UiKit.formContainer(
                 UiKit.pageHeader(language.text("createWorkOrder.title"), null),
-                UiKit.formField(language.text("createWorkOrder.type"), typeComboBox),
-                UiKit.formField(language.text("createWorkOrder.vehicle"), vehicleComboBox),
-                UiKit.formField(language.text("createWorkOrder.bookingLabel"), bookingComboBox),
-                UiKit.formField(language.text("bookings.mechanic"), mechanicComboBox),
-                UiKit.formField(language.text("createWorkOrder.service"), serviceListView),
+                typeField,
+                bookingField,
+                vehicleField,
+                serviceField,
+                mechanicField,
                 saveButton,
                 feedbackLabel
         ));
@@ -253,14 +267,20 @@ public class CreateWorkOrderView  extends VBox {
         };
     }
 
-    private StringConverter vehicleConverter() {
-        return new StringConverter() {
+    private StringConverter<Vehicle> vehicleConverter() {
+        return new StringConverter<Vehicle>() {
             @Override
             public String toString(Vehicle vehicle) {
-                if (vehicle == null) return "";
-                return vehicle.getRegistrationNumber() + " (" + vehicle.getModel() + ")";
+                String customer = Database.getCustomers().stream()
+                        .filter(c -> c.getId() == vehicle.getCustomerId())
+                        .map(Customer::getName).findFirst().orElse("");
+                return vehicle == null ? "" : vehicle.getRegistrationNumber() + " - "
+                        + vehicle.getModel() + " " + " (" +customer + ")";
             }
-            @Override public Vehicle fromString(String text) { return null; }
+            @Override
+            public Vehicle fromString(String text) {
+                return null;
+            }
         };
     }
 

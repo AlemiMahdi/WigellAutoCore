@@ -16,6 +16,8 @@ public class WorkOrderDto {
     private Integer mechanicId;
     private double price;
 
+    public WorkOrderDto(){}
+
     //drop_in arbetsorder
     public WorkOrderDto(int bookingId, int customerId, Integer vehicleId, String description, String status, List<Integer> services, Integer mechanicId, double price) {
         this.bookingId = bookingId;
