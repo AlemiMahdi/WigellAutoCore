@@ -246,7 +246,7 @@ public class GarageSystem {
             return;
         }
 
-        if (!workOrder.getStatus().equals("CREATED")) {
+        if (!workOrder.getStatus().canChangeTo(WorkOrderStatus.IN_PROGRESS)) {
             System.out.println("Work order cannot be started.");
             return;
         }
@@ -262,7 +262,7 @@ public class GarageSystem {
             booking.setStatus("IN_PROGRESS");
         }
 
-        workOrder.setStatus("IN_PROGRESS");
+        workOrder.changeStatus(WorkOrderStatus.IN_PROGRESS);
 
         System.out.println("Work order " + workOrderId + " has been started.");
     }
@@ -275,7 +275,7 @@ public class GarageSystem {
             return;
         }
 
-        if (!workOrder.getStatus().equals("IN_PROGRESS")) {
+        if (!workOrder.getStatus().canChangeTo(WorkOrderStatus.COMPLETED)) {
             System.out.println("Only work orders in progress can be completed.");
             return;
         }
@@ -283,7 +283,7 @@ public class GarageSystem {
         Mechanic mechanic = findMechanic(workOrder.getMechanicId());
         Booking booking = findBooking(workOrder.getBookingId());
 
-        workOrder.setStatus("COMPLETED");
+        workOrder.changeStatus(WorkOrderStatus.COMPLETED);
 
         if (mechanic != null) {
             mechanic.setAvailable(true);
@@ -304,7 +304,7 @@ public class GarageSystem {
             return null;
         }
 
-        if (!workOrder.getStatus().equals("COMPLETED")) {
+        if (workOrder.getStatus() != WorkOrderStatus.COMPLETED) {
             System.out.println("Invoice can only be created for a completed work order.");
             return null;
         }
