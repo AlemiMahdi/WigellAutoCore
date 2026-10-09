@@ -11,6 +11,7 @@ import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
 import javafx.collections.FXCollections;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
@@ -107,6 +108,15 @@ public class CreateWorkOrderView  extends VBox {
         vehicleComboBox.setConverter(vehicleConverter());
         UiKit.keepPromptWhenCleared(vehicleComboBox);
 
+        Button CreateCustomerButton = UiKit.primaryButton("+ Customer");
+        CreateCustomerButton.setTooltip(new Tooltip("Snabbregistrera ny kund"));
+        CreateCustomerButton.setOnAction(event -> Navigator.goTo("create-customer")); // Anpassa till din söksträng i Navigator
+
+        Button CreateVehicleButton = UiKit.primaryButton("+ Vehicle");
+        CreateVehicleButton.setTooltip(new Tooltip("Snabbregistrera nytt fordon på kund"));
+        CreateVehicleButton.setOnAction(event -> Navigator.goTo("create-vehicle")); // Anpassa till din söksträng i Navigator
+        HBox vehicleRowContainer = UiKit.formRow(vehicleComboBox, CreateCustomerButton, CreateVehicleButton);
+
         ListView<ServiceItem> serviceListView = new ListView<>(FXCollections.observableArrayList(Database.getServiceItems()));
         serviceListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         serviceListView.setPrefHeight(120); // Ger listan en lagom höjd i formuläret
@@ -123,10 +133,13 @@ public class CreateWorkOrderView  extends VBox {
         });
 
         VBox typeField = UiKit.formField(language.text("createWorkOrder.type"), typeComboBox);
-        VBox vehicleField = UiKit.formField(language.text("createWorkOrder.vehicle"), vehicleComboBox);
+        VBox vehicleField = UiKit.formField(language.text("createWorkOrder.vehicle"), vehicleRowContainer);
         VBox bookingField = UiKit.formField(language.text("createWorkOrder.bookingLabel"), bookingComboBox);
         VBox mechanicField = UiKit.formField(language.text("bookings.mechanic"), mechanicComboBox);
         VBox serviceField = UiKit.formField(language.text("createWorkOrder.service"), serviceListView);
+
+        CreateCustomerButton.textProperty().bind(language.text("createWorkOrder.buttonCustomer"));
+        CreateVehicleButton.textProperty().bind(language.text("createWorkOrder.buttonVehicle"));
 
         vehicleField.setVisible(false);
         vehicleField.setManaged(false);
