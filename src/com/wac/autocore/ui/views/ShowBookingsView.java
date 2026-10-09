@@ -282,12 +282,7 @@ public class ShowBookingsView {
 
         UiKit.styleTable(table);
 
-        VBox root =
-                new VBox(
-                        20,
-                        buildHeader(),
-                        table
-                );
+        VBox root = new VBox(20);
 
         // Redigeringsknapp
         TableColumn<Booking, Void> editColumn =
@@ -406,6 +401,8 @@ public class ShowBookingsView {
         // Skapar en ny bokning med den markerade som underlag.
         Button copyButton = UiKit.primaryButton("");
         copyButton.textProperty().bind(language.text("bookings.copy"));
+
+// Knappen kan bara användas när en bokning är markerad.
         copyButton.disableProperty().bind(
                 table.getSelectionModel().selectedItemProperty().isNull()
         );
@@ -414,31 +411,15 @@ public class ShowBookingsView {
             Booking selectedBooking =
                     table.getSelectionModel().getSelectedItem();
 
-            if (selectedBooking == null) {
-                return;
+            if (selectedBooking != null) {
+                showBookingForm(
+                        root,
+                        new CreateBookingView(selectedBooking).getView()
+                );
             }
-
-            Button backButton = UiKit.primaryButton("");
-            backButton.textProperty().bind(language.text("bookings.back"));
-            backButton.setOnAction(backEvent ->
-                    Navigator.goTo("show-bookings"));
-
-            VBox createView =
-                    new CreateBookingView(selectedBooking).getView();
-
-            root.getChildren().setAll(backButton, createView);
         });
 
-        // Samlar knapparna till höger i sidrubriken.
-        HBox header = (HBox) root.getChildren().get(0);
-
-        Node newBookingButton =
-                header.getChildren().remove(header.getChildren().size() - 1);
-
-        VBox bookingActions = new VBox(8, newBookingButton, copyButton);
-        bookingActions.setAlignment(javafx.geometry.Pos.TOP_RIGHT);
-
-        header.getChildren().add(bookingActions);
+        root.getChildren().addAll(buildHeader(copyButton), table);
 
         // Dubbelklick på en bokning öppnar formuläret.
         table.setRowFactory(tableView -> {
@@ -467,37 +448,29 @@ public class ShowBookingsView {
     }
 
     // Används av både pennknappen och dubbelklicket.
-    private void openBookingEditor(
-            VBox root,
-            Booking booking
-    ) {
-
-        Button backButton =
-                UiKit.primaryButton("");
-
-        backButton.textProperty().bind(
-                language.text("bookings.back")
-        );
-
-        backButton.setOnAction(
-                event ->
-                        Navigator.goTo(
-                                "show-bookings"
-                        )
-        );
-
-        VBox editView =
-                new EditBookingServicesView()
-                        .getView(booking);
-
-        root.getChildren().setAll(
-                backButton,
-                editView
+    private void openBookingEditor(VBox root, Booking booking) {
+        showBookingForm(
+                root,
+                new EditBookingServicesView().getView(booking)
         );
     }
 
-    // Rubrik med "+ New booking" till höger.
+    // Gemensam tillbaka-knapp för redigering och kopiering.
+    private void showBookingForm(VBox root, Node form) {
+        Button backButton = UiKit.primaryButton("");
+        backButton.textProperty().bind(language.text("bookings.back"));
+        backButton.setOnAction(event ->
+                Navigator.goTo("show-bookings"));
+
+        root.getChildren().setAll(backButton, form);
+    }
+
     private HBox buildHeader() {
+        return buildHeader(null);
+    }
+
+    // Rubrik med "+ New booking" till höger.
+    private HBox buildHeader(Button copyButton) {
 
         Button newBookingButton =
                 UiKit.primaryButton(
@@ -515,9 +488,16 @@ public class ShowBookingsView {
                         )
         );
 
+        VBox actions = new VBox(8, newBookingButton);
+        actions.setAlignment(javafx.geometry.Pos.TOP_RIGHT);
+
+        if (copyButton != null) {
+            actions.getChildren().add(copyButton);
+        }
+
         return UiKit.pageHeader(
                 language.text("bookings.title"),
-                newBookingButton
+                actions
         );
     }
 
