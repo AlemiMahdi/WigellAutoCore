@@ -117,6 +117,7 @@ public class CreateWorkOrderView  extends VBox {
         };
 
         selectedServices.addListener((ListChangeListener<ServiceItem>) change -> updateTotals.run());
+
         updateTotals.run();
 
         ListView<ServiceItem> serviceList = new ListView<>(FXCollections.observableArrayList(Database.getServiceItems()));
@@ -180,26 +181,28 @@ public class CreateWorkOrderView  extends VBox {
         CreateVehicleButton.setOnAction(event -> Navigator.goTo("create-vehicle")); // Anpassa till din söksträng i Navigator
         HBox vehicleRowContainer = UiKit.formRow(vehicleComboBox, CreateCustomerButton, CreateVehicleButton);
 
-        ListView<ServiceItem> serviceListView = new ListView<>(FXCollections.observableArrayList(Database.getServiceItems()));
-        serviceListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        serviceListView.setPrefHeight(120); // Ger listan en lagom höjd i formuläret
-        serviceListView.setCellFactory(param -> new ListCell<ServiceItem>() {
-            @Override
-            protected void updateItem(ServiceItem item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(item.getName() + " (" + item.getPrice() + " kr)");
-                }
-            }
-        });
+//        ListView<ServiceItem> serviceListView = new ListView<>(selectedServices);
+//        serviceListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+//        serviceListView.setPrefHeight(120); // Ger listan en lagom höjd i formuläret
+//        serviceListView.setCellFactory(param -> new ListCell<ServiceItem>() {
+//            @Override
+//            protected void updateItem(ServiceItem item, boolean empty) {
+//                super.updateItem(item, empty);
+//                if (empty || item == null) {
+//                    setText(null);
+//                } else {
+//                    setText(item.getName() + " (" + item.getPrice() + " kr)");
+//                }
+//            }
+//        });
+//
+//        updateTotals.run();
 
         VBox typeField = UiKit.formField(language.text("createWorkOrder.type"), typeComboBox);
         VBox vehicleField = UiKit.formField(language.text("createWorkOrder.vehicle"), vehicleRowContainer);
         VBox bookingField = UiKit.formField(language.text("createWorkOrder.bookingLabel"), bookingComboBox);
         VBox mechanicField = UiKit.formField(language.text("bookings.mechanic"), mechanicComboBox);
-        VBox serviceField = UiKit.formField(language.text("createWorkOrder.service"), serviceListView);
+        VBox serviceField = UiKit.formField(language.text("createWorkOrder.service"), serviceList);
         HBox dateTimeRow = UiKit.formRow(
                 UiKit.formField(language.text("bookings.date"), datePicker),
                 UiKit.formField(language.text("bookings.startTime"), startTimeField)
@@ -242,6 +245,8 @@ public class CreateWorkOrderView  extends VBox {
                         UiKit.formField(language.text("createBooking.durationLabel"), durationField),
                         mechanicField
                 );
+            } else {
+                durationMechanicRow.getChildren().addAll(mechanicField);
             }
         });
 
@@ -270,7 +275,7 @@ public class CreateWorkOrderView  extends VBox {
 
             if(selectedType == WorkOrderTypeEnum.DROP_IN){
                 Vehicle vehicle = vehicleComboBox.getValue();
-                List<ServiceItem> selectedService = serviceListView.getSelectionModel().getSelectedItems();
+                List<ServiceItem> selectedService = serviceList.getSelectionModel().getSelectedItems();
 
                 if(vehicle == null || selectedService.isEmpty()){
                     UiKit.showError(feedbackLabel, language.text("createWorkOrder.noSelection").get());
@@ -309,12 +314,11 @@ public class CreateWorkOrderView  extends VBox {
                     UiKit.showError(feedbackLabel, language.text("createBooking.overlapping").get());
                     return;
                 }
-// Sätt värdena på ditt DTO så att din strategiklass kan läsa in dem till skuggbokningen
+// Sätt värdena på DTO så att strategiklass kan läsa in dem till autobokningen
                 dto.setVehicleId(vehicle.getId());
                 dto.setDate(date);
                 dto.setStartTime(startTime);
                 dto.setDuration(durationMinutes);
-
                 dto.setVehicleId(vehicle.getId());
                 List<Integer> serviceIds = new ArrayList<>();
                 for(ServiceItem item : selectedService){
@@ -390,7 +394,7 @@ public class CreateWorkOrderView  extends VBox {
             vehicleCombo.setValue(null);
             datePicker.setValue(null);
             startTimeField.clear();
-            serviceListView.getSelectionModel().clearSelection();
+            serviceList.getSelectionModel().clearSelection();
 
         });
 
@@ -403,7 +407,7 @@ public class CreateWorkOrderView  extends VBox {
                 durationMechanicRow,
                 priceField,
                 serviceField,
-                mechanicField,
+                //mechanicField,
                 saveButton,
                 feedbackLabel
         ));
