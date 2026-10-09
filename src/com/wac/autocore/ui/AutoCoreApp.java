@@ -454,14 +454,16 @@ public class AutoCoreApp extends Application {
                 );
             }
             // Kontrollerar att arbetsorderns mekaniker finns.
-            boolean mechanicsExist = Database.getMechanics().stream()
-                    .anyMatch(mechanic ->
-                            mechanic.getId() == workOrder.getMechanicId());
+            // 0 betyder att ingen mekaniker är vald än (utkast, WAC-63)
+            if (workOrder.getMechanicId() != 0) {
+                boolean mechanicsExist = Database.getMechanics().stream()
+                        .anyMatch(mechanic -> mechanic.getId() == workOrder.getMechanicId());
 
-            if (!mechanicsExist) {
-                throw new IllegalStateException(
-                        "Mechanic missing for work order " + workOrder.getId()
-                );
+                if (!mechanicsExist) {
+                    throw new IllegalStateException(
+                            "Mechanic missing for work order " + workOrder.getId()
+                    );
+                }
             }
             // Kontrollerar att alla arbetsorderns tjänster finns.
             for (int serviceItemId : workOrder.getServiceItemIds()) {
