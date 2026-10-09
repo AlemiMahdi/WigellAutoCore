@@ -7,6 +7,7 @@ import com.wac.autocore.model.Mechanic;
 import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.model.Vehicle;
 import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.model.WorkOrderStatus;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Pos;
@@ -63,9 +64,9 @@ public class DashboardView extends VBox {
 
 
     private HBox createStatRow() {
-        // Aktiva = allt som inte är klart (CREATED eller IN_PROGRESS)
+        // Aktiva = allt som inte är klart (CONFIRM eller IN_PROGRESS)
         long activeCount = Database.getWorkOrders().stream()
-                .filter(wo -> !"COMPLETED".equals(wo.getStatus()))
+                .filter(wo -> wo.getStatus() != WorkOrderStatus.COMPLETED)
                 .count();
 
         // Summerar fakturor som skapats i innevarande månad
@@ -265,16 +266,16 @@ public class DashboardView extends VBox {
         return row;
     }
 
-    private Label createStatusBadge(String status) {
+    private Label createStatusBadge(WorkOrderStatus status) {
         Label badge = new Label();
         badge.getStyleClass().add("badge");
         // Badgen får aldrig krympa – då skulle texten klippas till "STAR…"
         badge.setMinWidth(Region.USE_PREF_SIZE);
 
-        if ("IN_PROGRESS".equals(status)) {
+        if (status == WorkOrderStatus.IN_PROGRESS) {
             badge.textProperty().bind(language.text("badge.IN_PROGRESS"));
             badge.getStyleClass().add("badge-started");
-        } else if ("COMPLETED".equals(status)) {
+        } else if (status == WorkOrderStatus.COMPLETED) {
             badge.textProperty().bind(language.text("badge.COMPLETED"));
             badge.getStyleClass().add("badge-completed");
         } else {
@@ -290,15 +291,15 @@ public class DashboardView extends VBox {
 
     private HBox createKanbanRow() {
         return new HBox(20,
-                createKanbanColumn("dashboard.pending", "CREATED"),
-                createKanbanColumn("dashboard.inProgress", "IN_PROGRESS"),
-                createKanbanColumn("dashboard.readyForPickup", "COMPLETED"));
+                createKanbanColumn("dashboard.pending", WorkOrderStatus.CONFIRMED),
+                createKanbanColumn("dashboard.inProgress", WorkOrderStatus.IN_PROGRESS),
+                createKanbanColumn("dashboard.readyForPickup", WorkOrderStatus.COMPLETED));
     }
 
-    private VBox createKanbanColumn(String titleKey, String status) {
+    private VBox createKanbanColumn(String titleKey, WorkOrderStatus status) {
         List<WorkOrder> orders = new ArrayList<WorkOrder>();
         for (WorkOrder wo : Database.getWorkOrders()) {
-            if (status.equals(wo.getStatus())) {
+            if (wo.getStatus() == status) {
                 orders.add(wo);
             }
         }

@@ -5,6 +5,7 @@ import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.InvoiceLine;
 import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.model.WorkOrderStatus;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;
@@ -316,7 +317,7 @@ public class BookingRepository {
 
                 for (WorkOrder order : workOrders) {
 
-                    if (!"CREATED".equals(order.getStatus())) {
+                    if (order.getStatus() != WorkOrderStatus.CONFIRMED) {
                         throw new IllegalArgumentException(
                                 "editBookingServices.locked"
                         );
