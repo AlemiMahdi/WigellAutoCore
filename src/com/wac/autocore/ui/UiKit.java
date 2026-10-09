@@ -144,7 +144,7 @@ public final class UiKit {
             return badgeFromKey("badge.BOOKED", "purple");
         } else if (status.equals("WORK_ORDER_CREATED")) {
             return badgeFromKey("badge.WORK_ORDER_CREATED", "grey");
-        } else if (status.equals("CREATED")) {
+        } else if (status.equals("CREATED") || status.equals("CONFIRMED")) {
             return badgeFromKey("badge.CREATED", "grey");
         } else if (status.equals("IN_PROGRESS")) {
             // Designen kallar "IN_PROGRESS" för STARTED

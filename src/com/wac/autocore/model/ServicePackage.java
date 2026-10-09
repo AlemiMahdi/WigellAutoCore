@@ -45,7 +45,12 @@ public class ServicePackage {
     public List<ServiceItem> getServices() { return services; }
     public void setServices( List<ServiceItem> services ) { this.services = services; }
 
-    public void addService( ServiceItem service ) { services.add(service); }
+    public void addService( ServiceItem service ) { 
+        if (service != null && services.stream()
+                .noneMatch(existing -> existing.getId() == service.getId())) {
+            services.add(service); 
+        }
+    }
     public void removeService( ServiceItem service ) { services.remove(service); }
     
     @Override 

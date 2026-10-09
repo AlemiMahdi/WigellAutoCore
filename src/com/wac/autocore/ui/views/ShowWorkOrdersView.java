@@ -6,6 +6,7 @@ import com.wac.autocore.model.Mechanic;
 import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.model.Vehicle;
 import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.model.WorkOrderStatus;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 
@@ -17,7 +18,7 @@ import javafx.scene.layout.VBox;
 import java.util.ArrayList;
 import java.util.List;
 
-// Visar arbetsordrarna som en kanban-tavla: CREATED, STARTED och COMPLETED.
+// Visar arbetsordrarna som en kanban-tavla: CONFIRMED, IN_PROGRESS och COMPLETED.
 public class ShowWorkOrdersView {
 
     private final LanguageManager language = LanguageManager.getInstance();
@@ -30,14 +31,14 @@ public class ShowWorkOrdersView {
 
         // Sorterar varje arbetsorder till rätt kolumn utifrån dess status
         for (WorkOrder workOrder : Database.getWorkOrders()) {
-            String status = workOrder.getStatus() == null ? "" : workOrder.getStatus().toUpperCase();
+            WorkOrderStatus status = workOrder.getStatus();
 
-            if (status.equals("IN_PROGRESS")) {
+            if (status == WorkOrderStatus.IN_PROGRESS) {
                 startedColumn.getChildren().add(buildCard(workOrder));
-            } else if (status.equals("COMPLETED")) {
+            } else if (status == WorkOrderStatus.COMPLETED) {
                 completedColumn.getChildren().add(buildCard(workOrder));
             } else {
-                // CREATED (och okända statusar) hamnar i första kolumnen så inget försvinner
+                // CONFIRM (och okända statusar) hamnar i första kolumnen så inget försvinner
                 createdColumn.getChildren().add(buildCard(workOrder));
             }
         }

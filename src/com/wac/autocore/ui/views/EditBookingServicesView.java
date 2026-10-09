@@ -15,6 +15,7 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.model.WorkOrderStatus;
 import com.wac.autocore.ui.UiKit;
 
 import java.util.ArrayList;
@@ -237,7 +238,7 @@ public class EditBookingServicesView {
 
             for (WorkOrder order : Database.getWorkOrders()) {
                 if (order.getBookingId() == booking.getId()
-                        && "CREATED".equals(order.getStatus())) {
+                        && order.getStatus() == WorkOrderStatus.CONFIRMED) {
                     order.setServiceItemIds(new ArrayList<>(serviceIds));
                 }
             }

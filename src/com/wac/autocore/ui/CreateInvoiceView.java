@@ -170,7 +170,7 @@ public class CreateInvoiceView {
     // Fyller listan med alla arbetsordrar som har status COMPLETED
     private static void loadCompletedWorkOrders(ComboBox<WorkOrder> workOrderBox) {
         for (WorkOrder workOrder : Database.getWorkOrders()) {
-            if ("COMPLETED".equals(workOrder.getStatus())) {
+            if (workOrder.getStatus() == WorkOrderStatus.COMPLETED) {
                 workOrderBox.getItems().add(workOrder);
             }
         }
