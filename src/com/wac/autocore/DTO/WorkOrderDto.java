@@ -15,6 +15,9 @@ public class WorkOrderDto {
     private List<Integer> services;
     private Integer mechanicId;
     private double price;
+    private LocalDate date;
+    private LocalTime startTime;
+    private int duration;
 
     public WorkOrderDto(){}
 
@@ -98,4 +101,11 @@ public class WorkOrderDto {
     public void setPrice(double price) {
         this.price = price;
     }
+
+    public void setDate(LocalDate date) { this.date = date; }
+    public void setStartTime(LocalTime startTime) { this.startTime = startTime; }
+    public void setDuration(int duration) { this.duration = duration; }
+    public LocalDate getDate() { return date; }
+    public LocalTime getStartTime() { return startTime; }
+    public int getDuration() { return duration; }
 }

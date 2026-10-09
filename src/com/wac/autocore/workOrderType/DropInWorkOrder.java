@@ -30,8 +30,9 @@ public class DropInWorkOrder implements WorkOrderTypeInterface{
         automaticBooking.setVehicleId(workOrderDto.getVehicleId());
         automaticBooking.setDescription(workOrderDto.getDescription() != null ? workOrderDto.getDescription() : "Drop-in order");
         automaticBooking.setStatus("CREATED");
-        automaticBooking.setDate(LocalDate.now());
-        automaticBooking.setStartTime(LocalTime.now());
+        automaticBooking.setDate(workOrderDto.getDate());
+        automaticBooking.setStartTime(workOrderDto.getStartTime());
+        automaticBooking.setDurationMinutes(workOrderDto.getDuration());
 
 
         List<InvoiceLine> frozenPrices = new ArrayList<>();

@@ -9,6 +9,8 @@ import com.wac.autocore.service.GarageSystem;
 import com.wac.autocore.ui.language.LanguageManager;
 import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
@@ -16,8 +18,12 @@ import javafx.scene.layout.VBox;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import static com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type.Node;
 
@@ -43,7 +49,7 @@ public class CreateWorkOrderView  extends VBox {
 
         ComboBox<WorkOrderTypeEnum> typeComboBox = new ComboBox<>(FXCollections.observableArrayList(WorkOrderTypeEnum.values()));
 
-        StringConverter<WorkOrderTypeEnum> safeTypeConverter = new StringConverter<WorkOrderTypeEnum>() {
+        StringConverter<WorkOrderTypeEnum> typeConverter = new StringConverter<WorkOrderTypeEnum>() {
             @Override
             public String toString(WorkOrderTypeEnum type) {
                 if (type == null) return "";
@@ -61,7 +67,7 @@ public class CreateWorkOrderView  extends VBox {
             }
         };
 
-        typeComboBox.setConverter(safeTypeConverter);
+        typeComboBox.setConverter(typeConverter);
         typeComboBox.setCellFactory(param -> new ListCell<WorkOrderTypeEnum>() {
             //visar när listan är öppen för rätt språk
             @Override
@@ -80,7 +86,64 @@ public class CreateWorkOrderView  extends VBox {
                 }
             }
         });
-            //styr värdet när listan är stängd, så språket inte blir konstigt i listan
+
+        ComboBox<Vehicle> vehicleCombo = new ComboBox<>(FXCollections.observableArrayList(Database.getVehicles()));
+        vehicleCombo.promptTextProperty().bind(language.text("createBooking.vehiclePrompt"));
+        vehicleCombo.setConverter(vehicleConverter());
+        UiKit.keepPromptWhenCleared(vehicleCombo);
+
+        DatePicker datePicker = new DatePicker();
+        datePicker.promptTextProperty().bind(language.text("createBooking.datePrompt"));
+
+        TextField startTimeField = new TextField();
+        startTimeField.setPromptText("HH:mm");
+
+        TextField durationField = new TextField();
+        durationField.promptTextProperty().bind(language.text("createBooking.durationPrompt"));
+        durationField.setEditable(false);
+        durationField.setText("0");
+
+        Label totalPriceLabel = new Label();
+
+        ObservableList<ServiceItem> selectedServices = FXCollections.observableArrayList();
+
+        // Automatisk beräkning av tid och pris
+        Runnable updateTotals = () -> {
+            int totalMinutes = selectedServices.stream().mapToInt(ServiceItem::getEstimatedMinutes).sum();
+            double totalPrice = selectedServices.stream().mapToDouble(ServiceItem::getPrice).sum();
+
+            durationField.setText(String.valueOf(totalMinutes));
+            totalPriceLabel.setText(String.format(Locale.ROOT, "%.2f", totalPrice));
+        };
+
+        selectedServices.addListener((ListChangeListener<ServiceItem>) change -> updateTotals.run());
+        updateTotals.run();
+
+        ListView<ServiceItem> serviceList = new ListView<>(FXCollections.observableArrayList(Database.getServiceItems()));
+        serviceList.setPrefHeight(150);
+        serviceList.setCellFactory(listView -> new ListCell<ServiceItem>() {
+            private final CheckBox checkBox = new CheckBox();
+            @Override
+            protected void updateItem(ServiceItem service, boolean empty) {
+                super.updateItem(service, empty);
+                if (empty || service == null) {
+                    setGraphic(null);
+                    return;
+                }
+                checkBox.setText(service.getName() + " – " + service.getPrice() + " kr – " + service.getEstimatedMinutes() + " min");
+                checkBox.setSelected(selectedServices.contains(service));
+                checkBox.setOnAction(event -> {
+                    if (checkBox.isSelected()) {
+                        if (!selectedServices.contains(service)) selectedServices.add(service);
+                    } else {
+                        selectedServices.remove(service);
+                    }
+                });
+                setGraphic(checkBox);
+            }
+        });
+
+        //styr värdet när listan är stängd, så språket inte blir konstigt i listan
         typeComboBox.setButtonCell(new ListCell<WorkOrderTypeEnum>() {
             @Override
             protected void updateItem(WorkOrderTypeEnum type, boolean empty) {
@@ -137,6 +200,15 @@ public class CreateWorkOrderView  extends VBox {
         VBox bookingField = UiKit.formField(language.text("createWorkOrder.bookingLabel"), bookingComboBox);
         VBox mechanicField = UiKit.formField(language.text("bookings.mechanic"), mechanicComboBox);
         VBox serviceField = UiKit.formField(language.text("createWorkOrder.service"), serviceListView);
+        HBox dateTimeRow = UiKit.formRow(
+                UiKit.formField(language.text("bookings.date"), datePicker),
+                UiKit.formField(language.text("bookings.startTime"), startTimeField)
+        );
+        HBox durationMechanicRow = UiKit.formRow(
+                UiKit.formField(language.text("createBooking.durationLabel"), durationField),
+                mechanicField
+        );
+        VBox priceField = UiKit.formField(language.text("createBooking.totalPrice"), totalPriceLabel);
 
         CreateCustomerButton.textProperty().bind(language.text("createWorkOrder.buttonCustomer"));
         CreateVehicleButton.textProperty().bind(language.text("createWorkOrder.buttonVehicle"));
@@ -145,6 +217,8 @@ public class CreateWorkOrderView  extends VBox {
         vehicleField.setManaged(false);
         serviceField.setVisible(false);
         serviceField.setManaged(false);
+        dateTimeRow.setVisible(false); dateTimeRow.setManaged(false);
+        priceField.setVisible(false); priceField.setManaged(false);
 
         Label feedbackLabel = UiKit.feedbackLabel();
 
@@ -160,6 +234,15 @@ public class CreateWorkOrderView  extends VBox {
             // Göm bokningsfältet om det är Drop-in
             bookingField.setVisible(!isDropIn);
             bookingField.setManaged(!isDropIn);
+            dateTimeRow.setVisible(isDropIn); dateTimeRow.setManaged(isDropIn);
+            priceField.setVisible(isDropIn); priceField.setManaged(isDropIn);
+            durationMechanicRow.getChildren().clear();
+            if (isDropIn) {
+                durationMechanicRow.getChildren().addAll(
+                        UiKit.formField(language.text("createBooking.durationLabel"), durationField),
+                        mechanicField
+                );
+            }
         });
 
         Button saveButton = UiKit.primaryButton("Create work order");
@@ -193,6 +276,45 @@ public class CreateWorkOrderView  extends VBox {
                     UiKit.showError(feedbackLabel, language.text("createWorkOrder.noSelection").get());
                     return;
                 }
+                LocalDate date = datePicker.getValue();
+                if (date == null) {
+                    UiKit.showError(feedbackLabel, language.text("createBooking.selectDate").get());
+                    return;
+                }
+                LocalTime startTime;
+                try {
+                    startTime = LocalTime.parse(startTimeField.getText().trim());
+                } catch (DateTimeParseException exception) {
+                    UiKit.showError(feedbackLabel, language.text("createBooking.invalidStartTime").get());
+                    return;
+                }
+                int durationMinutes;
+                try {
+                    durationMinutes = Integer.parseInt(durationField.getText().trim());
+                } catch (NumberFormatException exception) {
+                    UiKit.showError(feedbackLabel, language.text("createBooking.invalidDuration").get());
+                    return;
+                }
+                if (durationMinutes <= 0) {
+                    UiKit.showError(feedbackLabel, language.text("createBooking.durationGreaterThanZero").get());
+                    return;
+                }
+                if (selectedServices.isEmpty()) {
+                    UiKit.showError(feedbackLabel, language.text("createBooking.selectService").get());
+                    return;
+                }
+// Validering för krockande/överlappande bokningar
+                boolean overlapping = bookingRepository.hasOverlappingBooking(mechanic.getId(), date, startTime, durationMinutes);
+                if (overlapping) {
+                    UiKit.showError(feedbackLabel, language.text("createBooking.overlapping").get());
+                    return;
+                }
+// Sätt värdena på ditt DTO så att din strategiklass kan läsa in dem till skuggbokningen
+                dto.setVehicleId(vehicle.getId());
+                dto.setDate(date);
+                dto.setStartTime(startTime);
+                dto.setDuration(durationMinutes);
+
                 dto.setVehicleId(vehicle.getId());
                 List<Integer> serviceIds = new ArrayList<>();
                 for(ServiceItem item : selectedService){
@@ -251,7 +373,6 @@ public class CreateWorkOrderView  extends VBox {
                     Database.getBookings().removeIf(b -> b.getVehicleId() == dto.getVehicleId() && "BOOKED".equals(b.getStatus()));
                 }
 
-
                 UiKit.showError(feedbackLabel, language.text("createWorkOrder.saveError").get());
                 exception.printStackTrace();
                 return;
@@ -265,8 +386,10 @@ public class CreateWorkOrderView  extends VBox {
             mechanicComboBox.getSelectionModel().clearSelection();
             mechanicComboBox.setValue(null);
             typeComboBox.setValue(WorkOrderTypeEnum.PLANNED);
-            vehicleComboBox.getSelectionModel().clearSelection();
-            vehicleComboBox.setValue(null);
+            vehicleCombo.getSelectionModel().clearSelection();
+            vehicleCombo.setValue(null);
+            datePicker.setValue(null);
+            startTimeField.clear();
             serviceListView.getSelectionModel().clearSelection();
 
         });
@@ -276,6 +399,9 @@ public class CreateWorkOrderView  extends VBox {
                 typeField,
                 bookingField,
                 vehicleField,
+                dateTimeRow,
+                durationMechanicRow,
+                priceField,
                 serviceField,
                 mechanicField,
                 saveButton,
