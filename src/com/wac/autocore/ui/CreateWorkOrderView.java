@@ -12,6 +12,7 @@ import javafx.collections.FXCollections;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
+import javafx.util.Callback;
 import javafx.util.StringConverter;
 
 import java.util.ArrayList;
@@ -40,7 +41,63 @@ public class CreateWorkOrderView  extends VBox {
         UiKit.keepPromptWhenCleared(mechanicComboBox);
 
         ComboBox<WorkOrderTypeEnum> typeComboBox = new ComboBox<>(FXCollections.observableArrayList(WorkOrderTypeEnum.values()));
-        typeComboBox.setConverter(typeConverter());
+
+        StringConverter<WorkOrderTypeEnum> safeTypeConverter = new StringConverter<WorkOrderTypeEnum>() {
+            @Override
+            public String toString(WorkOrderTypeEnum type) {
+                if (type == null) return "";
+                switch (type) {
+                    case PLANNED: return language.text("workOrder.type.planned").get();
+                    case DROP_IN: return language.text("workOrder.type.dropIn").get();
+                    case COMPLAINT: return language.text("workOrder.type.complaint").get();
+                    default: return type.name();
+                }
+            }
+
+            @Override
+            public WorkOrderTypeEnum fromString(String string) {
+                return null;
+            }
+        };
+
+        typeComboBox.setConverter(safeTypeConverter);
+        typeComboBox.setCellFactory(param -> new ListCell<WorkOrderTypeEnum>() {
+            //visar när listan är öppen för rätt språk
+            @Override
+            protected void updateItem(WorkOrderTypeEnum type, boolean empty) {
+                super.updateItem(type, empty);
+                if (empty || type == null) {
+                    textProperty().unbind();
+                    setText(null);
+                } else {
+                    switch (type) {
+                        case PLANNED: textProperty().bind(language.text("workOrder.type.planned")); break;
+                        case DROP_IN: textProperty().bind(language.text("workOrder.type.dropIn")); break;
+                        case COMPLAINT: textProperty().bind(language.text("workOrder.type.complaint")); break;
+                        default: textProperty().unbind(); setText(type.name());
+                    }
+                }
+            }
+        });
+            //styr värdet när listan är stängd, så språket inte blir konstigt i listan
+        typeComboBox.setButtonCell(new ListCell<WorkOrderTypeEnum>() {
+            @Override
+            protected void updateItem(WorkOrderTypeEnum type, boolean empty) {
+                super.updateItem(type, empty);
+                if (empty || type == null) {
+                    textProperty().unbind();
+                    setText(null);
+                } else {
+                    switch (type) {
+                        case PLANNED: textProperty().bind(language.text("workOrder.type.planned")); break;
+                        case DROP_IN: textProperty().bind(language.text("workOrder.type.dropIn")); break;
+                        case COMPLAINT: textProperty().bind(language.text("workOrder.type.complaint")); break;
+                        default: textProperty().unbind(); setText(type.name());
+                    }
+                }
+            }
+        });
+
         typeComboBox.setValue(WorkOrderTypeEnum.PLANNED);
         UiKit.keepPromptWhenCleared(typeComboBox);
 
@@ -243,25 +300,6 @@ public class CreateWorkOrderView  extends VBox {
 
             @Override
             public Mechanic fromString(String text) {
-                return null;
-            }
-        };
-    }
-
-    private StringConverter<WorkOrderTypeEnum> typeConverter() {
-        return new StringConverter<WorkOrderTypeEnum>() {
-            @Override
-            public String toString(WorkOrderTypeEnum type) {
-                if (type == null) return "";
-                switch(type) {
-                        case PLANNED: return language.text("workOrder.type.planned").get();
-                        case DROP_IN: return language.text("workOrder.type.dropIn").get();
-                        case COMPLAINT: return language.text("workOrder.type.complaint").get();
-                        default: return type.name().toLowerCase();
-                }
-            }
-            @Override
-            public WorkOrderTypeEnum fromString(String string) {
                 return null;
             }
         };
