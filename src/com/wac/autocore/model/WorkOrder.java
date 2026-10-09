@@ -55,6 +55,21 @@ public class WorkOrder {
         this.type = type;
     }
 
+    public static WorkOrder createDraft(int id, int bookingId, WorkOrderTypeEnum type) {
+        if (type == null) {
+            throw new IllegalArgumentException("Work order type is required");
+        }
+
+        WorkOrder draft = new WorkOrder();
+        draft.id = id;
+        draft.bookingId = bookingId;
+        draft.mechanicId = 0;
+        draft.serviceItemIds = new ArrayList<>();
+        draft.status = WorkOrderStatus.DRAFT;
+        draft.type = type;
+        return draft;
+    }
+
     public int getId() {
         return id;
     }
