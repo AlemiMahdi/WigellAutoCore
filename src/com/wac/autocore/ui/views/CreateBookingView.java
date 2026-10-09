@@ -68,7 +68,9 @@ public class CreateBookingView {
         ComboBox<ServicePackage> packageCombo = new ComboBox<>(
             FXCollections.observableArrayList(Database.getServicePackages())
         );
-        packageCombo.setPromptText("Select service package");
+        packageCombo.promptTextProperty().bind(
+            language.text("createBooking.packagePrompt")
+        );
         UiKit.keepPromptWhenCleared(packageCombo);
 
         durationField.setEditable(false);
@@ -284,7 +286,7 @@ public class CreateBookingView {
                         UiKit.formField(language.text("createBooking.durationLabel"), durationField),
                         UiKit.formField(language.text("bookings.mechanic"), mechanicCombo)
                 ),
-                UiKit.formField("Service package", packageCombo),
+                UiKit.formField(language.text("createBooking.packageLabel"), packageCombo),
                 UiKit.formField(language.text("createBooking.services"), serviceList),
                 UiKit.formField(language.text("createBooking.totalPrice"), totalPriceLabel),
                 UiKit.formField(language.text("bookings.description"), descriptionField),
