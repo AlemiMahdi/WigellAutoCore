@@ -11,10 +11,13 @@ import com.wac.autocore.ui.views.ProcessPaymentView;
 import com.wac.autocore.ui.views.ShowBookingsView;
 import com.wac.autocore.ui.views.ShowPaymentsView;
 import com.wac.autocore.ui.views.ShowWorkOrdersView;
+
 import javafx.application.Application;
 import javafx.application.Platform;
+
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -23,11 +26,13 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+
 import javafx.stage.Stage;
+
 import java.util.logging.Logger;
 import java.util.logging.Level;
-
-
 
 import java.util.HashMap;
 
@@ -105,6 +110,12 @@ public class AutoCoreApp extends Application {
         scene.getStylesheets().add(stylesheet.toExternalForm());
 
         primaryStage.setTitle("Wigell AutoCore");
+        // Appikonen i titelraden, aktivitetsfältet och Alt-Tab.
+        primaryStage.getIcons().addAll(
+                loadImage("/images/logo-gron-16.png"),
+                loadImage("/images/logo-gron-32.png"),
+                loadImage("/images/logo-gron-48.png"),
+                loadImage("/images/logo-gron-256.png"));
         primaryStage.setMinWidth(1100);
         primaryStage.setMinHeight(700);
         primaryStage.setScene(scene);
@@ -122,6 +133,7 @@ public class AutoCoreApp extends Application {
             loadCustomers();
             loadVehicles();
             loadServiceItems();
+            loadServicePackages();
             loadMechanics();
             loadBookings();
             loadWorkOrders();
@@ -242,6 +254,12 @@ public class AutoCoreApp extends Application {
 
     }
 
+    private void loadServicePackages() {
+        ServicePackageRepository repository = new ServicePackageRepository();
+        List<ServicePackage> savedPackages = repository.findAll();
+        Database.getServicePackages().clear();
+        Database.getServicePackages().addAll(savedPackages);
+    }
     private void loadMechanics() {
 
         MechanicRepository repository =
@@ -474,25 +492,51 @@ public class AutoCoreApp extends Application {
     // ------------------------------------------------------------
 
     private StackPane createHeader() {
-        Label title = new Label("WIGELL AUTOCORE");
-        title.getStyleClass().add("app-title");
+        // Kundens logga visas centrerad i sidhuvudet
+        ImageView logo = new ImageView(loadImage("/images/logga-utan-underrubrik.png"));
+        logo.setPreserveRatio(true);
+        logo.setFitHeight(60);
+        logo.setSmooth(true);
+        logo.setAccessibleText("Wigell AutoCore");
 
+        // Underrubrik som text, så att den byter språk
         Label subtitle = new Label();
         subtitle.textProperty().bind(language.text("header.subtitle"));
         subtitle.getStyleClass().add("app-subtitle");
 
-        // Rubrik och underrubrik ligger centrerade mitt i sidhuvudet
-        VBox titleBox = new VBox(4, title, subtitle);
-        titleBox.setAlignment(Pos.CENTER);
+        // Loggan med underrubriken under. Paketet centreras i headern,
+        // men inuti ligger allt vänsterställt.
+        VBox brand = new VBox(4, logo, subtitle);
+        brand.setAlignment(Pos.CENTER_LEFT);
+        brand.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE); // brand blir inte bredare än loggan
+
+        // Lägg underrubriken tätt under "Wigell".
+        // Måtten är uppmätta i loggbilden (60 px hög): texten börjar 69 px in
+        // och det är tom yta under den. Ändras loggan måste måtten ändras.
+        VBox.setMargin(subtitle, new Insets(-19, 0, 0, 69));
 
         // Språkväljaren läggs ovanpå, men skjuts ut till höger kant
         MenuButton languageMenu = createLanguageMenu();
         StackPane.setAlignment(languageMenu, Pos.CENTER_RIGHT);
 
-        StackPane header = new StackPane(titleBox, languageMenu);
+        StackPane header = new StackPane(brand, languageMenu);
         header.getStyleClass().add("app-header");
         header.setPadding(new Insets(18));
         return header;
+    }
+
+    // Laddar en bild från resources i originalstorlek. Sökvägen ska börja med "/".
+    private Image loadImage(String path) {
+        return loadImage(path, 0);
+    }
+
+    // Laddar en bild och skalar den till en viss höjd vid inläsning (skarpare).
+    private Image loadImage(String path, double height) {
+        URL url = AutoCoreApp.class.getResource(path);
+        if (url == null) {
+            throw new IllegalStateException("Kunde inte hitta bilden " + path);
+        }
+        return new Image(url.toExternalForm(), 0, height, true, true);
     }
 
     /** Knapp med rullgardinsmeny för att byta språk (Svenska/English).*/
@@ -561,6 +605,8 @@ public class AutoCoreApp extends Application {
 
         addNavSection(menuBox, "menu.section.servicesMechanics",
                 createNavItem("show-services", "menu.services", () -> showView(new ServiceView())),
+                createNavItem("create-service-package", "menu.createServicePackage",
+                        () -> showView(new CreateServicePackageView().getView())),
                 createNavItem("show-mechanics", "menu.mechanics", () -> showView(new MechanicView())),
                 createNavItem("mechanic-schedule", "menu.schedule", () -> showView(new MechanicScheduleView().getView())));
 
