@@ -6,6 +6,7 @@ import com.wac.autocore.model.Mechanic;
 import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.model.Vehicle;
 import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.model.WorkOrderStatus;
 import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.repository.MechanicRepository;
 import com.wac.autocore.repository.WorkOrderRepository;
@@ -63,7 +64,7 @@ public class CompleteWorkOrderView {
         cardList.getChildren().clear();
 
         for (WorkOrder order : Database.getWorkOrders()) {
-            if ("IN_PROGRESS".equals(order.getStatus())) {
+            if (order.getStatus().canChangeTo(WorkOrderStatus.COMPLETED)) {
                 Button completeButton = UiKit.successButton("Complete work order");
                 completeButton.textProperty().bind(language.text("completeWorkOrder.button"));
                 int workOrderId = order.getId();
@@ -90,7 +91,7 @@ public class CompleteWorkOrderView {
         heading.getStyleClass().add("card-heading");
         heading.setWrapText(true);
 
-        HBox badgeRow = new HBox(UiKit.statusBadge(order.getStatus()));
+        HBox badgeRow = new HBox(UiKit.statusBadge(order.getStatus().name()));
         badgeRow.setAlignment(Pos.CENTER_LEFT);
 
         Mechanic mechanic = findMechanic(order.getMechanicId());
@@ -157,7 +158,7 @@ public class CompleteWorkOrderView {
             UiKit.showError(statusLabel, language.text("completeWorkOrder.notFound").get());
             return false;
         }
-        if (!foundOrder.getStatus().equals("IN_PROGRESS")) {
+        if (!foundOrder.getStatus().canChangeTo(WorkOrderStatus.COMPLETED)) {
             UiKit.showError(statusLabel, language.text("completeWorkOrder.invalidStatus").get());
             return false;
         }
