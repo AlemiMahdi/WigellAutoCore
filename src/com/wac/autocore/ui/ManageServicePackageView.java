@@ -5,6 +5,7 @@ import com.wac.autocore.data.Database;
 import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.model.ServicePackage;
 import com.wac.autocore.repository.ServicePackageRepository;
+import com.wac.autocore.ui.language.LanguageManager;
 
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -17,12 +18,15 @@ public class ManageServicePackageView {
 
     private final ServicePackageRepository repository =
             new ServicePackageRepository();
+    private final LanguageManager language = LanguageManager.getInstance();
 
     public VBox getView() {
 
         ComboBox<ServicePackage> packageBox = new ComboBox<>();
         packageBox.getItems().addAll(Database.getServicePackages());
-        packageBox.setPromptText("Select service package");
+        packageBox.promptTextProperty().bind(
+            language.text("manageServicePackage.packagePrompt")
+        );
 
         VBox servicesBox = new VBox(8);
         List<CheckBox> checkBoxes = new ArrayList<>();
@@ -52,13 +56,16 @@ public class ManageServicePackageView {
 
         Label messageLabel = UiKit.feedbackLabel();
         Button saveButton = UiKit.primaryButton("Save changes");
+        saveButton.textProperty().bind(
+            language.text("manageServicePackage.saveButton")
+        );
 
         saveButton.setOnAction(event -> {
             ServicePackage selectedPackage = packageBox.getValue();
 
             if (selectedPackage == null) {
                 UiKit.showError(messageLabel,
-                        "Please select a service package.");
+                        language.text("manageServicePackage.selectPackage").get());
                 return;
             }
 
@@ -79,19 +86,19 @@ public class ManageServicePackageView {
             try {
                 repository.save(selectedPackage);
                 UiKit.showSuccess(messageLabel,
-                        "Service package updated successfully.");
+                        language.text("manageServicePackage.success").get());
             } catch (RuntimeException exception) {
                 selectedPackage.setServices(previousServices);
                 UiKit.showError(messageLabel,
-                        "Could not save service package.");
+                        language.text("manageServicePackage.saveError").get());
                 exception.printStackTrace();
             }
         });
 
         VBox form = UiKit.formContainer(
-                UiKit.pageHeader("Manage service package", null),
-                UiKit.formField("Service package", packageBox),
-                UiKit.formField("Services", servicesBox),
+                UiKit.pageHeader(language.text("manageServicePackage.title"), null),
+                UiKit.formField(language.text("manageServicePackage.packageLabel"), packageBox),
+                UiKit.formField(language.text("manageServicePackage.servicesLabel"), servicesBox),
                 saveButton,
                 messageLabel
         );
