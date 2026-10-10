@@ -4,7 +4,6 @@ import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.Vehicle;
 import com.wac.autocore.model.WorkOrder;
-import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.repository.WorkOrderRepository;
 import com.wac.autocore.service.GarageSystem;
 import com.wac.autocore.ui.UiKit;
@@ -26,7 +25,6 @@ public class CreateDraftWorkOrderView {
 
     private final LanguageManager language = LanguageManager.getInstance();
     private final GarageSystem garageSystem = new GarageSystem();
-    private final BookingRepository bookingRepository = new BookingRepository();
     private final WorkOrderRepository workOrderRepository = new WorkOrderRepository();
 
     public VBox getView() {
@@ -84,11 +82,10 @@ public class CreateDraftWorkOrderView {
                 return;
             }
 
-            //Spara i MYSQL: bokningen först, eftersom utkastet pekar på den
+            //Spara boning och utkast i MySQL i samma transaktion
             Booking booking = findBooking(draft.getBookingId());
             try {
-                bookingRepository.save(booking);
-                workOrderRepository.save(draft);
+                workOrderRepository.saveWithBooking(draft, booking);
             } catch (RuntimeException e) {
                 //Tar bort ur minnet om sparandet misslyckades
                 Database.getWorkOrders().remove(draft);
