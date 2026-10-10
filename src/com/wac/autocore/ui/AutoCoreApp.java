@@ -7,6 +7,7 @@ import com.wac.autocore.data.HibernateUtil;
 import com.wac.autocore.model.*;
 import com.wac.autocore.repository.*;
 import com.wac.autocore.ui.views.CreateBookingView;
+import com.wac.autocore.ui.views.CreateDraftWorkOrderView;
 import com.wac.autocore.ui.views.ProcessPaymentView;
 import com.wac.autocore.ui.views.ShowBookingsView;
 import com.wac.autocore.ui.views.ShowPaymentsView;
@@ -602,6 +603,8 @@ public class AutoCoreApp extends Application {
         addNavSection(menuBox, "menu.section.workOrders",
                 createNavItem("show-work-orders", "menu.workOrders", () -> showView(new ShowWorkOrdersView().getView())),
                 createNavItem("create-work-order", "menu.createWorkOrder", () -> showView(new CreateWorkOrderView())),
+                createNavItem("create-draft-work-order", "menu.createDraftWorkOrder",
+                        () -> showView(new CreateDraftWorkOrderView().getView())),
                 createNavItem("start-work-order", "menu.startWorkOrder", () -> showView(new StartWorkOrderView())),
                 createNavItem("complete-work-order", "menu.completeWorkOrder", () -> showView(CompleteWorkOrderView.build())));
 
