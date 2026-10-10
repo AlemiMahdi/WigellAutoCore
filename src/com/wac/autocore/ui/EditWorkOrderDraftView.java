@@ -11,6 +11,9 @@ import javafx.scene.control.DatePicker;
 import javafx.scene.control.TextField;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
+import com.wac.autocore.model.Mechanic;
+import javafx.scene.control.ComboBox;
+import javafx.util.StringConverter;
 
 public class EditWorkOrderDraftView {
 
@@ -43,6 +46,36 @@ public class EditWorkOrderDraftView {
             return new VBox(10, errorLabel);
         }
 
+        ComboBox<Mechanic> mechanicCombo = new ComboBox<>();
+        mechanicCombo.getItems().setAll(Database.getMechanics());
+        mechanicCombo.setMaxWidth(Double.MAX_VALUE);
+
+        mechanicCombo.promptTextProperty().bind(
+                language.text("editWorkOrderDraft.mechanicPrompt")
+        );
+
+        mechanicCombo.setConverter(new StringConverter<Mechanic>() {
+            @Override
+            public String toString(Mechanic mechanic) {
+                return mechanic == null ? "" : mechanic.getName();
+            }
+
+            @Override
+            public Mechanic fromString(String text) {
+                return null;
+            }
+        });
+
+// Förväljer mekanikern om utkastet redan har en.
+        if (draft.getMechanicId() != 0) {
+            for (Mechanic mechanic : mechanicCombo.getItems()) {
+                if (mechanic.getId() == draft.getMechanicId()) {
+                    mechanicCombo.setValue(mechanic);
+                    break;
+                }
+            }
+        }
+
         DatePicker plannedDateField = new DatePicker();
 
         plannedDateField.setValue(booking.getDate());
@@ -73,6 +106,7 @@ public class EditWorkOrderDraftView {
 
         VBox form = UiKit.formContainer(
                 UiKit.pageHeader(language.text("editWorkOrderDraft.title"), null),
+                UiKit.formField(language.text("editWorkOrderDraft.mechanic"), mechanicCombo),
                 UiKit.formRow(
                         UiKit.formField(language.text("editWorkOrderDraft.plannedDate"), plannedDateField),
                         UiKit.formField(language.text("editWorkOrderDraft.estimatedMinutes"), estimatedMinutesField)
