@@ -29,8 +29,9 @@ public class WorkOrder {
     @Column(name = "service_item_id")
     private List<Integer> serviceItemIds = new ArrayList<>();
 
+    @Convert(converter = WorkOrderStatusConverter.class)
     @Column(name = "status")
-    private String status;
+    private WorkOrderStatus status;
 
    @Convert(converter = WorkOrderTypeConverter.class)
     @Column(name = "work_order_type")
@@ -50,7 +51,7 @@ public class WorkOrder {
         this.bookingId = bookingId;
         this.mechanicId = mechanicId;
         this.serviceItemIds = new ArrayList<>();
-        this.status = "CREATED";
+        this.status = WorkOrderStatus.CONFIRMED;
         this.type = type;
     }
 
@@ -86,12 +87,16 @@ public class WorkOrder {
         this.serviceItemIds = serviceItemIds;
     }
 
-    public String getStatus() {
+    public WorkOrderStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
+    public void changeStatus(WorkOrderStatus newStatus) {
+        if (!status.canChangeTo(newStatus)) {
+            throw new IllegalStateException(
+                    "Cannot change status from " + status + " to " + newStatus);
+        }
+        this.status = newStatus;
     }
 
     public void addServiceItem(int serviceItemId) {

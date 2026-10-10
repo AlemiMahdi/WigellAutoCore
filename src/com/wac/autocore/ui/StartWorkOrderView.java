@@ -1,11 +1,7 @@
 package com.wac.autocore.ui;
 
 import com.wac.autocore.data.Database;
-import com.wac.autocore.model.Booking;
-import com.wac.autocore.model.Mechanic;
-import com.wac.autocore.model.ServiceItem;
-import com.wac.autocore.model.Vehicle;
-import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.model.*;
 import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.repository.MechanicRepository;
 import com.wac.autocore.repository.WorkOrderRepository;
@@ -68,10 +64,10 @@ public class StartWorkOrderView extends VBox {
         selectedWorkOrder = null;
         selectedCard = null;
 
-        // Bara ordrar med status CREATED kan startas, så bara de visas i listan
+        // Bara ordrar som enligt statusreglerna får startas visas i listan.
         List<WorkOrder> startable = new ArrayList<WorkOrder>();
         for (WorkOrder workOrder : Database.getWorkOrders()) {
-            if ("CREATED".equals(workOrder.getStatus())) {
+            if (workOrder.getStatus().canChangeTo(WorkOrderStatus.IN_PROGRESS)) {
                 startable.add(workOrder);
             }
         }
@@ -119,7 +115,7 @@ public class StartWorkOrderView extends VBox {
         Label vehicleLabel = new Label(formatVehicle(findVehicle(workOrder), " · "));
         vehicleLabel.getStyleClass().add("select-card-sub");
 
-        HBox badgeRow = new HBox(UiKit.statusBadge(workOrder.getStatus()));
+        HBox badgeRow = new HBox(UiKit.statusBadge(workOrder.getStatus().name()));
         badgeRow.setAlignment(Pos.CENTER_LEFT);
 
         VBox card = UiKit.selectCard(title, vehicleLabel, badgeRow);
@@ -187,12 +183,12 @@ public class StartWorkOrderView extends VBox {
         }
 
         // Sparar den valda arbetsorderns status innan vi försöker starta den.
-        String previousStatus = workorder.getStatus();
+        WorkOrderStatus previousStatus = workorder.getStatus();
 
         garageSystem.startWorkOrder(workorder.getId());
 
-        if ("CREATED".equals(previousStatus)
-                && "IN_PROGRESS".equals(workorder.getStatus())) {
+        if (previousStatus == WorkOrderStatus.CONFIRMED
+                && workorder.getStatus() == WorkOrderStatus.IN_PROGRESS) {
             // Hämtar bokningen och mekanikern som startWorkOrder har ändrat.
             Booking booking = findBooking(workorder);
             Mechanic mechanic = findMechanic(workorder);
