@@ -215,10 +215,10 @@ public class Main {
         garageSystem.showMechanics();
         int mechanicId = readInt("Mechanic ID: ");
 
-        garageSystem.createWorkOrder(
-                bookingId,
-                mechanicId, WorkOrderTypeEnum.PLANNED
-        );
+//        garageSystem.createWorkOrder(
+//                bookingId,
+//                mechanicId, WorkOrderTypeEnum.PLANNED
+//        );
     }
 
     private static void startWorkOrder() {
