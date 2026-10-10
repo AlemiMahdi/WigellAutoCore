@@ -32,6 +32,7 @@ import static com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type.Node;
 public class CreateWorkOrderView  extends VBox {
 
     private final LanguageManager language = LanguageManager.getInstance();
+    private final ObservableList<ServiceItem> selectedServices = FXCollections.observableArrayList();
 
     public CreateWorkOrderView() {
         // Centrerar formulärkolumnen i innehållsytan
@@ -105,7 +106,7 @@ public class CreateWorkOrderView  extends VBox {
 
         Label totalPriceLabel = new Label();
 
-        ObservableList<ServiceItem> selectedServices = FXCollections.observableArrayList();
+        //selectedServices = FXCollections.observableArrayList();
 
         // Automatisk beräkning av tid och pris
         Runnable updateTotals = () -> {
@@ -174,29 +175,12 @@ public class CreateWorkOrderView  extends VBox {
 
         Button CreateCustomerButton = UiKit.primaryButton("+ Customer");
         CreateCustomerButton.setTooltip(new Tooltip("Snabbregistrera ny kund"));
-        CreateCustomerButton.setOnAction(event -> Navigator.goTo("create-customer")); // Anpassa till din söksträng i Navigator
+        CreateCustomerButton.setOnAction(event -> Navigator.goTo("create-customer"));
 
         Button CreateVehicleButton = UiKit.primaryButton("+ Vehicle");
         CreateVehicleButton.setTooltip(new Tooltip("Snabbregistrera nytt fordon på kund"));
-        CreateVehicleButton.setOnAction(event -> Navigator.goTo("create-vehicle")); // Anpassa till din söksträng i Navigator
+        CreateVehicleButton.setOnAction(event -> Navigator.goTo("create-vehicle"));
         HBox vehicleRowContainer = UiKit.formRow(vehicleComboBox, CreateCustomerButton, CreateVehicleButton);
-
-//        ListView<ServiceItem> serviceListView = new ListView<>(selectedServices);
-//        serviceListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-//        serviceListView.setPrefHeight(120); // Ger listan en lagom höjd i formuläret
-//        serviceListView.setCellFactory(param -> new ListCell<ServiceItem>() {
-//            @Override
-//            protected void updateItem(ServiceItem item, boolean empty) {
-//                super.updateItem(item, empty);
-//                if (empty || item == null) {
-//                    setText(null);
-//                } else {
-//                    setText(item.getName() + " (" + item.getPrice() + " kr)");
-//                }
-//            }
-//        });
-//
-//        updateTotals.run();
 
         VBox typeField = UiKit.formField(language.text("createWorkOrder.type"), typeComboBox);
         VBox vehicleField = UiKit.formField(language.text("createWorkOrder.vehicle"), vehicleRowContainer);
@@ -275,9 +259,8 @@ public class CreateWorkOrderView  extends VBox {
 
             if(selectedType == WorkOrderTypeEnum.DROP_IN){
                 Vehicle vehicle = vehicleComboBox.getValue();
-                List<ServiceItem> selectedService = serviceList.getSelectionModel().getSelectedItems();
 
-                if(vehicle == null || selectedService.isEmpty()){
+                if(vehicle == null || selectedServices.isEmpty()){
                     UiKit.showError(feedbackLabel, language.text("createWorkOrder.noSelection").get());
                     return;
                 }
@@ -321,7 +304,7 @@ public class CreateWorkOrderView  extends VBox {
                 dto.setDuration(durationMinutes);
                 dto.setVehicleId(vehicle.getId());
                 List<Integer> serviceIds = new ArrayList<>();
-                for(ServiceItem item : selectedService){
+                for(ServiceItem item : selectedServices){
                     serviceIds.add(item.getId());
                 }
                 dto.setServices(serviceIds);
@@ -329,7 +312,7 @@ public class CreateWorkOrderView  extends VBox {
                 // Gäller PLANNED och COMPLAINT
                 booking = bookingComboBox.getValue();
                 if (booking == null) {
-                    UiKit.showError(feedbackLabel, language.text("createWorkOrder.missingSelection").get());
+                    UiKit.showError(feedbackLabel, language.text("createWorkOrder.noSelection").get());
                     return;
                 }
                 dto.setBookingId(booking.getId());
@@ -395,6 +378,7 @@ public class CreateWorkOrderView  extends VBox {
             datePicker.setValue(null);
             startTimeField.clear();
             serviceList.getSelectionModel().clearSelection();
+            //Lägga in selected services här?
 
         });
 
@@ -407,7 +391,6 @@ public class CreateWorkOrderView  extends VBox {
                 durationMechanicRow,
                 priceField,
                 serviceField,
-                //mechanicField,
                 saveButton,
                 feedbackLabel
         ));

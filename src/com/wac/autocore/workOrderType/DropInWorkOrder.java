@@ -29,7 +29,7 @@ public class DropInWorkOrder implements WorkOrderTypeInterface{
         Booking automaticBooking = new Booking();
         automaticBooking.setVehicleId(workOrderDto.getVehicleId());
         automaticBooking.setDescription(workOrderDto.getDescription() != null ? workOrderDto.getDescription() : "Drop-in order");
-        automaticBooking.setStatus("CREATED");
+        automaticBooking.setStatus("BOOKED");
         automaticBooking.setDate(workOrderDto.getDate());
         automaticBooking.setStartTime(workOrderDto.getStartTime());
         automaticBooking.setDurationMinutes(workOrderDto.getDuration());
