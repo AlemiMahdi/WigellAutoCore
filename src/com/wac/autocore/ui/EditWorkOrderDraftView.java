@@ -5,13 +5,26 @@ import com.wac.autocore.ui.language.LanguageManager;
 import javafx.geometry.Pos;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.VBox;
+import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.model.WorkOrderStatus;
 
 public class EditWorkOrderDraftView {
 
     private final LanguageManager language =
             LanguageManager.getInstance();
 
-    public VBox getView() {
+    public VBox getView(WorkOrder draft) {
+
+        if (draft == null || draft.getStatus() != WorkOrderStatus.DRAFT) {
+            javafx.scene.control.Label errorLabel = UiKit.feedbackLabel();
+            UiKit.showError(errorLabel, "");
+            errorLabel.textProperty().bind(
+                    language.text("editWorkOrderDraft.onlyDraft")
+            );
+
+            return new VBox(10, errorLabel);
+        }
+
         TextArea instructionsField = new TextArea();
         instructionsField.setPrefRowCount(3);
         instructionsField.setWrapText(true);
