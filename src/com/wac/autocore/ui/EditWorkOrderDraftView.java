@@ -7,6 +7,8 @@ import javafx.scene.control.TextArea;
 import javafx.scene.layout.VBox;
 import com.wac.autocore.model.WorkOrder;
 import com.wac.autocore.model.WorkOrderStatus;
+import javafx.scene.control.DatePicker;
+import javafx.scene.control.TextField;
 
 public class EditWorkOrderDraftView {
 
@@ -25,6 +27,17 @@ public class EditWorkOrderDraftView {
             return new VBox(10, errorLabel);
         }
 
+        DatePicker plannedDateField = new DatePicker();
+
+        TextField estimatedMinutesField = new TextField();
+        TextField priceField = new TextField();
+        priceField.promptTextProperty().bind(
+                language.text("editWorkOrderDraft.pricePrompt")
+        );
+        estimatedMinutesField.promptTextProperty().bind(
+                language.text("editWorkOrderDraft.minutesPrompt")
+        );
+
         TextArea instructionsField = new TextArea();
         instructionsField.setPrefRowCount(3);
         instructionsField.setWrapText(true);
@@ -35,6 +48,11 @@ public class EditWorkOrderDraftView {
 
         VBox form = UiKit.formContainer(
                 UiKit.pageHeader(language.text("editWorkOrderDraft.title"), null),
+                UiKit.formRow(
+                        UiKit.formField(language.text("editWorkOrderDraft.plannedDate"), plannedDateField),
+                        UiKit.formField(language.text("editWorkOrderDraft.estimatedMinutes"), estimatedMinutesField)
+                ),
+                UiKit.formField(language.text("editWorkOrderDraft.price"), priceField),
                 UiKit.formField(language.text("editWorkOrderDraft.instructions"), instructionsField),
                 UiKit.formField(language.text("editWorkOrderDraft.comments"), commentsField
                 )
