@@ -3,16 +3,13 @@ package com.wac.autocore.workOrderType;
 import com.wac.autocore.DTO.WorkOrderDto;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
-import com.wac.autocore.service.GarageSystem;
+import com.wac.autocore.repository.BookingRepository;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
 public class DropInWorkOrder implements WorkOrderTypeInterface{
-
-    GarageSystem garageSystem = new GarageSystem();
+    private final BookingRepository bookingRepository = new BookingRepository();
 
     @Override
     public WorkOrder createWorkOrder(WorkOrderDto workOrderDto) {
@@ -21,15 +18,21 @@ public class DropInWorkOrder implements WorkOrderTypeInterface{
                 .findFirst()
                 .orElse(null);
 
+
         if (vehicle == null) {
             System.out.println("Vehicle with ID " + workOrderDto.getVehicleId() + " does not exist.");
             return null;
         }
 
+        int nextBookingId =Database.getBookings().stream()
+                .mapToInt(Booking::getId).max()
+                .orElse(0) +1;
+
         Booking automaticBooking = new Booking();
+        automaticBooking.setId(nextBookingId);
         automaticBooking.setVehicleId(workOrderDto.getVehicleId());
         automaticBooking.setDescription(workOrderDto.getDescription() != null ? workOrderDto.getDescription() : "Drop-in order");
-        automaticBooking.setStatus(workOrderDto.getStatus());
+        automaticBooking.setStatus("WORK_ORDER_CREATED");
         automaticBooking.setDate(workOrderDto.getDate());
         automaticBooking.setStartTime(workOrderDto.getStartTime());
         automaticBooking.setDurationMinutes(workOrderDto.getDuration());
@@ -56,6 +59,7 @@ public class DropInWorkOrder implements WorkOrderTypeInterface{
         }
         automaticBooking.setFrozenPrice(frozenPrices);
         automaticBooking.setDurationMinutes(totalDuration);
+
         Database.getBookings().add(automaticBooking);
 
         return getWorkOrder(workOrderDto, automaticBooking);
