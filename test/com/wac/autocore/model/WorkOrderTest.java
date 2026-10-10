@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-// Testar att WorkOrder följer statusreglerna när statusen byts (WAC-62).
+// Testar att WorkOrder följer statusreglerna när statusen byts (WAC-63).
 // Reglerna själva testas i WorkOrderStatusTest – här testas att WorkOrder använder dem.
 public class WorkOrderTest {
 
@@ -33,4 +33,23 @@ public class WorkOrderTest {
         // Viktigast: felet ska komma INNAN statusen ändras
         assertEquals(WorkOrderStatus.CONFIRMED, workOrder.getStatus());
     }
+
+    // Ett nytt utkast ska ha status DRAFT, vald typ, ingen mekaniker (0) och inga tjänster.
+    @Test
+    void createDraftStartsAsDraftWithoutMechanics() {
+        WorkOrder draft = WorkOrder.createDraft(1, 5, WorkOrderTypeEnum.PLANNED);
+
+        assertEquals(WorkOrderStatus.DRAFT, draft.getStatus());
+        assertEquals(WorkOrderTypeEnum.PLANNED, draft.getType());
+        assertEquals(0, draft.getMechanicId());
+        assertTrue(draft.getServiceItemIds().isEmpty());
+    }
+
+    // Ett utkast utan typ ska stoppas direkt (fail fast).
+    @Test
+    void createDraftWithoutTypeThrows() {
+        assertThrows(IllegalArgumentException.class,
+                () -> WorkOrder.createDraft(1, 5, null));
+    }
+
 }
