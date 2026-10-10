@@ -259,7 +259,9 @@ public class Main {
 
         garageSystem.createInvoice(
                 workOrderId,
-                discountCode
+                discountCode,
+                "",
+                0.0
         );
     }
 

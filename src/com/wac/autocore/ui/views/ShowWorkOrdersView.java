@@ -69,6 +69,46 @@ public class ShowWorkOrdersView {
         servicesLabel.setWrapText(true);
 
         VBox card = new VBox(idLabel, vehicleLabel, mechanicLabel, servicesLabel);
+
+        // Visar vilken arbetsorder reklamationen tillhör
+        if (workOrder.getOriginalWorkOrderId() != null) {
+            Label originalLabel = new Label();
+
+            originalLabel.textProperty().bind(
+                language.text("workOrders.complaintOf")
+                    .concat(String.valueOf(workOrder.getOriginalWorkOrderId()))
+            );
+
+            originalLabel.getStyleClass().add("kanban-card-hint");
+            originalLabel.setStyle("-fx-font-weight: bold;");
+            card.getChildren().add(originalLabel);
+        }
+
+        // Visar vilka reklamationer som tillhör denna arbetsorder
+        List<String> complaintIds = new ArrayList<>();
+
+        for (WorkOrder other : Database.getWorkOrders()) {
+            if (other.getOriginalWorkOrderId() != null
+                    && other.getOriginalWorkOrderId() == workOrder.getId()) {
+                complaintIds.add("WO-" + other.getId());
+            }
+        }
+
+        if (!complaintIds.isEmpty()) {
+            Label complaintsLabel = new Label();
+
+            complaintsLabel.textProperty().bind(
+                language.text("workOrders.relatedComplaints")
+                    .concat(": " + String.join(", ", complaintIds))
+            );
+
+            complaintsLabel.getStyleClass().add("kanban-card-hint");
+            complaintsLabel.setStyle("-fx-font-weight: bold;");
+            complaintsLabel.setWrapText(true);
+
+            card.getChildren().add(complaintsLabel);
+        }
+
         card.getStyleClass().add("kanban-card");
         return card;
     }

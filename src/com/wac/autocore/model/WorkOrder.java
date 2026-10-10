@@ -115,13 +115,24 @@ public class WorkOrder {
     public void setType(WorkOrderTypeEnum type) { this.type = type;}
 
     public Integer getOriginalWorkOrderId() { return originalWorkOrderId; }
-    public void setOriginalWorkOrderId( Integer originalworkOrderId) {
-        if (originalworkOrderId != null && originalworkOrderId == this.id) {
-            throw new IllegalArgumentException(
-                "A work order cannot reference itself"
-            );
+    public void setOriginalWorkOrderId(Integer originalWorkOrderId) {
+
+        if (originalWorkOrderId != null) {
+
+            if (this.type != WorkOrderTypeEnum.COMPLAINT) {
+                throw new IllegalStateException(
+                    "Only complaint work orders can reference an original work order."
+                );
+            }
+
+            if (originalWorkOrderId == this.id) {
+                throw new IllegalArgumentException(
+                    "A work order cannot reference itself."
+                );
+            }
         }
-        this.originalWorkOrderId = originalworkOrderId;
+
+        this.originalWorkOrderId = originalWorkOrderId;
     }
 
 

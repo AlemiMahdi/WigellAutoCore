@@ -248,6 +248,7 @@ public class GarageSystem {
             System.out.println("Work order with ID " + workOrderId + " does not exist.");
             return;
         }
+        
 
         if (!workOrder.getStatus().canChangeTo(WorkOrderStatus.IN_PROGRESS)) {
             System.out.println("Work order cannot be started.");
@@ -299,11 +300,36 @@ public class GarageSystem {
         System.out.println("Work order " + workOrderId + " has been completed.");
     }
 
-    public Invoice createInvoice(int workOrderId, String discountCode) {
+    public Invoice createInvoice(
+            int workOrderId, 
+            String discountCode,
+            String extraDescription,
+            double extraCost) {
         WorkOrder workOrder = findWorkOrder(workOrderId);
 
         if (workOrder == null) {
             System.out.println("Work order with ID " + workOrderId + " does not exist.");
+            return null;
+        }
+        boolean alreadyInvoiced = Database.getInvoices()
+        .stream()
+        .anyMatch(invoice -> invoice.getWorkOrderId() == workOrderId);
+
+        if (alreadyInvoiced) {
+            System.out.println(
+                "Work order " + workOrderId + " already has an invoice."
+            );
+            return null;
+        }
+        if (!Double.isFinite(extraCost) || extraCost < 0) {
+            System.out.println("Extra cost must be a valid non-negative number.");
+            return null;
+        }
+
+        if (workOrder.getType() == WorkOrderTypeEnum.COMPLAINT
+                && extraCost > 0
+                && (extraDescription == null || extraDescription.isEmpty())) {
+            System.out.println("Extra cost requires a description.");
             return null;
         }
 
@@ -327,13 +353,31 @@ public class GarageSystem {
                     0.0
             );
 
-            for(InvoiceLine frozenLine : booking.getFrozenPrice()){
+            boolean isComplaint = workOrder.getType() == WorkOrderTypeEnum.COMPLAINT;
+
+            for (InvoiceLine frozenLine : booking.getFrozenPrice()) {
+
+                double price = isComplaint ? 0.0 : frozenLine.getPrice();
+
                 InvoiceLine line = new InvoiceLine(
-                        frozenLine.getServiceItemId(),
-                        frozenLine.getServiceName(),
-                        frozenLine.getPrice()
-                ); invoice.addLine(line);
+                    frozenLine.getServiceItemId(),
+                    frozenLine.getServiceName(),
+                    price
+                );
+
+                invoice.addLine(line);
             }
+
+            if (isComplaint && extraCost > 0) {
+                InvoiceLine extraLine = new InvoiceLine(
+                    0,
+                    extraDescription,
+                    extraCost
+                );
+
+                invoice.addLine(extraLine);
+            }
+
             double amount = invoice.getAmount();
             double discount = 0.0;
 

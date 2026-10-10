@@ -5,6 +5,7 @@ import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.Mechanic;
 import com.wac.autocore.model.Vehicle;
 import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.model.WorkOrderStatus;
 import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.repository.WorkOrderRepository;
 import com.wac.autocore.service.GarageSystem;
@@ -42,6 +43,95 @@ public class CreateWorkOrderView  extends VBox {
         typeComboBox.setConverter(typeConverter());
         typeComboBox.setValue(WorkOrderTypeEnum.PLANNED);
 
+        ComboBox<WorkOrder> originalWorkOrderCombo = new ComboBox<>(
+            FXCollections.observableArrayList(
+                Database.getWorkOrders()
+                    .stream()
+                    .filter(workOrder ->
+                        workOrder.getStatus() == WorkOrderStatus.COMPLETED
+                    )
+                    .collect(java.util.stream.Collectors.toList())
+            )
+        );
+        originalWorkOrderCombo.promptTextProperty().bind(
+                language.text("createWorkOrder.selectOriginalWorkOrder")
+        );
+        originalWorkOrderCombo.setConverter(new StringConverter<WorkOrder>() {
+
+            
+            @Override
+            public String toString(WorkOrder workOrder) {
+                if (workOrder == null) {
+                    return "";
+                }
+                return "#" + workOrder.getId()
+                + " - Booking ID: " + workOrder.getBookingId();
+            }
+
+            @Override
+            public WorkOrder fromString(String text) {
+                return null;
+            }
+
+            
+        });
+
+        UiKit.keepPromptWhenCleared(originalWorkOrderCombo);
+        VBox originalWorkOrderField = UiKit.formField(
+                language.text("createWorkOrder.originalWorkOrder"),
+                originalWorkOrderCombo
+        );
+        originalWorkOrderField.visibleProperty().bind(
+            typeComboBox.valueProperty().isEqualTo(WorkOrderTypeEnum.COMPLAINT)
+        );
+        originalWorkOrderField.managedProperty().bind(
+            originalWorkOrderField.visibleProperty()
+        );
+
+        // Välj automatiskt originalarbetsorderns bokning vid reklamation.
+        originalWorkOrderCombo.valueProperty().addListener(
+            (obs, oldValue, originalWorkOrder) -> {
+
+                if (typeComboBox.getValue() != WorkOrderTypeEnum.COMPLAINT) {
+                    return;
+                }
+
+                if (originalWorkOrder == null) {
+                    bookingComboBox.setValue(null);
+                    return;
+                }
+
+                Booking matchingBooking = bookingComboBox.getItems()
+                    .stream()
+                    .filter(booking ->
+                        booking.getId() == originalWorkOrder.getBookingId()
+                    )
+                    .findFirst()
+                    .orElse(null);
+
+                bookingComboBox.setValue(matchingBooking);
+            }
+        );
+
+        // Lås bokningsfältet för reklamationer.
+        bookingComboBox.disableProperty().bind(
+            typeComboBox.valueProperty().isEqualTo(WorkOrderTypeEnum.COMPLAINT)
+        );
+
+        // Återställ bokningsvalet när arbetsordertypen ändras.
+        typeComboBox.valueProperty().addListener(
+            (obs, oldType, newType) -> {
+
+                if (newType == WorkOrderTypeEnum.COMPLAINT) {
+                    originalWorkOrderCombo.setValue(null);
+                    bookingComboBox.setValue(null);
+                } else if (oldType == WorkOrderTypeEnum.COMPLAINT) {
+                    originalWorkOrderCombo.setValue(null);
+                    bookingComboBox.setValue(null);
+                }
+            }
+        );
+
         Button saveButton = UiKit.primaryButton("Create work order");
         saveButton.textProperty().bind(language.text("createWorkOrder.title"));
 
@@ -62,6 +152,12 @@ public class CreateWorkOrderView  extends VBox {
                 return;
             }
 
+            WorkOrder originalWorkOrder = originalWorkOrderCombo.getValue();
+            if (selectedType == WorkOrderTypeEnum.COMPLAINT && originalWorkOrder == null) {
+                UiKit.showError(feedbackLabel, language.text("createWorkOrder.missingOriginalWorkOrder").get());
+                return;
+            }
+
             // Sparar bokningens status ifall vi behöver återställa den.
             String previousBookingStatus = booking.getStatus();
 
@@ -76,6 +172,9 @@ public class CreateWorkOrderView  extends VBox {
                     UiKit.showError(feedbackLabel, language.text("createWorkOrder.createError").get());
                 }
                 return;
+            }
+            if (selectedType == WorkOrderTypeEnum.COMPLAINT) {
+                workOrder.setOriginalWorkOrderId(originalWorkOrder.getId());
             }
 
             try {
@@ -101,12 +200,15 @@ public class CreateWorkOrderView  extends VBox {
             mechanicComboBox.getSelectionModel().clearSelection();
             mechanicComboBox.setValue(null);
             typeComboBox.setValue(WorkOrderTypeEnum.PLANNED);
+            originalWorkOrderCombo.getSelectionModel().clearSelection();
+            originalWorkOrderCombo.setValue(null);
 
         });
 
         getChildren().add(UiKit.formContainer(
                 UiKit.pageHeader(language.text("createWorkOrder.title"), null),
                 UiKit.formField(language.text("createWorkOrder.type"), typeComboBox),
+                originalWorkOrderField,
                 UiKit.formField(language.text("createWorkOrder.bookingLabel"), bookingComboBox),
                 UiKit.formField(language.text("bookings.mechanic"), mechanicComboBox),
                 saveButton,
