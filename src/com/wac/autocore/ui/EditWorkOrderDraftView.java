@@ -9,6 +9,8 @@ import com.wac.autocore.model.WorkOrder;
 import com.wac.autocore.model.WorkOrderStatus;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.TextField;
+import com.wac.autocore.data.Database;
+import com.wac.autocore.model.Booking;
 
 public class EditWorkOrderDraftView {
 
@@ -27,9 +29,32 @@ public class EditWorkOrderDraftView {
             return new VBox(10, errorLabel);
         }
 
+        Booking booking = Database.getBookings().stream()
+                .filter(existing -> existing.getId() == draft.getBookingId())
+                .findFirst()
+                .orElse(null);
+
+        if (booking == null) {
+            javafx.scene.control.Label errorLabel = UiKit.feedbackLabel();
+            UiKit.showError(errorLabel, "");
+            errorLabel.textProperty().bind(
+                    language.text("editWorkOrderDraft.bookingMissing")
+            );
+            return new VBox(10, errorLabel);
+        }
+
         DatePicker plannedDateField = new DatePicker();
 
+        plannedDateField.setValue(booking.getDate());
+
         TextField estimatedMinutesField = new TextField();
+
+        if (booking.getDurationMinutes() > 0) {
+            estimatedMinutesField.setText(
+                    String.valueOf(booking.getDurationMinutes())
+            );
+        }
+
         TextField priceField = new TextField();
         priceField.promptTextProperty().bind(
                 language.text("editWorkOrderDraft.pricePrompt")
