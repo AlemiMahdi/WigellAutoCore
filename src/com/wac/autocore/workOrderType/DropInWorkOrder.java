@@ -29,7 +29,7 @@ public class DropInWorkOrder implements WorkOrderTypeInterface{
         Booking automaticBooking = new Booking();
         automaticBooking.setVehicleId(workOrderDto.getVehicleId());
         automaticBooking.setDescription(workOrderDto.getDescription() != null ? workOrderDto.getDescription() : "Drop-in order");
-        automaticBooking.setStatus("BOOKED");
+        automaticBooking.setStatus(workOrderDto.getStatus());
         automaticBooking.setDate(workOrderDto.getDate());
         automaticBooking.setStartTime(workOrderDto.getStartTime());
         automaticBooking.setDurationMinutes(workOrderDto.getDuration());
@@ -62,11 +62,12 @@ public class DropInWorkOrder implements WorkOrderTypeInterface{
     }
 
     private WorkOrder getWorkOrder(WorkOrderDto workOrderDto, Booking automaticBooking) {
-        WorkOrder workOrder = new WorkOrder();
-        workOrder.setBookingId(automaticBooking.getId());
-        workOrder.setMechanicId(workOrderDto.getMechanicId());
-        workOrder.setType(WorkOrderTypeEnum.DROP_IN);
-        workOrder.setStatus("CREATED");
+        WorkOrder workOrder = new WorkOrder(
+                0,
+                automaticBooking.getId(),
+                workOrderDto.getMechanicId(),
+                WorkOrderTypeEnum.DROP_IN
+        );
 
         if (workOrderDto.getServices() != null) {
             for (int serviceId : workOrderDto.getServices()) {

@@ -320,6 +320,7 @@ public class CreateWorkOrderView  extends VBox {
             }
 
             //GarageSystem anropar WorkOrderTypeManager
+            selectedType = typeComboBox.getValue();
             WorkOrder workOrder = garageSystem.createWorkOrder(dto, selectedType);
 
             if(workOrder == null){

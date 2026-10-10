@@ -5,6 +5,7 @@ import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.model.WorkOrderStatus;
 
 public class PlannedWorkOrder implements WorkOrderTypeInterface{
 
@@ -21,11 +22,12 @@ public class PlannedWorkOrder implements WorkOrderTypeInterface{
             return null;
         }
         //Skapa variabel och sätt in type enum
-        WorkOrder order = new WorkOrder();
-        order.setBookingId(dto.getBookingId());
-        order.setMechanicId(dto.getMechanicId());
-        order.setType(WorkOrderTypeEnum.PLANNED);
-        order.setStatus("WORK_ORDER_CREATED");
+        WorkOrder order = new WorkOrder(
+                0,
+                dto.getBookingId(),
+                dto.getMechanicId(),
+                WorkOrderTypeEnum.PLANNED
+        );
 
         for (ServiceItem serviceItem : booking.getServices()) {
             order.addServiceItem(serviceItem.getId());
