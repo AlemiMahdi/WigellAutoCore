@@ -8,6 +8,18 @@ import org.hibernate.Session;
 import org.hibernate.Transaction;
 
 import java.util.List;
+import com.wac.autocore.model.Mechanic;
+import com.wac.autocore.model.ServiceItem;
+import com.wac.autocore.model.WorkOrderStatus;
+import org.hibernate.LockMode;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import com.wac.autocore.model.Vehicle;
+import com.wac.autocore.model.Customer;
 
 public class WorkOrderRepository {
 
@@ -90,6 +102,229 @@ public class WorkOrderRepository {
         return findAll();
     }
 
+    public List<String> confirmDraft(int workOrderId) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Transaction transaction = session.beginTransaction();
+
+            try {
+                List<String> errors = new ArrayList<>();
+
+                WorkOrder workOrder = session.get(
+                        WorkOrder.class,
+                        workOrderId,
+                        LockMode.PESSIMISTIC_WRITE
+                );
+
+                if (workOrder == null) {
+                    errors.add("confirmWorkOrder.orderMissing");
+                } else if (workOrder.getStatus() != WorkOrderStatus.DRAFT) {
+                    errors.add("confirmWorkOrder.onlyDraft");
+                }
+
+                if (!errors.isEmpty()) {
+                    transaction.rollback();
+                    return errors;
+                }
+
+                if (workOrder.getType() == null) {
+                    errors.add("confirmWorkOrder.typeMissing");
+                }
+
+                Booking booking = session.get(
+                        Booking.class,
+                        workOrder.getBookingId(),
+                        LockMode.PESSIMISTIC_WRITE
+                );
+
+                if (booking == null) {
+                    errors.add("confirmWorkOrder.bookingMissing");
+                } else {
+                    Vehicle vehicle = session.get(
+                            Vehicle.class, booking.getVehicleId()
+                    );
+
+                    if (vehicle == null) {
+                        errors.add("confirmWorkOrder.vehicleMissing");
+                    } else if (session.get(
+                            Customer.class, vehicle.getCustomerId()) == null) {
+                        errors.add("confirmWorkOrder.customerMissing");
+                    }
+                }
+
+                if (workOrder.getMechanicId() == 0
+                        || session.get(
+                        Mechanic.class, workOrder.getMechanicId()) == null) {
+                    errors.add("confirmWorkOrder.mechanicMissing");
+                }
+
+                List<Integer> serviceIds = workOrder.getServiceItemIds();
+
+                if (serviceIds == null || serviceIds.isEmpty()) {
+                    errors.add("confirmWorkOrder.servicesMissing");
+                } else {
+                    for (Integer serviceId : serviceIds) {
+                        if (serviceId == null
+                                || session.get(ServiceItem.class, serviceId) == null) {
+                            errors.add("confirmWorkOrder.serviceMissing");
+                            break;
+                        }
+                    }
+                }
+
+                if (!errors.isEmpty()) {
+                    transaction.rollback();
+                    return errors;
+                }
+
+                workOrder.changeStatus(WorkOrderStatus.CONFIRMED);
+                transaction.commit();
+
+                return errors;
+
+            } catch (RuntimeException exception) {
+                if (transaction.isActive()) {
+                    transaction.rollback();
+                }
+                throw exception;
+            }
+        }
+    }
+
+    public void updateDraft(
+            WorkOrder draft,
+            Booking booking,
+            List<Integer> serviceIds,
+            int mechanicId,
+            LocalDate plannedDate,
+            int minutes,
+            BigDecimal price,
+            String instructions,
+            String comments
+    ) {
+        if (draft == null || draft.getStatus() != WorkOrderStatus.DRAFT) {
+            throw new IllegalArgumentException("editWorkOrderDraft.onlyDraft");
+        }
+
+        if (booking == null || booking.getId() != draft.getBookingId()) {
+            throw new IllegalArgumentException("editWorkOrderDraft.bookingMissing");
+        }
+
+        if (minutes < 0) {
+            throw new IllegalArgumentException("editWorkOrderDraft.invalidMinutes");
+        }
+
+        BigDecimal normalizedPrice = price;
+
+        if (price != null) {
+            try {
+                normalizedPrice = price.setScale(2, RoundingMode.UNNECESSARY);
+            } catch (ArithmeticException exception) {
+                throw new IllegalArgumentException("editWorkOrderDraft.invalidPrice");
+            }
+
+            if (normalizedPrice.signum() < 0
+                    || normalizedPrice.compareTo(
+                    new BigDecimal("9999999999.99")) > 0) {
+                throw new IllegalArgumentException("editWorkOrderDraft.invalidPrice");
+            }
+        }
+
+        String savedInstructions = instructions == null ? "" : instructions.trim();
+        String savedComments = comments == null ? "" : comments.trim();
+
+        if (savedInstructions.length() > 4000 || savedComments.length() > 4000) {
+            throw new IllegalArgumentException("editWorkOrderDraft.textTooLong");
+        }
+
+        List<Integer> selectedIds =
+                new ArrayList<>(new LinkedHashSet<>(serviceIds));
+
+        List<ServiceItem> savedServices = new ArrayList<>();
+
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Transaction transaction = session.beginTransaction();
+
+            try {
+                WorkOrder savedDraft = session.get(
+                        WorkOrder.class, draft.getId(), LockMode.PESSIMISTIC_WRITE
+                );
+
+                if (savedDraft == null
+                        || savedDraft.getStatus() != WorkOrderStatus.DRAFT) {
+                    throw new IllegalArgumentException(
+                            "editWorkOrderDraft.onlyDraft"
+                    );
+                }
+
+                Booking savedBooking = session.get(
+                        Booking.class,
+                        savedDraft.getBookingId(),
+                        LockMode.PESSIMISTIC_WRITE
+                );
+
+                if (savedBooking == null || savedBooking.getId() != booking.getId()) {
+                    throw new IllegalArgumentException(
+                            "editWorkOrderDraft.bookingMissing"
+                    );
+                }
+
+                if (mechanicId != 0
+                        && session.get(Mechanic.class, mechanicId) == null) {
+                    throw new IllegalArgumentException(
+                            "editWorkOrderDraft.mechanicMissing"
+                    );
+                }
+
+                for (Integer serviceId : selectedIds) {
+                    ServiceItem service = serviceId == null
+                            ? null
+                            : session.get(ServiceItem.class, serviceId);
+
+                    if (service == null) {
+                        throw new IllegalArgumentException(
+                                "editWorkOrderDraft.serviceMissing"
+                        );
+                    }
+
+                    savedServices.add(service);
+                }
+
+                savedDraft.getServiceItemIds().clear();
+                savedDraft.getServiceItemIds().addAll(selectedIds);
+                savedDraft.setMechanicId(mechanicId);
+                savedDraft.setEstimatedPrice(normalizedPrice);
+                savedDraft.setCustomerInstructions(savedInstructions);
+                savedDraft.setDraftComments(savedComments);
+
+                savedBooking.setDate(plannedDate);
+                savedBooking.setDurationMinutes(minutes);
+                savedBooking.setMechanicId(mechanicId == 0 ? null : mechanicId);
+                savedBooking.getServices().clear();
+                savedBooking.getServices().addAll(savedServices);
+
+                // Status, problembeskrivning och historiska priser ändras inte.
+                transaction.commit();
+
+            } catch (RuntimeException exception) {
+                if (transaction.isActive()) {
+                    transaction.rollback();
+                }
+                throw exception;
+            }
+        }
+
+        // Uppdaterar appens objekt först efter lyckad commit.
+        draft.setServiceItemIds(new ArrayList<>(selectedIds));
+        draft.setMechanicId(mechanicId);
+        draft.setEstimatedPrice(normalizedPrice);
+        draft.setCustomerInstructions(savedInstructions);
+        draft.setDraftComments(savedComments);
+
+        booking.setDate(plannedDate);
+        booking.setDurationMinutes(minutes);
+        booking.setMechanicId(mechanicId == 0 ? null : mechanicId);
+        booking.setServices(new ArrayList<>(savedServices));
+    }
     public void saveDropInOrder(WorkOrder workOrder, Booking booking) {
         org.hibernate.Session session = HibernateUtil.getSessionFactory().openSession();
         org.hibernate.Transaction tx = null;
