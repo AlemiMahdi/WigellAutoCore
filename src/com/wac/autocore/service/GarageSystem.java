@@ -363,7 +363,7 @@ public class GarageSystem {
         Mechanic mechanic = findMechanic(workOrder.getMechanicId());
         Booking booking = findBooking(workOrder.getBookingId());
 
-        if (mechanic == null) {
+        if (mechanic == null || !mechanic.isAvailable()) {
             System.out.println("Cannot start work order: mechanic is missing.");
             return;
         }
