@@ -59,7 +59,7 @@ public class DropInWorkOrder implements WorkOrderTypeInterface{
         automaticBooking.setFrozenPrice(frozenPrices);
         automaticBooking.setDurationMinutes(totalDuration);
 
-        //Database.getBookings().add(automaticBooking);
+        Database.getBookings().add(automaticBooking);
 
         return getWorkOrder(workOrderDto, automaticBooking);
     }

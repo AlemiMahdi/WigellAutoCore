@@ -313,9 +313,9 @@ public class CreateWorkOrderView  extends VBox {
                         0, customerId, vehicle.getId(), "Drop-in",
                         serviceIds, mechanic.getId(), totalPrice
                 );
-//                dto.setDate(date);
-//                dto.setStartTime(startTime);
-//                dto.setDuration(durationMinutes);
+                dto.setDate(date);
+                dto.setStartTime(startTime);
+                dto.setDuration(durationMinutes);
                 //GarageSystem anropar WorkOrderTypeManager
                 selectedType = typeComboBox.getValue();
                 workOrder = garageSystem.createWorkOrder(dto, selectedType);
@@ -356,8 +356,6 @@ public class CreateWorkOrderView  extends VBox {
                             workOrderRepository.saveDropInOrder(workOrder, autoBooking);
                             if (!Database.getBookings().contains(autoBooking)) {
                                 Database.getBookings().add(autoBooking);
-                            } else {
-                                workOrderRepository.save(workOrder);
                             }
                         }
                     }
@@ -393,7 +391,6 @@ public class CreateWorkOrderView  extends VBox {
             vehicleCombo.setValue(null);
             datePicker.setValue(null);
             startTimeField.clear();
-           // serviceList.getSelectionModel().clearSelection();
             selectedServices.clear();
 
         });
