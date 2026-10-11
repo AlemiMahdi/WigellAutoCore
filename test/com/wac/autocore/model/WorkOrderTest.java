@@ -52,4 +52,31 @@ public class WorkOrderTest {
                 () -> WorkOrder.createDraft(1, 5, null));
     }
 
+    // Testar endast statusövergången, inte om uppgifterna är kompletta.
+    @Test
+    void draftCanChangeToConfirmed() {
+        WorkOrder draft = WorkOrder.createDraft(
+                1, 5, WorkOrderTypeEnum.PLANNED
+        );
+
+        draft.changeStatus(WorkOrderStatus.CONFIRMED);
+
+        assertEquals(WorkOrderStatus.CONFIRMED, draft.getStatus());
+    }
+
+    // Ett utkast får inte startas direkt utan bekräftelse.
+    @Test
+    void draftCannotStartBeforeConfirmation() {
+        WorkOrder draft = WorkOrder.createDraft(
+                1, 5, WorkOrderTypeEnum.PLANNED
+        );
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> draft.changeStatus(WorkOrderStatus.IN_PROGRESS)
+        );
+
+        assertEquals(WorkOrderStatus.DRAFT, draft.getStatus());
+    }
+
 }

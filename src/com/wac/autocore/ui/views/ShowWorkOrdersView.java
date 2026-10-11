@@ -9,11 +9,13 @@ import com.wac.autocore.model.WorkOrder;
 import com.wac.autocore.model.WorkOrderStatus;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
+import com.wac.autocore.service.GarageSystem;
 
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.FlowPane;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -105,7 +107,71 @@ public class ShowWorkOrdersView {
                 root.getChildren().setAll(backButton, editView);
             });
 
-            card.getChildren().add(editButton);
+            Button confirmButton = UiKit.primaryButton("");
+            confirmButton.textProperty().bind(
+                    language.text("confirmWorkOrder.button")
+            );
+
+            VBox feedbackBox = new VBox(4);
+            feedbackBox.setVisible(false);
+            feedbackBox.setManaged(false);
+
+            confirmButton.setOnAction(event -> {
+                feedbackBox.getChildren().clear();
+                feedbackBox.setVisible(false);
+                feedbackBox.setManaged(false);
+
+                List<String> errors;
+
+                try {
+                    errors = new GarageSystem().confirmWorkOrder(workOrder.getId());
+                } catch (RuntimeException exception) {
+                    Label errorLabel = UiKit.feedbackLabel();
+                    errorLabel.setWrapText(true);
+                    UiKit.showError(errorLabel, "");
+                    errorLabel.textProperty().bind(
+                            language.text("confirmWorkOrder.saveError")
+                    );
+
+                    feedbackBox.getChildren().add(errorLabel);
+                    feedbackBox.setVisible(true);
+                    feedbackBox.setManaged(true);
+
+                    exception.printStackTrace();
+                    return;
+                }
+
+                if (!errors.isEmpty()) {
+                    for (String key : errors) {
+                        Label errorLabel = UiKit.feedbackLabel();
+                        errorLabel.setWrapText(true);
+                        UiKit.showError(errorLabel, "");
+                        errorLabel.textProperty().bind(language.text(key));
+
+                        feedbackBox.getChildren().add(errorLabel);
+                    }
+
+                    feedbackBox.setVisible(true);
+                    feedbackBox.setManaged(true);
+                    return;
+                }
+
+                Label successLabel = UiKit.feedbackLabel();
+                successLabel.setWrapText(true);
+                UiKit.showSuccess(successLabel, "");
+                successLabel.textProperty().bind(
+                        language.text("confirmWorkOrder.success")
+                                .concat(" WO-" + workOrder.getId())
+                );
+                VBox refreshedView = getView();
+                refreshedView.getChildren().add(1, successLabel);
+                root.getChildren().setAll(refreshedView);
+            });
+
+            FlowPane actions = new FlowPane(8, 8);
+            actions.getChildren().addAll(editButton, confirmButton);
+
+            card.getChildren().addAll(actions, feedbackBox);
         }
 
         return card;
