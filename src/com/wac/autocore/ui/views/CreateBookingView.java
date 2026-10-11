@@ -3,7 +3,9 @@ package com.wac.autocore.ui.views;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
 import com.wac.autocore.repository.BookingRepository;
+import com.wac.autocore.repository.WorkOrderRepository;
 import com.wac.autocore.service.GarageSystem;
+import com.wac.autocore.ui.AutoCoreApp;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 
@@ -197,10 +199,11 @@ public class CreateBookingView {
         Button createButton = UiKit.primaryButton("Create booking");
         createButton.textProperty().bind(language.text("createBooking.button"));
 
-        BookingRepository bookingRepository = new BookingRepository();
-
         createButton.setOnAction(event -> {
-
+            AutoCoreApp app = AutoCoreApp.getInstance();
+            GarageSystem garageSystem = app.getGarageSystem();
+            WorkOrderRepository workOrderRepository = app.getWorkOrderRepository();
+            BookingRepository bookingRepository = app.getBookingRepository();
 
             Vehicle vehicle = vehicleCombo.getValue();
             if (vehicle == null) {

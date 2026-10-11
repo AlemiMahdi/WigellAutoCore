@@ -235,4 +235,25 @@ public class WorkOrderRepository {
         booking.setMechanicId(mechanicId == 0 ? null : mechanicId);
         booking.setServices(new ArrayList<>(savedServices));
     }
+    
+    public void saveDropInOrder(WorkOrder workOrder, Booking booking) {
+        org.hibernate.Session session = HibernateUtil.getSessionFactory().openSession();
+        org.hibernate.Transaction tx = null;
+        try {
+            tx = session.beginTransaction();
+
+            // 1. Spara bokningen först så att MySQL genererar dess data och fordonet länkas
+            session.save(booking);
+            session.save(workOrder);
+
+            tx.commit();
+            System.out.println("Drop-in order och skuggbokning sparades i samma transaktion via DI!");
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            e.printStackTrace();
+            throw new RuntimeException("Kunde inte spara drop-in-order via repository: " + e.getMessage());
+        } finally {
+            session.close();
+        }
+    }
 }

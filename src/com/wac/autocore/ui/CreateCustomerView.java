@@ -38,9 +38,11 @@ public class CreateCustomerView extends VBox {
         saveButton.textProperty().bind(language.text("customer.create.title"));
         saveButton.setOnAction(event -> saveCustomer());
 
+        Button backBtn = UiKit.backButton(language.text("createWorkOrder.backBtn"), "create-work-order");
+
         // Rubriken ligger inne i formulärkolumnen, som i designen
         getChildren().add(UiKit.formContainer(
-                UiKit.pageHeader(language.text("customer.create.title"), null),
+                UiKit.pageHeader(language.text("customer.create.title"), backBtn),
                 UiKit.formField(language.text("customers.name"), nameField),
                 UiKit.formField(language.text("customers.phone"), phoneField),
                 UiKit.formField(language.text("customers.email"), emailField),
