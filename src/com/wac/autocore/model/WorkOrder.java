@@ -22,6 +22,9 @@ public class WorkOrder {
     @Column(name = "mechanic_id")
     private int mechanicId;
 
+    @Column (name = "original_work_order_id")
+    private Integer originalWorkOrderId;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
             name = "work_order_services",
@@ -135,6 +138,27 @@ public class WorkOrder {
     public WorkOrderTypeEnum getType(){ return type; }
 
     public void setType(WorkOrderTypeEnum type) { this.type = type;}
+
+    public Integer getOriginalWorkOrderId() { return originalWorkOrderId; }
+    public void setOriginalWorkOrderId(Integer originalWorkOrderId) {
+
+        if (originalWorkOrderId != null) {
+
+            if (this.type != WorkOrderTypeEnum.COMPLAINT) {
+                throw new IllegalStateException(
+                    "Only complaint work orders can reference an original work order."
+                );
+            }
+
+            if (originalWorkOrderId == this.id) {
+                throw new IllegalArgumentException(
+                    "A work order cannot reference itself."
+                );
+            }
+        }
+
+        this.originalWorkOrderId = originalWorkOrderId;
+    }
 
     public BigDecimal getEstimatedPrice() {
         return estimatedPrice;

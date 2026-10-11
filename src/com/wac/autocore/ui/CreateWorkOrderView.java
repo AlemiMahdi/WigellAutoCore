@@ -1,8 +1,15 @@
 package com.wac.autocore.ui;
 
+import com.wac.autocore.model.InvoiceLine;
+import com.wac.autocore.model.ServiceItem;
+import com.wac.autocore.model.Customer;
 import com.wac.autocore.DTO.WorkOrderDto;
 import com.wac.autocore.data.Database;
-import com.wac.autocore.model.*;
+import com.wac.autocore.model.Booking;
+import com.wac.autocore.model.Mechanic;
+import com.wac.autocore.model.Vehicle;
+import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.model.WorkOrderStatus;
 import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.repository.WorkOrderRepository;
 import com.wac.autocore.service.GarageSystem;
@@ -157,6 +164,95 @@ public class CreateWorkOrderView  extends VBox {
         typeComboBox.setValue(WorkOrderTypeEnum.PLANNED);
         UiKit.keepPromptWhenCleared(typeComboBox);
 
+        ComboBox<WorkOrder> originalWorkOrderCombo = new ComboBox<>(
+            FXCollections.observableArrayList(
+                Database.getWorkOrders()
+                    .stream()
+                    .filter(workOrder ->
+                        workOrder.getStatus() == WorkOrderStatus.COMPLETED
+                    )
+                    .collect(java.util.stream.Collectors.toList())
+            )
+        );
+        originalWorkOrderCombo.promptTextProperty().bind(
+                language.text("createWorkOrder.selectOriginalWorkOrder")
+        );
+        originalWorkOrderCombo.setConverter(new StringConverter<WorkOrder>() {
+
+            
+            @Override
+            public String toString(WorkOrder workOrder) {
+                if (workOrder == null) {
+                    return "";
+                }
+                return "#" + workOrder.getId()
+                + " - Booking ID: " + workOrder.getBookingId();
+            }
+
+            @Override
+            public WorkOrder fromString(String text) {
+                return null;
+            }
+
+            
+        });
+
+        UiKit.keepPromptWhenCleared(originalWorkOrderCombo);
+        VBox originalWorkOrderField = UiKit.formField(
+                language.text("createWorkOrder.originalWorkOrder"),
+                originalWorkOrderCombo
+        );
+        originalWorkOrderField.visibleProperty().bind(
+            typeComboBox.valueProperty().isEqualTo(WorkOrderTypeEnum.COMPLAINT)
+        );
+        originalWorkOrderField.managedProperty().bind(
+            originalWorkOrderField.visibleProperty()
+        );
+
+        // Välj automatiskt originalarbetsorderns bokning vid reklamation.
+        originalWorkOrderCombo.valueProperty().addListener(
+            (obs, oldValue, originalWorkOrder) -> {
+
+                if (typeComboBox.getValue() != WorkOrderTypeEnum.COMPLAINT) {
+                    return;
+                }
+
+                if (originalWorkOrder == null) {
+                    bookingComboBox.setValue(null);
+                    return;
+                }
+
+                Booking matchingBooking = bookingComboBox.getItems()
+                    .stream()
+                    .filter(booking ->
+                        booking.getId() == originalWorkOrder.getBookingId()
+                    )
+                    .findFirst()
+                    .orElse(null);
+
+                bookingComboBox.setValue(matchingBooking);
+            }
+        );
+
+        // Lås bokningsfältet för reklamationer.
+        bookingComboBox.disableProperty().bind(
+            typeComboBox.valueProperty().isEqualTo(WorkOrderTypeEnum.COMPLAINT)
+        );
+
+        // Återställ bokningsvalet när arbetsordertypen ändras.
+        typeComboBox.valueProperty().addListener(
+            (obs, oldType, newType) -> {
+
+                if (newType == WorkOrderTypeEnum.COMPLAINT) {
+                    originalWorkOrderCombo.setValue(null);
+                    bookingComboBox.setValue(null);
+                } else if (oldType == WorkOrderTypeEnum.COMPLAINT) {
+                    originalWorkOrderCombo.setValue(null);
+                    bookingComboBox.setValue(null);
+                }
+            }
+        );
+
         //ny för drop-in arbetsorder
         ComboBox<Vehicle> vehicleComboBox = new ComboBox<>(FXCollections.observableArrayList(Database.getVehicles()));
         vehicleComboBox.promptTextProperty().bind(language.text("createWorkOrder.selectVehicle"));
@@ -241,6 +337,15 @@ public class CreateWorkOrderView  extends VBox {
                 return;
             }
 
+          WorkOrder originalWorkOrder = originalWorkOrderCombo.getValue();
+
+          if (selectedType == WorkOrderTypeEnum.COMPLAINT && originalWorkOrder == null) {
+              UiKit.showError(
+                  feedbackLabel,
+                  language.text("createWorkOrder.missingOriginalWorkOrder").get()
+              );
+              return;
+          } 
            // WorkOrderDto dto = new WorkOrderDto();
             WorkOrder workOrder = null;
 
@@ -320,6 +425,9 @@ public class CreateWorkOrderView  extends VBox {
                 previousBookingStatus = booking.getStatus();
 
                 WorkOrderDto dto = new WorkOrderDto(booking.getId(), mechanic.getId());
+                if (selectedType == WorkOrderTypeEnum.COMPLAINT) {
+                    dto.setOriginalWorkOrderId(originalWorkOrder.getId());
+                }
                 workOrder = garageSystem.createWorkOrder(dto, selectedType);
             }
 
@@ -332,10 +440,60 @@ public class CreateWorkOrderView  extends VBox {
                 }
                 return;
             }
+            if (selectedType == WorkOrderTypeEnum.COMPLAINT) {
+                workOrder.setOriginalWorkOrderId(originalWorkOrder.getId());
+            }
 
             try {
-                // Sparar arbetsordern och bokningens nya status i MySQL.
-                if(booking != null) {
+// Reklamationen får en egen bokning.
+                if (selectedType == WorkOrderTypeEnum.COMPLAINT) {
+                    int newBookingId = Database.getBookings().stream()
+                            .mapToInt(Booking::getId)
+                            .max()
+                            .orElse(0) + 1;
+
+                    Booking complaintBooking = new Booking(
+                            newBookingId,
+                            booking.getVehicleId(),
+                            null,
+                            booking.getDescription()
+                    );
+
+                    complaintBooking.setStatus("WORK_ORDER_CREATED");
+                    complaintBooking.setMechanicId(mechanic.getId());
+
+                    List<ServiceItem> complaintServices = new ArrayList<>();
+                    int totalMinutes = 0;
+
+                    for (Integer serviceId : workOrder.getServiceItemIds()) {
+                        ServiceItem service = Database.getServiceItems().stream()
+                                .filter(item -> Integer.valueOf(item.getId()).equals(serviceId))
+                                .findFirst()
+                                .orElseThrow(() ->
+                                        new IllegalArgumentException(
+                                                "editWorkOrderDraft.serviceMissing"
+                                        )
+                                );
+
+                        complaintServices.add(service);
+                        totalMinutes += service.getEstimatedMinutes();
+
+                        complaintBooking.getFrozenPrice().add(
+                                new InvoiceLine(service.getId(), service.getName(), 0.0)
+                        );
+                    }
+
+                    complaintBooking.setServices(complaintServices);
+                    complaintBooking.setDurationMinutes(totalMinutes);
+
+                    workOrder.setBookingId(newBookingId);
+
+                    workOrderRepository.saveWithBooking(workOrder, complaintBooking);
+
+                    // Lägg till bokningen i minnet först efter lyckad sparning.
+                    Database.getBookings().add(complaintBooking);
+
+                } else if (booking != null) {
                     workOrderRepository.save(workOrder);
                     bookingRepository.save(booking);
                 } else {
@@ -375,6 +533,8 @@ public class CreateWorkOrderView  extends VBox {
             mechanicComboBox.getSelectionModel().clearSelection();
             mechanicComboBox.setValue(null);
             typeComboBox.setValue(WorkOrderTypeEnum.PLANNED);
+            originalWorkOrderCombo.getSelectionModel().clearSelection();
+            originalWorkOrderCombo.setValue(null);
             vehicleComboBox.getSelectionModel().clearSelection();
             vehicleComboBox.setValue(null);
             datePicker.setValue(null);
@@ -386,17 +546,18 @@ public class CreateWorkOrderView  extends VBox {
         });
 
         getChildren().add(UiKit.formContainer(
-                UiKit.pageHeader(language.text("createWorkOrder.title"), null),
-                typeField,
-                bookingField,
-                vehicleField,
-                dateTimeRow,
-                durationMechanicRow,
-                priceField,
-                serviceField,
-                saveButton,
-                feedbackLabel
-        ));
+            UiKit.pageHeader(language.text("createWorkOrder.title"), null),
+            typeField,
+            originalWorkOrderField,
+            bookingField,
+            vehicleField,
+            dateTimeRow,
+            durationMechanicRow,
+            priceField,
+            serviceField,
+            saveButton,
+            feedbackLabel
+      ));
     }
 
     // Visar bokningen som "#3 · GHI321 · Tire change"

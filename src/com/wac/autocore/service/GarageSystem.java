@@ -201,7 +201,7 @@ public class GarageSystem {
     public WorkOrder createWorkOrder(WorkOrderDto dto, WorkOrderTypeEnum type) {
 
         Mechanic mechanic = findMechanic(dto.getMechanicId());
-        if (mechanic == null || !mechanic.isAvailable()) {
+        if (mechanic == null) {
             System.out.println("Mechanic with ID " + dto.getMechanicId() + " does not exist or is not available.");
             return null;
         }
@@ -215,11 +215,15 @@ public class GarageSystem {
         }
 
         Booking booking = findBooking(workOrder.getBookingId());
-        if (booking != null) {
+        if (booking != null && type != WorkOrderTypeEnum.COMPLAINT) {
             booking.setStatus("WORK_ORDER_CREATED");
         }
 
-        int id = Database.getWorkOrders().size() + 1;
+        int id = Database.getWorkOrders().stream()
+        .mapToInt(WorkOrder::getId)
+        .max()
+        .orElse(0) + 1;
+
         workOrder.setId(id);
 
         System.out.println("Work order created successfully.");
@@ -270,6 +274,24 @@ public class GarageSystem {
 
         if (workOrder.getType() == null) {
             errors.add("confirmWorkOrder.typeMissing");
+        }
+
+        if (workOrder.getType() == WorkOrderTypeEnum.COMPLAINT) {
+            Integer originalId = workOrder.getOriginalWorkOrderId();
+
+            if (originalId == null) {
+                errors.add("confirmWorkOrder.originalRequired");
+            } else if (originalId.intValue() == workOrder.getId()) {
+                errors.add("confirmWorkOrder.originalSelfReference");
+            } else {
+                WorkOrder original = findWorkOrder(originalId);
+
+                if (original == null) {
+                    errors.add("confirmWorkOrder.originalMissing");
+                } else if (original.getStatus() != WorkOrderStatus.COMPLETED) {
+                    errors.add("confirmWorkOrder.originalNotCompleted");
+                }
+            }
         }
 
         Booking booking = findBooking(workOrder.getBookingId());
@@ -359,23 +381,22 @@ public class GarageSystem {
         Mechanic mechanic = findMechanic(workOrder.getMechanicId());
         Booking booking = findBooking(workOrder.getBookingId());
 
+        if (mechanic == null || !mechanic.isAvailable()) {
+            System.out.println("Cannot start work order: mechanic is missing or unavailable.");
+            return;
+        }
+
         if (booking == null) {
             System.out.println("Cannot start work order: booking is missing.");
             return;
         }
 
-        if (mechanic == null) {
-            System.out.println("Cannot start work order: mechanic is missing.");
-            return;
-        }
-
-        if (mechanic != null) {
-            mechanic.setAvailable(false);
-        }
-
-        if (booking != null) {
+        // Reklamationer ska inte ändra originalbokningens status.
+        if (!sharesOriginalBooking(workOrder)) {
             booking.setStatus("IN_PROGRESS");
         }
+
+        mechanic.setAvailable(false);
 
         workOrder.changeStatus(WorkOrderStatus.IN_PROGRESS);
 
@@ -404,18 +425,43 @@ public class GarageSystem {
             mechanic.setAvailable(true);
         }
 
-        if (booking != null) {
+        if (booking != null && !sharesOriginalBooking(workOrder)) {
             booking.setStatus("COMPLETED");
         }
 
         System.out.println("Work order " + workOrderId + " has been completed.");
     }
 
-    public Invoice createInvoice(int workOrderId, String discountCode) {
+    public Invoice createInvoice(
+            int workOrderId, 
+            String discountCode,
+            String extraDescription,
+            double extraCost) {
         WorkOrder workOrder = findWorkOrder(workOrderId);
 
         if (workOrder == null) {
             System.out.println("Work order with ID " + workOrderId + " does not exist.");
+            return null;
+        }
+        boolean alreadyInvoiced = Database.getInvoices()
+        .stream()
+        .anyMatch(invoice -> invoice.getWorkOrderId() == workOrderId);
+
+        if (alreadyInvoiced) {
+            System.out.println(
+                "Work order " + workOrderId + " already has an invoice."
+            );
+            return null;
+        }
+        if (!Double.isFinite(extraCost) || extraCost < 0) {
+            System.out.println("Extra cost must be a valid non-negative number.");
+            return null;
+        }
+
+        if (workOrder.getType() == WorkOrderTypeEnum.COMPLAINT
+                && extraCost > 0
+                && (extraDescription == null || extraDescription.isEmpty())) {
+            System.out.println("Extra cost requires a description.");
             return null;
         }
 
@@ -439,13 +485,48 @@ public class GarageSystem {
                     0.0
             );
 
-            for(InvoiceLine frozenLine : booking.getFrozenPrice()){
-                InvoiceLine line = new InvoiceLine(
+            boolean isComplaint = workOrder.getType() == WorkOrderTypeEnum.COMPLAINT;
+
+        if (isComplaint) {
+            for (Integer serviceId : workOrder.getServiceItemIds()) {
+                ServiceItem service = Database.getServiceItems().stream()
+                        .filter(item -> Integer.valueOf(item.getId()).equals(serviceId))
+                        .findFirst()
+                        .orElse(null);
+
+                if (service == null) {
+                    System.out.println(
+                            "Cannot create invoice: service missing, ID " + serviceId
+                    );
+                    return null;
+                }
+
+                invoice.addLine(new InvoiceLine(
+                        service.getId(),
+                        service.getName(),
+                        0.0
+                ));
+            }
+        } else {
+            for (InvoiceLine frozenLine : booking.getFrozenPrice()) {
+                invoice.addLine(new InvoiceLine(
                         frozenLine.getServiceItemId(),
                         frozenLine.getServiceName(),
                         frozenLine.getPrice()
-                ); invoice.addLine(line);
+                ));
             }
+        }
+
+            if (isComplaint && extraCost > 0) {
+                InvoiceLine extraLine = new InvoiceLine(
+                    0,
+                    extraDescription,
+                    extraCost
+                );
+
+                invoice.addLine(extraLine);
+            }
+
             double amount = invoice.getAmount();
             double discount = 0.0;
 
@@ -552,6 +633,20 @@ public class GarageSystem {
         }
 
         return payment;
+    }
+
+    private boolean sharesOriginalBooking(WorkOrder workOrder) {
+        if (workOrder.getType() != WorkOrderTypeEnum.COMPLAINT
+                || workOrder.getOriginalWorkOrderId() == null) {
+            return false;
+        }
+
+        WorkOrder original = findWorkOrder(
+                workOrder.getOriginalWorkOrderId()
+        );
+
+        return original != null
+                && original.getBookingId() == workOrder.getBookingId();
     }
 
     private Customer findCustomer(int id) {

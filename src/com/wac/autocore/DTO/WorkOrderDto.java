@@ -10,6 +10,7 @@ public class WorkOrderDto {
     private Integer bookingId;
     private Integer customerId;
     private Integer vehicleId;
+    private Integer originalWorkOrderId;
     private String description;
     private String status;
     private List<Integer> services;
@@ -18,6 +19,7 @@ public class WorkOrderDto {
     private LocalDate date;
     private LocalTime startTime;
     private int duration;
+
 
     public WorkOrderDto(){}
 
@@ -108,4 +110,11 @@ public class WorkOrderDto {
     public LocalDate getDate() { return date; }
     public LocalTime getStartTime() { return startTime; }
     public int getDuration() { return duration; }
+    public Integer getOriginalWorkOrderId() {
+        return originalWorkOrderId;
+    }
+
+    public void setOriginalWorkOrderId(Integer originalWorkOrderId) {
+        this.originalWorkOrderId = originalWorkOrderId;
+    }
 }

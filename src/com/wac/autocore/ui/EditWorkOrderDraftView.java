@@ -1,5 +1,6 @@
 package com.wac.autocore.ui;
 
+import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.geometry.Pos;
@@ -70,6 +71,47 @@ public class EditWorkOrderDraftView {
             );
             return new VBox(10, errorLabel);
         }
+
+        boolean isComplaint = draft.getType() == WorkOrderTypeEnum.COMPLAINT;
+
+        ComboBox<WorkOrder> originalCombo = new ComboBox<>();
+        originalCombo.setMaxWidth(Double.MAX_VALUE);
+        originalCombo.promptTextProperty().bind(
+                language.text("createWorkOrder.selectOriginalWorkOrder")
+        );
+
+        for (WorkOrder order : Database.getWorkOrders()) {
+            if (order.getId() != draft.getId()
+                    && order.getStatus() == WorkOrderStatus.COMPLETED) {
+                originalCombo.getItems().add(order);
+            }
+        }
+
+        originalCombo.setConverter(new StringConverter<WorkOrder>() {
+            @Override
+            public String toString(WorkOrder order) {
+                return order == null ? "" : "WO-" + order.getId();
+            }
+
+            @Override
+            public WorkOrder fromString(String text) {
+                return null;
+            }
+        });
+
+        for (WorkOrder order : originalCombo.getItems()) {
+            if (Integer.valueOf(order.getId()).equals(draft.getOriginalWorkOrderId())) {
+                originalCombo.setValue(order);
+                break;
+            }
+        }
+
+        VBox originalField = UiKit.formField(
+                language.text("createWorkOrder.originalWorkOrder"),
+                originalCombo
+        );
+        originalField.setVisible(isComplaint);
+        originalField.setManaged(isComplaint);
 
         ComboBox<Mechanic> mechanicCombo = new ComboBox<>();
         mechanicCombo.getItems().setAll(Database.getMechanics());
@@ -203,76 +245,79 @@ public class EditWorkOrderDraftView {
                 try {
                     price = new BigDecimal(priceText).setScale(2, RoundingMode.UNNECESSARY);
 
-                    if (price.signum() < 0 ||price.compareTo(new BigDecimal("9999999999.99")) > 0){
+                    if (price.signum() < 0 || price.compareTo(new BigDecimal("9999999999.99")) > 0) {
                         throw new NumberFormatException();
                     }
 
                 } catch (IllegalArgumentException | ArithmeticException exception) {
-                    showFeedback (
-                        messageLabel, "editWorkOrderDraft.invalidPrice", false);
-                        return;
-
-
-                    }
-                }
-
-                java.time.LocalDate plannedDate = plannedDateField.getValue();
-
-                // Läs även datum som användaren har skrivit utan att lämna fältet.
-                try {
-                    String dateText = plannedDateField.getEditor().getText().trim();
-                    plannedDate = dateText.isEmpty() ? null : plannedDateField.getConverter().fromString(dateText);
-
-                    plannedDateField.setValue(plannedDate);
-                } catch (RuntimeException exception) {
-                    showFeedback(messageLabel, "editWorkOrderDraft.invalidDate", false);
+                    showFeedback(
+                            messageLabel, "editWorkOrderDraft.invalidPrice", false);
                     return;
-                    }
 
-                    Mechanic mechanic = mechanicCombo.getValue();
-                    int mechanicId = mechanic == null ? 0 : mechanic.getId();
 
-                    List<Integer> serviceIds = new ArrayList<>(selectedServiceIds);
+                }
+            }
 
-                    try {
-                        new WorkOrderRepository().updateDraft(
-                                draft,
-                                booking,
-                                serviceIds,
-                                mechanicId,
-                                plannedDate,
-                                minutes,
-                                price,
-                                instructionsField.getText(),
-                                commentsField.getText()
-                        );
+            java.time.LocalDate plannedDate = plannedDateField.getValue();
 
-                        showFeedback(messageLabel, "editWorkOrderDraft.saved", true);
+            // Läs även datum som användaren har skrivit utan att lämna fältet.
+            try {
+                String dateText = plannedDateField.getEditor().getText().trim();
+                plannedDate = dateText.isEmpty() ? null : plannedDateField.getConverter().fromString(dateText);
 
-                    } catch (IllegalArgumentException exception) {
-                        showFeedback(messageLabel, exception.getMessage(), false);
+                plannedDateField.setValue(plannedDate);
+            } catch (RuntimeException exception) {
+                showFeedback(messageLabel, "editWorkOrderDraft.invalidDate", false);
+                return;
+            }
 
-                    } catch (RuntimeException exception) {
-                        showFeedback(messageLabel, "editWorkOrderDraft.saveError", false);
-                        exception.printStackTrace();
-                    }
+            Mechanic mechanic = mechanicCombo.getValue();
+            int mechanicId = mechanic == null ? 0 : mechanic.getId();
 
-                });
+            List<Integer> serviceIds = new ArrayList<>(selectedServiceIds);
 
-                VBox form = UiKit.formContainer(
-                        UiKit.pageHeader(language.text("editWorkOrderDraft.title"), null),
-                        UiKit.formField(language.text("editWorkOrderDraft.mechanic"), mechanicFields),
-                        UiKit.formField(language.text("editWorkOrderDraft.services"), serviceChoices
-                        ),
-                        UiKit.formRow(
-                                UiKit.formField(language.text("editWorkOrderDraft.plannedDate"), plannedDateField),
-                                UiKit.formField(language.text("editWorkOrderDraft.estimatedMinutes"), estimatedMinutesField)
-                        ),
-                        UiKit.formField(language.text("editWorkOrderDraft.price"), priceField),
-                        UiKit.formField(language.text("editWorkOrderDraft.instructions"), instructionsField),
-                        UiKit.formField(language.text("editWorkOrderDraft.comments"), commentsField), saveButton, messageLabel
+            try {
+                new WorkOrderRepository().updateDraft(
+                        draft,
+                        booking,
+                        serviceIds,
+                        mechanicId,
+                        plannedDate,
+                        minutes,
+                        price,
+                        instructionsField.getText(),
+                        commentsField.getText(),
+                        isComplaint && originalCombo.getValue() != null
+                                ? Integer.valueOf(originalCombo.getValue().getId())
+                                : null
+                );
 
-                        );
+                showFeedback(messageLabel, "editWorkOrderDraft.saved", true);
+
+            } catch (IllegalArgumentException exception) {
+                showFeedback(messageLabel, exception.getMessage(), false);
+
+            } catch (RuntimeException exception) {
+                showFeedback(messageLabel, "editWorkOrderDraft.saveError", false);
+                exception.printStackTrace();
+            }
+
+        });
+
+        VBox form = UiKit.formContainer(
+                UiKit.pageHeader(language.text("editWorkOrderDraft.title"), null ),originalField,
+                UiKit.formField(language.text("editWorkOrderDraft.mechanic"), mechanicFields),
+                UiKit.formField(language.text("editWorkOrderDraft.services"), serviceChoices
+                ),
+                UiKit.formRow(
+                        UiKit.formField(language.text("editWorkOrderDraft.plannedDate"), plannedDateField),
+                        UiKit.formField(language.text("editWorkOrderDraft.estimatedMinutes"), estimatedMinutesField)
+                ),
+                UiKit.formField(language.text("editWorkOrderDraft.price"), priceField),
+                UiKit.formField(language.text("editWorkOrderDraft.instructions"), instructionsField),
+                UiKit.formField(language.text("editWorkOrderDraft.comments"), commentsField), saveButton, messageLabel
+
+        );
 
         clearMechButton.setStyle(
                 "-fx-text-fill: -fx-text-muted; -fx-padding: 2 0;"
@@ -282,10 +327,10 @@ public class EditWorkOrderDraftView {
                 mechanicCombo.valueProperty().isNull()
         );
 
-                VBox view = new VBox(form);
-                view.setAlignment(Pos.TOP_CENTER);
-                return view;
-            }
-        }
+        VBox view = new VBox(form);
+        view.setAlignment(Pos.TOP_CENTER);
+        return view;
+    }
+}
 
 
