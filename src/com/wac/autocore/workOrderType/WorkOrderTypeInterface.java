@@ -1,5 +1,6 @@
 package com.wac.autocore.workOrderType;
 
+import com.wac.autocore.DTO.WorkOrderDto;
 import com.wac.autocore.model.WorkOrder;
 
 public interface WorkOrderTypeInterface {
@@ -9,8 +10,7 @@ public interface WorkOrderTypeInterface {
     //Planerad arbetsorder, drop-in, reklamation med ENUM
     //Manager spindeln i nätet
 
-    WorkOrder createWorkOrder(int bookingId,
-                              int mechanicId);
+    WorkOrder createWorkOrder(WorkOrderDto workOrderDto);
     void startWorkOrder(int workOrderId);
     void completeWorkOrder(int workOrderId);
 }

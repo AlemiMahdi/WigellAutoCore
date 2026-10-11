@@ -1,5 +1,6 @@
 package com.wac.autocore.workOrderType;
 
+import com.wac.autocore.DTO.WorkOrderDto;
 import com.wac.autocore.model.WorkOrder;
 
 import java.util.ArrayList;
@@ -20,7 +21,7 @@ public class WorkOrderTypeManager {
         this.strategy = strategy;
     }
     //När en ny arbetsorder typ tillkommer, lägg in en klass och lägg till i switchsatsen, metoden createWorkOrderType
-    public WorkOrder createWorkOrderType(int bookingId, int mechanicId){
+    public WorkOrder createWorkOrderType(WorkOrderDto dto){
         if(this.strategy == null) {
             throw new IllegalStateException("Must put in strategy");
         }
@@ -37,7 +38,7 @@ public class WorkOrderTypeManager {
                 default:
                     throw new IllegalStateException("Unknown workOrderType");
         }
-        WorkOrder newOrder = orderStrategy.createWorkOrder(bookingId, mechanicId);
+        WorkOrder newOrder = orderStrategy.createWorkOrder(dto);
         createdWorkOrders.add(newOrder);
         return newOrder;
     }

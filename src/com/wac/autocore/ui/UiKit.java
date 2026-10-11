@@ -108,6 +108,15 @@ public final class UiKit {
         return button;
     }
 
+    //Återanvända och skapa en tillbaka knapp
+    public static Button backButton(ObservableValue<String> buttonText, String targetView) {
+        Button backButton = primaryButton("");
+        backButton.textProperty().bind(buttonText);
+        backButton.getStyleClass().add("back-button");
+        backButton.setOnAction(event -> { Navigator.goTo(targetView); });
+        return backButton;
+    }
+
     // ------------------------------------------------------------
     // Badges (små "piller" med status)
     // ------------------------------------------------------------

@@ -1,6 +1,8 @@
 package com.wac.autocore.ui;
 
 import java.net.URL;
+
+import com.wac.autocore.service.GarageSystem;
 import com.wac.autocore.ui.language.LanguageManager;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.data.HibernateUtil;
@@ -49,6 +51,35 @@ import java.util.Map;
  */
 
 public class AutoCoreApp extends Application {
+
+    private static AutoCoreApp instance;
+
+    private final GarageSystem garageSystem;
+    private final WorkOrderRepository workOrderRepository;
+    private final BookingRepository bookingRepository;
+    private final VehicleRepository vehicleRepository;
+
+    // FIX 1: Konstruktorn MÅSTE vara publik i en JavaFX-applikation!
+    public AutoCoreApp() {
+        this.garageSystem = new GarageSystem();
+        this.workOrderRepository = new WorkOrderRepository();
+        this.bookingRepository = new BookingRepository();
+        this.vehicleRepository = new VehicleRepository();
+
+        // Sätt instansen i samma sekund som JavaFX startar appen
+        synchronized (AutoCoreApp.class) {
+            instance = this;
+        }
+    }
+
+    // Global åtkomstpunkt för alla dina vyer
+    public static synchronized AutoCoreApp getInstance() {
+        // Om gränssnittet inte hunnit starta än skapar vi en tillfällig fallback
+        if (instance == null) {
+            instance = new AutoCoreApp();
+        }
+        return instance;
+    }
 
     private static final Logger LOGGER =
             Logger.getLogger(AutoCoreApp.class.getName());
@@ -741,6 +772,22 @@ public class AutoCoreApp extends Application {
         // Byggs om varje gång så att siffrorna alltid är aktuella.
         // (Scrollningen sköts av innehållsytans ScrollPane.)
         showView(new DashboardView());
+    }
+
+    public GarageSystem getGarageSystem() {
+        return garageSystem;
+    }
+
+    public WorkOrderRepository getWorkOrderRepository() {
+        return workOrderRepository;
+    }
+
+    public BookingRepository getBookingRepository() {
+        return bookingRepository;
+    }
+
+    public VehicleRepository getVehicleRepository() {
+        return vehicleRepository;
     }
 
     public static void main(String[] args) {launch(args);

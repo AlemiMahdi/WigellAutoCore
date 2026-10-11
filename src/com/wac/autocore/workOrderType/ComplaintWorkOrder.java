@@ -1,10 +1,13 @@
 package com.wac.autocore.workOrderType;
 
+import com.wac.autocore.DTO.WorkOrderDto;
 import com.wac.autocore.model.WorkOrder;
 
 public class ComplaintWorkOrder implements WorkOrderTypeInterface{
+
+
     @Override
-    public WorkOrder createWorkOrder(int bookingId, int mechanicId) {
+    public WorkOrder createWorkOrder(WorkOrderDto workOrderDto) {
         return null;
     }
 
