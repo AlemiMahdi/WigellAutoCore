@@ -8,6 +8,9 @@ import com.wac.autocore.workOrderType.WorkOrderTypeManager;
 
 import java.awt.print.Book;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import com.wac.autocore.repository.WorkOrderRepository;
 
 public class GarageSystem {
 
@@ -198,7 +201,7 @@ public class GarageSystem {
     public WorkOrder createWorkOrder(WorkOrderDto dto, WorkOrderTypeEnum type) {
 
         Mechanic mechanic = findMechanic(dto.getMechanicId());
-        if (mechanic == null || !mechanic.isAvailable()) {
+        if (mechanic == null) {
             System.out.println("Mechanic with ID " + dto.getMechanicId() + " does not exist or is not available.");
             return null;
         }
@@ -212,7 +215,7 @@ public class GarageSystem {
         }
 
         Booking booking = findBooking(workOrder.getBookingId());
-        if (booking != null) {
+        if (booking != null && type != WorkOrderTypeEnum.COMPLAINT) {
             booking.setStatus("WORK_ORDER_CREATED");
         }
 
@@ -260,6 +263,81 @@ public class GarageSystem {
         return draft;
     }
 
+    public List<String> validateWorkOrderForConfirmation(int workOrderId) {
+        List<String> errors = new ArrayList<>();
+        WorkOrder workOrder = findWorkOrder(workOrderId);
+
+        if (workOrder == null) {
+            errors.add("confirmWorkOrder.orderMissing");
+            return errors;
+        }
+
+        if (workOrder.getType() == null) {
+            errors.add("confirmWorkOrder.typeMissing");
+        }
+
+        Booking booking = findBooking(workOrder.getBookingId());
+
+        if (booking == null) {
+            errors.add("confirmWorkOrder.bookingMissing");
+        } else {
+            Vehicle vehicle = findVehicle(booking.getVehicleId());
+
+            if (vehicle == null) {
+                errors.add("confirmWorkOrder.vehicleMissing");
+            } else if (findCustomer(vehicle.getCustomerId()) == null) {
+                errors.add("confirmWorkOrder.customerMissing");
+            }
+        }
+
+        if (findMechanic(workOrder.getMechanicId()) == null) {
+            errors.add("confirmWorkOrder.mechanicMissing");
+        }
+
+        List<Integer> serviceIds = workOrder.getServiceItemIds();
+
+        if (serviceIds == null || serviceIds.isEmpty()) {
+            errors.add("confirmWorkOrder.servicesMissing");
+        } else {
+            for (Integer serviceId : serviceIds) {
+                boolean exists = serviceId != null
+                        && Database.getServiceItems().stream()
+                        .anyMatch(service -> service.getId() == serviceId);
+
+                if (!exists) {
+                    errors.add("confirmWorkOrder.serviceMissing");
+                    break;
+                }
+            }
+        }
+
+        return errors;
+    }
+
+    public List<String> confirmWorkOrder(int workOrderId) {
+        WorkOrder workOrder = findWorkOrder(workOrderId);
+        List<String> errors = new ArrayList<>();
+
+        if (workOrder == null) {
+            errors.add("confirmWorkOrder.orderMissing");
+            return errors;
+        }
+
+        if (workOrder.getStatus() != WorkOrderStatus.DRAFT) {
+            errors.add("confirmWorkOrder.onlyDraft");
+            return errors;
+        }
+
+        errors = new WorkOrderRepository().confirmDraft(workOrderId);
+
+        if (errors.isEmpty()) {
+            // Uppdatera minnet först när databasen har sparats.
+            workOrder.changeStatus(WorkOrderStatus.CONFIRMED);
+        }
+
+        return errors;
+    }
+
     public void startWorkOrder(int workOrderId) {
         WorkOrder workOrder = findWorkOrder(workOrderId);
 
@@ -267,23 +345,40 @@ public class GarageSystem {
             System.out.println("Work order with ID " + workOrderId + " does not exist.");
             return;
         }
-        
 
         if (!workOrder.getStatus().canChangeTo(WorkOrderStatus.IN_PROGRESS)) {
             System.out.println("Work order cannot be started.");
             return;
         }
 
+        List<String> errors = validateWorkOrderForConfirmation(workOrderId);
+
+        if (!errors.isEmpty()) {
+            System.out.println(
+                    "Work order cannot be started: " + String.join(", ", errors)
+            );
+            return;
+        }
+
         Mechanic mechanic = findMechanic(workOrder.getMechanicId());
         Booking booking = findBooking(workOrder.getBookingId());
 
-        if (mechanic != null) {
-            mechanic.setAvailable(false);
+        if (mechanic == null) {
+            System.out.println("Cannot start work order: mechanic is missing.");
+            return;
         }
 
-        if (booking != null) {
+        if (booking == null) {
+            System.out.println("Cannot start work order: booking is missing.");
+            return;
+        }
+
+        // Reklamationer ska inte ändra originalbokningens status.
+        if (workOrder.getType() != WorkOrderTypeEnum.COMPLAINT) {
             booking.setStatus("IN_PROGRESS");
         }
+
+        mechanic.setAvailable(false);
 
         workOrder.changeStatus(WorkOrderStatus.IN_PROGRESS);
 
@@ -312,7 +407,7 @@ public class GarageSystem {
             mechanic.setAvailable(true);
         }
 
-        if (booking != null) {
+        if (booking != null && workOrder.getType() != WorkOrderTypeEnum.COMPLAINT) {
             booking.setStatus("COMPLETED");
         }
 

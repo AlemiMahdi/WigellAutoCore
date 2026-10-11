@@ -1,5 +1,7 @@
 package com.wac.autocore.ui;
 
+import com.wac.autocore.model.ServiceItem;
+import com.wac.autocore.model.Customer;
 import com.wac.autocore.DTO.WorkOrderDto;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
@@ -250,8 +252,6 @@ public class CreateWorkOrderView  extends VBox {
             }
         );
 
-        Button saveButton = UiKit.primaryButton("Create work order");
-        saveButton.textProperty().bind(language.text("createWorkOrder.title"));
         //ny för drop-in arbetsorder
         ComboBox<Vehicle> vehicleComboBox = new ComboBox<>(FXCollections.observableArrayList(Database.getVehicles()));
         vehicleComboBox.promptTextProperty().bind(language.text("createWorkOrder.selectVehicle"));

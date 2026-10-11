@@ -9,14 +9,19 @@ import com.wac.autocore.model.WorkOrder;
 import com.wac.autocore.model.WorkOrderStatus;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
+import com.wac.autocore.service.GarageSystem;
 
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.FlowPane;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import com.wac.autocore.ui.EditWorkOrderDraftView;
+import javafx.scene.control.Button;
 
 // Visar arbetsordrarna som en kanban-tavla: CONFIRMED, IN_PROGRESS och COMPLETED.
 public class ShowWorkOrdersView {
@@ -25,6 +30,9 @@ public class ShowWorkOrdersView {
 
     public VBox getView() {
 
+        VBox root = new VBox(20);
+
+        VBox draftColumn = UiKit.kanbanColumn(language.text("workOrders.drafts"), "grey");
         VBox createdColumn = UiKit.kanbanColumn(language.text("badge.CREATED"), "grey");
         VBox startedColumn = UiKit.kanbanColumn(language.text("badge.IN_PROGRESS"), "yellow");
         VBox completedColumn = UiKit.kanbanColumn(language.text("badge.COMPLETED"), "green");
@@ -33,28 +41,34 @@ public class ShowWorkOrdersView {
         for (WorkOrder workOrder : Database.getWorkOrders()) {
             WorkOrderStatus status = workOrder.getStatus();
 
-            if (status == WorkOrderStatus.IN_PROGRESS) {
-                startedColumn.getChildren().add(buildCard(workOrder));
+            if (status == WorkOrderStatus.DRAFT) {
+                draftColumn.getChildren().add(buildCard(workOrder, root));
+            } else if (status == WorkOrderStatus.IN_PROGRESS) {
+                startedColumn.getChildren().add(buildCard(workOrder, root));
             } else if (status == WorkOrderStatus.COMPLETED) {
-                completedColumn.getChildren().add(buildCard(workOrder));
+                completedColumn.getChildren().add(buildCard(workOrder, root));
             } else {
                 // CONFIRM (och okända statusar) hamnar i första kolumnen så inget försvinner
-                createdColumn.getChildren().add(buildCard(workOrder));
+                createdColumn.getChildren().add(buildCard(workOrder, root));
             }
         }
 
         addEmptyTextIfNoCards(createdColumn);
+        addEmptyTextIfNoCards(draftColumn);
         addEmptyTextIfNoCards(startedColumn);
         addEmptyTextIfNoCards(completedColumn);
 
-        HBox board = new HBox(24, createdColumn, startedColumn, completedColumn);
+        HBox board = new HBox(24, draftColumn ,createdColumn, startedColumn, completedColumn);
         board.setAlignment(Pos.TOP_LEFT);
 
-        return new VBox(20, UiKit.pageHeader(language.text("workOrders.title"), null), board);
+        root.getChildren().addAll(
+                UiKit.pageHeader(language.text("workOrders.title"), null), board
+        );
+        return root;
     }
 
     // Ett kort per arbetsorder: WO-id, fordon, mekaniker och tjänster
-    private VBox buildCard(WorkOrder workOrder) {
+    private VBox buildCard(WorkOrder workOrder, VBox root) {
         Label idLabel = new Label("WO-" + workOrder.getId());
         idLabel.getStyleClass().add("kanban-card-title");
 
@@ -110,6 +124,96 @@ public class ShowWorkOrdersView {
         }
 
         card.getStyleClass().add("kanban-card");
+
+        if (workOrder.getStatus() == WorkOrderStatus.DRAFT) {
+            Button editButton = UiKit.primaryButton("");
+            editButton.textProperty().bind(
+                    language.text("editWorkOrderDraft.open")
+            );
+
+            editButton.setOnAction(event -> {
+                Button backButton = UiKit.primaryButton("");
+                backButton.textProperty().bind(
+                        language.text("editWorkOrderDraft.back")
+                );
+
+                backButton.setOnAction(backEvent ->
+                        root.getChildren().setAll(getView())
+                );
+
+                VBox editView =
+                        new EditWorkOrderDraftView().getView(workOrder);
+
+                root.getChildren().setAll(backButton, editView);
+            });
+
+            Button confirmButton = UiKit.primaryButton("");
+            confirmButton.textProperty().bind(
+                    language.text("confirmWorkOrder.button")
+            );
+
+            VBox feedbackBox = new VBox(4);
+            feedbackBox.setVisible(false);
+            feedbackBox.setManaged(false);
+
+            confirmButton.setOnAction(event -> {
+                feedbackBox.getChildren().clear();
+                feedbackBox.setVisible(false);
+                feedbackBox.setManaged(false);
+
+                List<String> errors;
+
+                try {
+                    errors = new GarageSystem().confirmWorkOrder(workOrder.getId());
+                } catch (RuntimeException exception) {
+                    Label errorLabel = UiKit.feedbackLabel();
+                    errorLabel.setWrapText(true);
+                    UiKit.showError(errorLabel, "");
+                    errorLabel.textProperty().bind(
+                            language.text("confirmWorkOrder.saveError")
+                    );
+
+                    feedbackBox.getChildren().add(errorLabel);
+                    feedbackBox.setVisible(true);
+                    feedbackBox.setManaged(true);
+
+                    exception.printStackTrace();
+                    return;
+                }
+
+                if (!errors.isEmpty()) {
+                    for (String key : errors) {
+                        Label errorLabel = UiKit.feedbackLabel();
+                        errorLabel.setWrapText(true);
+                        UiKit.showError(errorLabel, "");
+                        errorLabel.textProperty().bind(language.text(key));
+
+                        feedbackBox.getChildren().add(errorLabel);
+                    }
+
+                    feedbackBox.setVisible(true);
+                    feedbackBox.setManaged(true);
+                    return;
+                }
+
+                Label successLabel = UiKit.feedbackLabel();
+                successLabel.setWrapText(true);
+                UiKit.showSuccess(successLabel, "");
+                successLabel.textProperty().bind(
+                        language.text("confirmWorkOrder.success")
+                                .concat(" WO-" + workOrder.getId())
+                );
+                VBox refreshedView = getView();
+                refreshedView.getChildren().add(1, successLabel);
+                root.getChildren().setAll(refreshedView);
+            });
+
+            FlowPane actions = new FlowPane(8, 8);
+            actions.getChildren().addAll(editButton, confirmButton);
+
+            card.getChildren().addAll(actions, feedbackBox);
+        }
+
         return card;
     }
 

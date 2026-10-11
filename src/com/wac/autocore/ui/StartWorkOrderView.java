@@ -13,6 +13,7 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.beans.binding.StringExpression;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -133,6 +134,7 @@ public class StartWorkOrderView extends VBox {
         selectedCard = card;
         UiKit.setSelected(card, true);
 
+        feedbackLabel.textProperty().unbind();
         feedbackLabel.setText("");
         showDetails();
     }
@@ -147,7 +149,7 @@ public class StartWorkOrderView extends VBox {
         if (selectedWorkOrder == null) {
             Label hintLabel = UiKit.emptyText("");
             hintLabel.textProperty().bind(language.text("startWorkOrder.selectHint"));
-            detailCard = UiKit.card(hintLabel, startButton);
+            detailCard = UiKit.card(hintLabel, startButton, feedbackLabel);
         } else {
             Booking booking = findBooking(selectedWorkOrder);
             Mechanic mechanic = findMechanic(selectedWorkOrder);
@@ -164,21 +166,43 @@ public class StartWorkOrderView extends VBox {
             Label servicesLabel = detailText(language.text("createWorkOrder.services").get() + " "
                     + formatServices(selectedWorkOrder));
 
-            detailCard = UiKit.card(heading, bookingLabel, mechanicLabel, servicesLabel, startButton);
+            detailCard = UiKit.card(heading, bookingLabel, mechanicLabel, servicesLabel, startButton, feedbackLabel);
         }
         detailCard.getStyleClass().add("detail-card");
         // Kortet fyller höjden som i designen (vgrow i spalten)
         VBox.setVgrow(detailCard, Priority.ALWAYS);
         detailCard.setMaxWidth(Double.MAX_VALUE);
 
-        detailColumn.getChildren().setAll(detailCard, feedbackLabel);
+        detailColumn.getChildren().setAll(detailCard);
     }
 
     // Samma logik som tidigare: starta via GarageSystem och spara via repositories.
     private void startSelectedWorkOrder() {
+
+        feedbackLabel.textProperty().unbind();
+        feedbackLabel.setText("");
+
         WorkOrder workorder = selectedWorkOrder;
         if (workorder == null) {
             UiKit.showError(feedbackLabel, language.text("startWorkOrder.select").get());
+            return;
+        }
+
+        List<String> errors =
+                garageSystem.validateWorkOrderForConfirmation(workorder.getId());
+
+        if (!errors.isEmpty()) {
+            StringExpression message = language.text(errors.get(0));
+
+            for (int i = 1; i < errors.size(); i++) {
+                message = message.concat("\n").concat(
+                        language.text(errors.get(i))
+                );
+            }
+
+            feedbackLabel.setWrapText(true);
+            UiKit.showError(feedbackLabel, "");
+            feedbackLabel.textProperty().bind(message);
             return;
         }
 
