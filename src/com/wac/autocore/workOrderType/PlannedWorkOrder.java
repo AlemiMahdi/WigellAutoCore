@@ -1,21 +1,17 @@
 package com.wac.autocore.workOrderType;
 
 import com.wac.autocore.DTO.WorkOrderDto;
-import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.model.WorkOrder;
-import com.wac.autocore.model.WorkOrderStatus;
+import com.wac.autocore.ui.AutoCoreApp;
 
 public class PlannedWorkOrder implements WorkOrderTypeInterface{
 
     @Override
     public WorkOrder createWorkOrder(WorkOrderDto dto) {
 
-        Booking booking = Database.getBookings().stream()
-                .filter(b -> b.getId() == dto.getBookingId())
-                .findFirst()
-                .orElse(null);
+        Booking booking = AutoCoreApp.getInstance().getBookingRepository().findById(dto.getBookingId());
 
         if (booking == null) {
             System.out.println("Booking with ID " + dto.getBookingId() + " does not exist.");

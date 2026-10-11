@@ -4,24 +4,22 @@ import com.wac.autocore.DTO.WorkOrderDto;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
 import com.wac.autocore.repository.BookingRepository;
+import com.wac.autocore.ui.AutoCoreApp;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class DropInWorkOrder implements WorkOrderTypeInterface{
-    private final BookingRepository bookingRepository = new BookingRepository();
 
     @Override
     public WorkOrder createWorkOrder(WorkOrderDto workOrderDto) {
-        Vehicle vehicle = Database.getVehicles().stream()
-                .filter(v -> v.getId() == workOrderDto.getVehicleId())
-                .findFirst()
-                .orElse(null);
-
+        if (workOrderDto == null || workOrderDto.getVehicleId() == null) {
+            throw new IllegalArgumentException("Fordons-ID saknas i begäran.");
+        }
+        Vehicle vehicle = AutoCoreApp.getInstance().getVehicleRepository().findById(workOrderDto.getVehicleId());
 
         if (vehicle == null) {
-            System.out.println("Vehicle with ID " + workOrderDto.getVehicleId() + " does not exist.");
-            return null;
+            throw new IllegalArgumentException("Vehicle with ID " + workOrderDto.getVehicleId() + " does not exist.");
         }
 
         int nextBookingId =Database.getBookings().stream()
@@ -36,6 +34,7 @@ public class DropInWorkOrder implements WorkOrderTypeInterface{
         automaticBooking.setDate(workOrderDto.getDate());
         automaticBooking.setStartTime(workOrderDto.getStartTime());
         automaticBooking.setDurationMinutes(workOrderDto.getDuration());
+        automaticBooking.setMechanicId(workOrderDto.getMechanicId());
 
 
         List<InvoiceLine> frozenPrices = new ArrayList<>();
@@ -60,7 +59,7 @@ public class DropInWorkOrder implements WorkOrderTypeInterface{
         automaticBooking.setFrozenPrice(frozenPrices);
         automaticBooking.setDurationMinutes(totalDuration);
 
-        Database.getBookings().add(automaticBooking);
+        //Database.getBookings().add(automaticBooking);
 
         return getWorkOrder(workOrderDto, automaticBooking);
     }

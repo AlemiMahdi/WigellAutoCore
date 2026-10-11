@@ -34,6 +34,7 @@ public class CreateWorkOrderView  extends VBox {
     private final LanguageManager language = LanguageManager.getInstance();
     private final ObservableList<ServiceItem> selectedServices = FXCollections.observableArrayList();
 
+
     public CreateWorkOrderView() {
         // Centrerar formulärkolumnen i innehållsytan
         setAlignment(Pos.TOP_CENTER);
@@ -105,8 +106,6 @@ public class CreateWorkOrderView  extends VBox {
         durationField.setText("0");
 
         Label totalPriceLabel = new Label();
-
-        //selectedServices = FXCollections.observableArrayList();
 
         // Automatisk beräkning av tid och pris
         Runnable updateTotals = () -> {
@@ -237,11 +236,11 @@ public class CreateWorkOrderView  extends VBox {
         Button saveButton = UiKit.primaryButton("Create work order");
         saveButton.textProperty().bind(language.text("createWorkOrder.title"));
 
-        GarageSystem garageSystem = new GarageSystem();
-        WorkOrderRepository workOrderRepository = new WorkOrderRepository();
-        BookingRepository bookingRepository = new BookingRepository();
-
         saveButton.setOnAction(event -> {
+            AutoCoreApp app = AutoCoreApp.getInstance();
+            GarageSystem garageSystem = app.getGarageSystem();
+            WorkOrderRepository workOrderRepository = app.getWorkOrderRepository();
+            BookingRepository bookingRepository = app.getBookingRepository();
             Mechanic mechanic = mechanicComboBox.getValue();
             WorkOrderTypeEnum selectedType = typeComboBox.getValue();
 
@@ -251,19 +250,23 @@ public class CreateWorkOrderView  extends VBox {
                 return;
             }
 
-            WorkOrderDto dto = new WorkOrderDto();
-            dto.setMechanicId(mechanic.getId());
+           // WorkOrderDto dto = new WorkOrderDto();
+            WorkOrder workOrder = null;
 
             Booking booking = null;
             String previousBookingStatus = null;
+            int bookingId;
 
             if(selectedType == WorkOrderTypeEnum.DROP_IN){
+                bookingId = 0;
                 Vehicle vehicle = vehicleComboBox.getValue();
 
                 if(vehicle == null || selectedServices.isEmpty()){
                     UiKit.showError(feedbackLabel, language.text("createWorkOrder.noSelection").get());
                     return;
                 }
+                int customerId = (vehicle != null) ? vehicle.getId() : 0;
+
                 LocalDate date = datePicker.getValue();
                 if (date == null) {
                     UiKit.showError(feedbackLabel, language.text("createBooking.selectDate").get());
@@ -298,16 +301,25 @@ public class CreateWorkOrderView  extends VBox {
                     return;
                 }
 // Sätt värdena på DTO så att strategiklass kan läsa in dem till autobokningen
-                dto.setVehicleId(vehicle.getId());
-                dto.setDate(date);
-                dto.setStartTime(startTime);
-                dto.setDuration(durationMinutes);
-                dto.setVehicleId(vehicle.getId());
+
+                double totalPrice = selectedServices.stream()
+                        .mapToDouble(ServiceItem::getPrice)
+                        .sum();
                 List<Integer> serviceIds = new ArrayList<>();
                 for(ServiceItem item : selectedServices){
                     serviceIds.add(item.getId());
                 }
-                dto.setServices(serviceIds);
+                WorkOrderDto dto = new WorkOrderDto(
+                        0, customerId, vehicle.getId(), "Drop-in",
+                        serviceIds, mechanic.getId(), totalPrice
+                );
+//                dto.setDate(date);
+//                dto.setStartTime(startTime);
+//                dto.setDuration(durationMinutes);
+                //GarageSystem anropar WorkOrderTypeManager
+                selectedType = typeComboBox.getValue();
+                workOrder = garageSystem.createWorkOrder(dto, selectedType);
+
             } else {
                 // Gäller PLANNED och COMPLAINT
                 booking = bookingComboBox.getValue();
@@ -315,13 +327,10 @@ public class CreateWorkOrderView  extends VBox {
                     UiKit.showError(feedbackLabel, language.text("createWorkOrder.noSelection").get());
                     return;
                 }
-                dto.setBookingId(booking.getId());
+//                dto.setBookingId(booking.getId());
+                bookingId = booking.getId();
                 previousBookingStatus = booking.getStatus();
             }
-
-            //GarageSystem anropar WorkOrderTypeManager
-            selectedType = typeComboBox.getValue();
-            WorkOrder workOrder = garageSystem.createWorkOrder(dto, selectedType);
 
             if(workOrder == null){
                 if (!mechanic.isAvailable()){
@@ -339,18 +348,24 @@ public class CreateWorkOrderView  extends VBox {
                     workOrderRepository.save(workOrder);
                     bookingRepository.save(booking);
                 } else {
-                    Booking autoBooking = Database.getBookings().stream()
-                            .filter(b -> b.getVehicleId() == dto.getVehicleId() && "BOOKED".equals(b.getStatus()))
-                            .findFirst().orElse(null);
-                    if(autoBooking != null){
-                        bookingRepository.save(autoBooking);
-                        workOrder.setBookingId(autoBooking.getId());
-                        workOrderRepository.save(workOrder);
+                    if (!Database.getBookings().isEmpty()) {
+                        Booking autoBooking = Database.getBookings().get(Database.getBookings().size() - 1);
+
+                        if (autoBooking != null && autoBooking.getId() == workOrder.getBookingId()) {
+                            autoBooking.setStatus("BOOKED");
+                            workOrderRepository.saveDropInOrder(workOrder, autoBooking);
+                            if (!Database.getBookings().contains(autoBooking)) {
+                                Database.getBookings().add(autoBooking);
+                            } else {
+                                workOrderRepository.save(workOrder);
+                            }
+                        }
                     }
                 }
                 if (!Database.getWorkOrders().contains(workOrder)) {
                     Database.getWorkOrders().add(workOrder);
                 }
+                UiKit.showSuccess(feedbackLabel, "Arbetsorder och bokning sparad framgångsrikt!");
             } catch (RuntimeException exception) {
                 // Tar bort arbetsordern ur minnet och återställer bokningen
                 // om databassparandet misslyckas.
@@ -358,7 +373,7 @@ public class CreateWorkOrderView  extends VBox {
                 if(booking != null){
                     booking.setStatus(previousBookingStatus);
                 } else {
-                    Database.getBookings().removeIf(b -> b.getVehicleId() == dto.getVehicleId() && "BOOKED".equals(b.getStatus()));
+                    Database.getBookings().removeIf(b -> b.getId() == bookingId && "BOOKED".equals(b.getStatus()));
                 }
 
                 UiKit.showError(feedbackLabel, language.text("createWorkOrder.saveError").get());
@@ -378,8 +393,8 @@ public class CreateWorkOrderView  extends VBox {
             vehicleCombo.setValue(null);
             datePicker.setValue(null);
             startTimeField.clear();
-            serviceList.getSelectionModel().clearSelection();
-            //Lägga in selected services här?
+           // serviceList.getSelectionModel().clearSelection();
+            selectedServices.clear();
 
         });
 

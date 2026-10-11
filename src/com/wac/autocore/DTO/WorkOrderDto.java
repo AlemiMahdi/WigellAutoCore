@@ -22,12 +22,12 @@ public class WorkOrderDto {
     public WorkOrderDto(){}
 
     //drop_in arbetsorder
-    public WorkOrderDto(int bookingId, int customerId, Integer vehicleId, String description, String status, List<Integer> services, Integer mechanicId, double price) {
+    public WorkOrderDto(int bookingId, int customerId, Integer vehicleId, String description,
+                        List<Integer> services, Integer mechanicId, double price) {
         this.bookingId = bookingId;
         this.customerId = customerId;
         this.vehicleId = vehicleId;
         this.description = description;
-        this.status = status;
         this.services = services;
         this.mechanicId = mechanicId;
         this.price = price;
