@@ -18,6 +18,8 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import com.wac.autocore.model.Vehicle;
+import com.wac.autocore.model.Customer;
 
 public class WorkOrderRepository {
 
@@ -98,6 +100,94 @@ public class WorkOrderRepository {
 
     public List<WorkOrder> findAllWorkOrders() {
         return findAll();
+    }
+
+    public List<String> confirmDraft(int workOrderId) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Transaction transaction = session.beginTransaction();
+
+            try {
+                List<String> errors = new ArrayList<>();
+
+                WorkOrder workOrder = session.get(
+                        WorkOrder.class,
+                        workOrderId,
+                        LockMode.PESSIMISTIC_WRITE
+                );
+
+                if (workOrder == null) {
+                    errors.add("confirmWorkOrder.orderMissing");
+                } else if (workOrder.getStatus() != WorkOrderStatus.DRAFT) {
+                    errors.add("confirmWorkOrder.onlyDraft");
+                }
+
+                if (!errors.isEmpty()) {
+                    transaction.rollback();
+                    return errors;
+                }
+
+                if (workOrder.getType() == null) {
+                    errors.add("confirmWorkOrder.typeMissing");
+                }
+
+                Booking booking = session.get(
+                        Booking.class,
+                        workOrder.getBookingId(),
+                        LockMode.PESSIMISTIC_WRITE
+                );
+
+                if (booking == null) {
+                    errors.add("confirmWorkOrder.bookingMissing");
+                } else {
+                    Vehicle vehicle = session.get(
+                            Vehicle.class, booking.getVehicleId()
+                    );
+
+                    if (vehicle == null) {
+                        errors.add("confirmWorkOrder.vehicleMissing");
+                    } else if (session.get(
+                            Customer.class, vehicle.getCustomerId()) == null) {
+                        errors.add("confirmWorkOrder.customerMissing");
+                    }
+                }
+
+                if (workOrder.getMechanicId() == 0
+                        || session.get(
+                        Mechanic.class, workOrder.getMechanicId()) == null) {
+                    errors.add("confirmWorkOrder.mechanicMissing");
+                }
+
+                List<Integer> serviceIds = workOrder.getServiceItemIds();
+
+                if (serviceIds == null || serviceIds.isEmpty()) {
+                    errors.add("confirmWorkOrder.servicesMissing");
+                } else {
+                    for (Integer serviceId : serviceIds) {
+                        if (serviceId == null
+                                || session.get(ServiceItem.class, serviceId) == null) {
+                            errors.add("confirmWorkOrder.serviceMissing");
+                            break;
+                        }
+                    }
+                }
+
+                if (!errors.isEmpty()) {
+                    transaction.rollback();
+                    return errors;
+                }
+
+                workOrder.changeStatus(WorkOrderStatus.CONFIRMED);
+                transaction.commit();
+
+                return errors;
+
+            } catch (RuntimeException exception) {
+                if (transaction.isActive()) {
+                    transaction.rollback();
+                }
+                throw exception;
+            }
+        }
     }
 
     public void updateDraft(

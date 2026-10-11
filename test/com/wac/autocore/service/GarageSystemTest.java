@@ -8,6 +8,8 @@ import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
+import com.wac.autocore.model.Mechanic;
+import java.util.List;
 
 // Testar att GarageSystem skapar utkast med automatisk bokning (WAC-63).
 // Database innehåller exempeldata: fordon 1-3 med kunder 1-3.
@@ -65,6 +67,80 @@ public class GarageSystemTest {
                 () -> garageSystem.createDraftWorkOrder(1, "Ljud", null));
 
         assertEquals(bookingsBefore, Database.getBookings().size());
+    }
+
+    @Test
+    void incompleteDraftReportsMissingMechanicAndServices() {
+        WorkOrder draft = garageSystem.createDraftWorkOrder(
+                1, "Kontroll av bromsar", WorkOrderTypeEnum.PLANNED
+        );
+        Booking booking = findBooking(draft.getBookingId());
+
+        try {
+            List<String> errors =
+                    garageSystem.validateWorkOrderForConfirmation(draft.getId());
+
+            assertTrue(errors.contains("confirmWorkOrder.mechanicMissing"));
+            assertTrue(errors.contains("confirmWorkOrder.servicesMissing"));
+            assertEquals(WorkOrderStatus.DRAFT, draft.getStatus());
+        } finally {
+            Database.getWorkOrders().remove(draft);
+            Database.getBookings().remove(booking);
+        }
+    }
+
+    @Test
+    void completeDraftPassesValidationWithoutOptionalFields() {
+        WorkOrder draft = garageSystem.createDraftWorkOrder(
+                1, "Kontroll av bromsar", WorkOrderTypeEnum.PLANNED
+        );
+        Booking booking = findBooking(draft.getBookingId());
+
+        try {
+            draft.setMechanicId(Database.getMechanics().get(0).getId());
+            draft.addServiceItem(Database.getServiceItems().get(0).getId());
+
+            List<String> errors =
+                    garageSystem.validateWorkOrderForConfirmation(draft.getId());
+
+            assertTrue(errors.isEmpty(), errors.toString());
+
+            // Validering ska inte i sig bekräfta arbetsordern.
+            assertEquals(WorkOrderStatus.DRAFT, draft.getStatus());
+        } finally {
+            Database.getWorkOrders().remove(draft);
+            Database.getBookings().remove(booking);
+        }
+    }
+
+    @Test
+    void confirmedOrderWithoutServicesCannotStart() {
+        WorkOrder draft = garageSystem.createDraftWorkOrder(
+                1, "Kontroll av bromsar", WorkOrderTypeEnum.PLANNED
+        );
+        Booking booking = findBooking(draft.getBookingId());
+        Mechanic mechanic = Database.getMechanics().get(0);
+        boolean originalAvailability = mechanic.isAvailable();
+
+        try {
+            draft.setMechanicId(mechanic.getId());
+
+            // Simulerar en redan bekräftad men ofullständig order.
+            draft.changeStatus(WorkOrderStatus.CONFIRMED);
+            mechanic.setAvailable(true);
+
+            String originalBookingStatus = booking.getStatus();
+
+            garageSystem.startWorkOrder(draft.getId());
+
+            assertEquals(WorkOrderStatus.CONFIRMED, draft.getStatus());
+            assertEquals(originalBookingStatus, booking.getStatus());
+            assertTrue(mechanic.isAvailable());
+        } finally {
+            mechanic.setAvailable(originalAvailability);
+            Database.getWorkOrders().remove(draft);
+            Database.getBookings().remove(booking);
+        }
     }
 
     // Hjälpmetod: hittar en bokning i listan med id.
