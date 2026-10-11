@@ -369,8 +369,6 @@ public class CreateWorkOrderView  extends VBox {
                 return;
             }
 
-            UiKit.showSuccess(feedbackLabel, language.text("createWorkOrder.success").get());
-
             //tömmer valen efter registreringen har lyckats.
             bookingComboBox.getSelectionModel().clearSelection();
             bookingComboBox.setValue(null);
@@ -382,6 +380,8 @@ public class CreateWorkOrderView  extends VBox {
             datePicker.setValue(null);
             startTimeField.clear();
             selectedServices.clear();
+
+            UiKit.showSuccess(feedbackLabel, language.text("createWorkOrder.success").get());
 
         });
 
