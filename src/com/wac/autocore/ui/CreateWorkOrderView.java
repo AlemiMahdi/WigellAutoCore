@@ -75,8 +75,8 @@ public class CreateWorkOrderView  extends VBox {
             @Override
             protected void updateItem(WorkOrderTypeEnum type, boolean empty) {
                 super.updateItem(type, empty);
+                textProperty().unbind();
                 if (empty || type == null) {
-                    textProperty().unbind();
                     setText(null);
                 } else {
                     switch (type) {
@@ -149,8 +149,8 @@ public class CreateWorkOrderView  extends VBox {
             @Override
             protected void updateItem(WorkOrderTypeEnum type, boolean empty) {
                 super.updateItem(type, empty);
+                textProperty().unbind();
                 if (empty || type == null) {
-                    textProperty().unbind();
                     setText(null);
                 } else {
                     switch (type) {
