@@ -1,5 +1,6 @@
 package com.wac.autocore.ui;
 
+import com.wac.autocore.model.InvoiceLine;
 import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.model.Customer;
 import com.wac.autocore.DTO.WorkOrderDto;
@@ -424,6 +425,9 @@ public class CreateWorkOrderView  extends VBox {
                 previousBookingStatus = booking.getStatus();
 
                 WorkOrderDto dto = new WorkOrderDto(booking.getId(), mechanic.getId());
+                if (selectedType == WorkOrderTypeEnum.COMPLAINT) {
+                    dto.setOriginalWorkOrderId(originalWorkOrder.getId());
+                }
                 workOrder = garageSystem.createWorkOrder(dto, selectedType);
             }
 
@@ -441,8 +445,55 @@ public class CreateWorkOrderView  extends VBox {
             }
 
             try {
-                // Sparar arbetsordern och bokningens nya status i MySQL.
-                if(booking != null) {
+// Reklamationen får en egen bokning.
+                if (selectedType == WorkOrderTypeEnum.COMPLAINT) {
+                    int newBookingId = Database.getBookings().stream()
+                            .mapToInt(Booking::getId)
+                            .max()
+                            .orElse(0) + 1;
+
+                    Booking complaintBooking = new Booking(
+                            newBookingId,
+                            booking.getVehicleId(),
+                            null,
+                            booking.getDescription()
+                    );
+
+                    complaintBooking.setStatus("WORK_ORDER_CREATED");
+                    complaintBooking.setMechanicId(mechanic.getId());
+
+                    List<ServiceItem> complaintServices = new ArrayList<>();
+                    int totalMinutes = 0;
+
+                    for (Integer serviceId : workOrder.getServiceItemIds()) {
+                        ServiceItem service = Database.getServiceItems().stream()
+                                .filter(item -> Integer.valueOf(item.getId()).equals(serviceId))
+                                .findFirst()
+                                .orElseThrow(() ->
+                                        new IllegalArgumentException(
+                                                "editWorkOrderDraft.serviceMissing"
+                                        )
+                                );
+
+                        complaintServices.add(service);
+                        totalMinutes += service.getEstimatedMinutes();
+
+                        complaintBooking.getFrozenPrice().add(
+                                new InvoiceLine(service.getId(), service.getName(), 0.0)
+                        );
+                    }
+
+                    complaintBooking.setServices(complaintServices);
+                    complaintBooking.setDurationMinutes(totalMinutes);
+
+                    workOrder.setBookingId(newBookingId);
+
+                    workOrderRepository.saveWithBooking(workOrder, complaintBooking);
+
+                    // Lägg till bokningen i minnet först efter lyckad sparning.
+                    Database.getBookings().add(complaintBooking);
+
+                } else if (booking != null) {
                     workOrderRepository.save(workOrder);
                     bookingRepository.save(booking);
                 } else {

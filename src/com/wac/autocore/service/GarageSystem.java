@@ -392,7 +392,7 @@ public class GarageSystem {
         }
 
         // Reklamationer ska inte ändra originalbokningens status.
-        if (workOrder.getType() != WorkOrderTypeEnum.COMPLAINT) {
+        if (!sharesOriginalBooking(workOrder)) {
             booking.setStatus("IN_PROGRESS");
         }
 
@@ -425,7 +425,7 @@ public class GarageSystem {
             mechanic.setAvailable(true);
         }
 
-        if (booking != null && workOrder.getType() != WorkOrderTypeEnum.COMPLAINT) {
+        if (booking != null && !sharesOriginalBooking(workOrder)) {
             booking.setStatus("COMPLETED");
         }
 
@@ -487,18 +487,35 @@ public class GarageSystem {
 
             boolean isComplaint = workOrder.getType() == WorkOrderTypeEnum.COMPLAINT;
 
-            for (InvoiceLine frozenLine : booking.getFrozenPrice()) {
+        if (isComplaint) {
+            for (Integer serviceId : workOrder.getServiceItemIds()) {
+                ServiceItem service = Database.getServiceItems().stream()
+                        .filter(item -> Integer.valueOf(item.getId()).equals(serviceId))
+                        .findFirst()
+                        .orElse(null);
 
-                double price = isComplaint ? 0.0 : frozenLine.getPrice();
+                if (service == null) {
+                    System.out.println(
+                            "Cannot create invoice: service missing, ID " + serviceId
+                    );
+                    return null;
+                }
 
-                InvoiceLine line = new InvoiceLine(
-                    frozenLine.getServiceItemId(),
-                    frozenLine.getServiceName(),
-                    price
-                );
-
-                invoice.addLine(line);
+                invoice.addLine(new InvoiceLine(
+                        service.getId(),
+                        service.getName(),
+                        0.0
+                ));
             }
+        } else {
+            for (InvoiceLine frozenLine : booking.getFrozenPrice()) {
+                invoice.addLine(new InvoiceLine(
+                        frozenLine.getServiceItemId(),
+                        frozenLine.getServiceName(),
+                        frozenLine.getPrice()
+                ));
+            }
+        }
 
             if (isComplaint && extraCost > 0) {
                 InvoiceLine extraLine = new InvoiceLine(
@@ -616,6 +633,20 @@ public class GarageSystem {
         }
 
         return payment;
+    }
+
+    private boolean sharesOriginalBooking(WorkOrder workOrder) {
+        if (workOrder.getType() != WorkOrderTypeEnum.COMPLAINT
+                || workOrder.getOriginalWorkOrderId() == null) {
+            return false;
+        }
+
+        WorkOrder original = findWorkOrder(
+                workOrder.getOriginalWorkOrderId()
+        );
+
+        return original != null
+                && original.getBookingId() == workOrder.getBookingId();
     }
 
     private Customer findCustomer(int id) {
