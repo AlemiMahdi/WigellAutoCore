@@ -3,6 +3,7 @@ package com.wac.autocore.repository;
 import com.wac.autocore.data.HibernateUtil;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;
@@ -128,6 +129,18 @@ public class WorkOrderRepository {
 
                 if (workOrder.getType() == null) {
                     errors.add("confirmWorkOrder.typeMissing");
+                }
+
+                if (workOrder.getType() == WorkOrderTypeEnum.COMPLAINT) {
+                    Integer originalId = workOrder.getOriginalWorkOrderId();
+
+                    if (originalId == null) {
+                        errors.add("confirmWorkOrder.originalRequired");
+                    } else if (originalId.intValue() == workOrder.getId()) {
+                        errors.add("confirmWorkOrder.originalSelfReference");
+                    } else if (session.get(WorkOrder.class, originalId) == null) {
+                        errors.add("confirmWorkOrder.originalMissing");
+                    }
                 }
 
                 Booking booking = session.get(
