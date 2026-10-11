@@ -35,6 +35,27 @@ public class WorkOrderRepository {
         }
     }
 
+    // Sparar bokningen och utkastet i samma transaktion (WAC-63)
+    // Antingen sparas båda, eller ingen av dem.
+    public void saveWithBooking(WorkOrder workOrder, Booking booking) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+
+            Transaction transaction = session.beginTransaction();
+
+            try {
+                session.save(booking);
+                session.save(workOrder);
+
+                transaction.commit();
+            } catch (RuntimeException e) {
+                 if (transaction.isActive()) {
+                     transaction.rollback();
+                 }
+                 throw e;
+            }
+        }
+    }
+
     public List<WorkOrder> findAll() {
 
         try (Session session =
