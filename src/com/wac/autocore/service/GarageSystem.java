@@ -6,6 +6,7 @@ import com.wac.autocore.model.*;
 import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
 import com.wac.autocore.workOrderType.WorkOrderTypeManager;
 
+import java.awt.print.Book;
 import java.time.LocalDate;
 
 public class GarageSystem {
@@ -198,23 +199,28 @@ public class GarageSystem {
 
         Mechanic mechanic = findMechanic(dto.getMechanicId());
         if (mechanic == null || !mechanic.isAvailable()) {
-            System.out.println("Mechanic with ID " + mechanic + " does not exist or is not available.");
+            System.out.println("Mechanic with ID " + dto.getMechanicId() + " does not exist or is not available.");
             return null;
         }
 
         WorkOrderTypeManager manager = new WorkOrderTypeManager();
         manager.setStrategy(type);
         WorkOrder workOrder = manager.createWorkOrderType(dto);
-        if(workOrder == null) {
+        if (workOrder == null) {
             System.out.println("WorkOrder does not exist.");
             return null;
+        }
+
+        Booking booking = findBooking(workOrder.getBookingId());
+        if (booking != null) {
+            booking.setStatus("WORK_ORDER_CREATED");
         }
 
         int id = Database.getWorkOrders().size() + 1;
         workOrder.setId(id);
 
-               System.out.println("Work order created successfully.");
-               System.out.println(workOrder);
+        System.out.println("Work order created successfully.");
+        System.out.println(workOrder);
 
         Database.getWorkOrders().add(workOrder);
         return workOrder;

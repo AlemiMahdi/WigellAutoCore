@@ -39,7 +39,6 @@ import java.util.logging.Level;
 import java.util.HashMap;
 
 import com.wac.autocore.ui.views.MechanicScheduleView;
-import sun.awt.AppContext;
 
 import java.util.List;
 import java.util.Map;

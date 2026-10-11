@@ -15,7 +15,6 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.util.Callback;
 import javafx.util.StringConverter;
 
 import java.time.LocalDate;
@@ -24,9 +23,6 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-
-import static com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type.Node;
-
 
 //Formulär för att skapa arbetsordrar.
 public class CreateWorkOrderView  extends VBox {
@@ -88,11 +84,6 @@ public class CreateWorkOrderView  extends VBox {
                 }
             }
         });
-
-        ComboBox<Vehicle> vehicleCombo = new ComboBox<>(FXCollections.observableArrayList(Database.getVehicles()));
-        vehicleCombo.promptTextProperty().bind(language.text("createBooking.vehiclePrompt"));
-        vehicleCombo.setConverter(vehicleConverter());
-        UiKit.keepPromptWhenCleared(vehicleCombo);
 
         DatePicker datePicker = new DatePicker();
         datePicker.promptTextProperty().bind(language.text("createBooking.datePrompt"));
@@ -255,17 +246,15 @@ public class CreateWorkOrderView  extends VBox {
 
             Booking booking = null;
             String previousBookingStatus = null;
-            int bookingId;
 
             if(selectedType == WorkOrderTypeEnum.DROP_IN){
-                bookingId = 0;
                 Vehicle vehicle = vehicleComboBox.getValue();
 
                 if(vehicle == null || selectedServices.isEmpty()){
                     UiKit.showError(feedbackLabel, language.text("createWorkOrder.noSelection").get());
                     return;
                 }
-                int customerId = (vehicle != null) ? vehicle.getId() : 0;
+                int customerId = (vehicle != null) ? vehicle.getCustomerId() : 0;
 
                 LocalDate date = datePicker.getValue();
                 if (date == null) {
@@ -327,9 +316,11 @@ public class CreateWorkOrderView  extends VBox {
                     UiKit.showError(feedbackLabel, language.text("createWorkOrder.noSelection").get());
                     return;
                 }
-//                dto.setBookingId(booking.getId());
-                bookingId = booking.getId();
+
                 previousBookingStatus = booking.getStatus();
+
+                WorkOrderDto dto = new WorkOrderDto(booking.getId(), mechanic.getId());
+                workOrder = garageSystem.createWorkOrder(dto, selectedType);
             }
 
             if(workOrder == null){
@@ -352,7 +343,6 @@ public class CreateWorkOrderView  extends VBox {
                         Booking autoBooking = Database.getBookings().get(Database.getBookings().size() - 1);
 
                         if (autoBooking != null && autoBooking.getId() == workOrder.getBookingId()) {
-                            autoBooking.setStatus("BOOKED");
                             workOrderRepository.saveDropInOrder(workOrder, autoBooking);
                             if (!Database.getBookings().contains(autoBooking)) {
                                 Database.getBookings().add(autoBooking);
@@ -363,7 +353,6 @@ public class CreateWorkOrderView  extends VBox {
                 if (!Database.getWorkOrders().contains(workOrder)) {
                     Database.getWorkOrders().add(workOrder);
                 }
-                UiKit.showSuccess(feedbackLabel, "Arbetsorder och bokning sparad framgångsrikt!");
             } catch (RuntimeException exception) {
                 // Tar bort arbetsordern ur minnet och återställer bokningen
                 // om databassparandet misslyckas.
@@ -371,7 +360,8 @@ public class CreateWorkOrderView  extends VBox {
                 if(booking != null){
                     booking.setStatus(previousBookingStatus);
                 } else {
-                    Database.getBookings().removeIf(b -> b.getId() == bookingId && "BOOKED".equals(b.getStatus()));
+                    int autoBookingId = workOrder.getBookingId();
+                    Database.getBookings().removeIf(b -> b.getId() == autoBookingId);
                 }
 
                 UiKit.showError(feedbackLabel, language.text("createWorkOrder.saveError").get());
@@ -387,8 +377,8 @@ public class CreateWorkOrderView  extends VBox {
             mechanicComboBox.getSelectionModel().clearSelection();
             mechanicComboBox.setValue(null);
             typeComboBox.setValue(WorkOrderTypeEnum.PLANNED);
-            vehicleCombo.getSelectionModel().clearSelection();
-            vehicleCombo.setValue(null);
+            vehicleComboBox.getSelectionModel().clearSelection();
+            vehicleComboBox.setValue(null);
             datePicker.setValue(null);
             startTimeField.clear();
             selectedServices.clear();
@@ -448,10 +438,13 @@ public class CreateWorkOrderView  extends VBox {
         return new StringConverter<Vehicle>() {
             @Override
             public String toString(Vehicle vehicle) {
+                if (vehicle == null) {
+                    return "";
+                }
                 String customer = Database.getCustomers().stream()
                         .filter(c -> c.getId() == vehicle.getCustomerId())
                         .map(Customer::getName).findFirst().orElse("");
-                return vehicle == null ? "" : vehicle.getRegistrationNumber() + " - "
+                return vehicle.getRegistrationNumber() + " - "
                         + vehicle.getModel() + " " + " (" +customer + ")";
             }
             @Override
