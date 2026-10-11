@@ -138,8 +138,14 @@ public class WorkOrderRepository {
                         errors.add("confirmWorkOrder.originalRequired");
                     } else if (originalId.intValue() == workOrder.getId()) {
                         errors.add("confirmWorkOrder.originalSelfReference");
-                    } else if (session.get(WorkOrder.class, originalId) == null) {
-                        errors.add("confirmWorkOrder.originalMissing");
+                    } else {
+                        WorkOrder original = session.get(WorkOrder.class, originalId);
+
+                        if (original == null) {
+                            errors.add("confirmWorkOrder.originalMissing");
+                        } else if (original.getStatus() != WorkOrderStatus.COMPLETED) {
+                            errors.add("confirmWorkOrder.originalNotCompleted");
+                        }
                     }
                 }
 
@@ -163,6 +169,7 @@ public class WorkOrderRepository {
                         errors.add("confirmWorkOrder.customerMissing");
                     }
                 }
+
 
                 if (workOrder.getMechanicId() == 0
                         || session.get(
@@ -212,7 +219,8 @@ public class WorkOrderRepository {
             int minutes,
             BigDecimal price,
             String instructions,
-            String comments
+            String comments,
+            Integer originalWorkOrderId
     ) {
         if (draft == null || draft.getStatus() != WorkOrderStatus.DRAFT) {
             throw new IllegalArgumentException("editWorkOrderDraft.onlyDraft");
@@ -269,6 +277,26 @@ public class WorkOrderRepository {
                     );
                 }
 
+                if (originalWorkOrderId != null) {
+                    if (savedDraft.getType() != WorkOrderTypeEnum.COMPLAINT) {
+                        throw new IllegalArgumentException("confirmWorkOrder.originalWrongType");
+                    }
+
+                    if (originalWorkOrderId.intValue() == savedDraft.getId()) {
+                        throw new IllegalArgumentException("confirmWorkOrder.originalSelfReference");
+                    }
+
+                    WorkOrder original = session.get(WorkOrder.class, originalWorkOrderId);
+
+                    if (original == null) {
+                        throw new IllegalArgumentException("confirmWorkOrder.originalMissing");
+                    }
+
+                    if (original.getStatus() != WorkOrderStatus.COMPLETED) {
+                        throw new IllegalArgumentException("confirmWorkOrder.originalNotCompleted");
+                    }
+                }
+
                 Booking savedBooking = session.get(
                         Booking.class,
                         savedDraft.getBookingId(),
@@ -314,6 +342,7 @@ public class WorkOrderRepository {
                 savedBooking.setMechanicId(mechanicId == 0 ? null : mechanicId);
                 savedBooking.getServices().clear();
                 savedBooking.getServices().addAll(savedServices);
+                savedDraft.setOriginalWorkOrderId(originalWorkOrderId);
 
                 // Status, problembeskrivning och historiska priser ändras inte.
                 transaction.commit();
@@ -332,6 +361,7 @@ public class WorkOrderRepository {
         draft.setEstimatedPrice(normalizedPrice);
         draft.setCustomerInstructions(savedInstructions);
         draft.setDraftComments(savedComments);
+        draft.setOriginalWorkOrderId(originalWorkOrderId);
 
         booking.setDate(plannedDate);
         booking.setDurationMinutes(minutes);

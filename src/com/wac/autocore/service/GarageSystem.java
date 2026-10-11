@@ -276,6 +276,24 @@ public class GarageSystem {
             errors.add("confirmWorkOrder.typeMissing");
         }
 
+        if (workOrder.getType() == WorkOrderTypeEnum.COMPLAINT) {
+            Integer originalId = workOrder.getOriginalWorkOrderId();
+
+            if (originalId == null) {
+                errors.add("confirmWorkOrder.originalRequired");
+            } else if (originalId.intValue() == workOrder.getId()) {
+                errors.add("confirmWorkOrder.originalSelfReference");
+            } else {
+                WorkOrder original = findWorkOrder(originalId);
+
+                if (original == null) {
+                    errors.add("confirmWorkOrder.originalMissing");
+                } else if (original.getStatus() != WorkOrderStatus.COMPLETED) {
+                    errors.add("confirmWorkOrder.originalNotCompleted");
+                }
+            }
+        }
+
         Booking booking = findBooking(workOrder.getBookingId());
 
         if (booking == null) {
@@ -364,7 +382,7 @@ public class GarageSystem {
         Booking booking = findBooking(workOrder.getBookingId());
 
         if (mechanic == null || !mechanic.isAvailable()) {
-            System.out.println("Cannot start work order: mechanic is missing.");
+            System.out.println("Cannot start work order: mechanic is missing or unavailable.");
             return;
         }
 
