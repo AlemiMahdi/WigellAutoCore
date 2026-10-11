@@ -30,6 +30,7 @@ public class ShowWorkOrdersView {
 
         VBox root = new VBox(20);
 
+        VBox draftColumn = UiKit.kanbanColumn(language.text("workOrders.drafts"), "grey");
         VBox createdColumn = UiKit.kanbanColumn(language.text("badge.CREATED"), "grey");
         VBox startedColumn = UiKit.kanbanColumn(language.text("badge.IN_PROGRESS"), "yellow");
         VBox completedColumn = UiKit.kanbanColumn(language.text("badge.COMPLETED"), "green");
@@ -38,7 +39,9 @@ public class ShowWorkOrdersView {
         for (WorkOrder workOrder : Database.getWorkOrders()) {
             WorkOrderStatus status = workOrder.getStatus();
 
-            if (status == WorkOrderStatus.IN_PROGRESS) {
+            if (status == WorkOrderStatus.DRAFT) {
+                draftColumn.getChildren().add(buildCard(workOrder, root));
+            } else if (status == WorkOrderStatus.IN_PROGRESS) {
                 startedColumn.getChildren().add(buildCard(workOrder, root));
             } else if (status == WorkOrderStatus.COMPLETED) {
                 completedColumn.getChildren().add(buildCard(workOrder, root));
@@ -49,10 +52,11 @@ public class ShowWorkOrdersView {
         }
 
         addEmptyTextIfNoCards(createdColumn);
+        addEmptyTextIfNoCards(draftColumn);
         addEmptyTextIfNoCards(startedColumn);
         addEmptyTextIfNoCards(completedColumn);
 
-        HBox board = new HBox(24, createdColumn, startedColumn, completedColumn);
+        HBox board = new HBox(24, draftColumn ,createdColumn, startedColumn, completedColumn);
         board.setAlignment(Pos.TOP_LEFT);
 
         root.getChildren().addAll(
