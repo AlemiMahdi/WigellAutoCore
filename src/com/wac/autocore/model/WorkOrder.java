@@ -7,6 +7,7 @@ import javax.persistence.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "work_orders")
@@ -36,6 +37,15 @@ public class WorkOrder {
    @Convert(converter = WorkOrderTypeConverter.class)
     @Column(name = "work_order_type")
     private WorkOrderTypeEnum type;
+
+    @Column(name = "estimated_price", precision = 12, scale = 2)
+    private BigDecimal estimatedPrice;
+
+    @Column(name = "customer_instructions", length = 4000)
+    private String customerInstructions;
+
+    @Column(name = "draft_comments", length = 4000)
+    private String draftComments;
 
     // Hibernate behöver en tom konstruktor.
     public WorkOrder() {
@@ -125,6 +135,30 @@ public class WorkOrder {
     public WorkOrderTypeEnum getType(){ return type; }
 
     public void setType(WorkOrderTypeEnum type) { this.type = type;}
+
+    public BigDecimal getEstimatedPrice() {
+        return estimatedPrice;
+    }
+
+    public void setEstimatedPrice(BigDecimal estimatedPrice) {
+        this.estimatedPrice = estimatedPrice;
+    }
+
+    public String getCustomerInstructions() {
+        return customerInstructions;
+    }
+
+    public void setCustomerInstructions(String customerInstructions) {
+        this.customerInstructions = customerInstructions;
+    }
+
+    public String getDraftComments() {
+        return draftComments;
+    }
+
+    public void setDraftComments(String draftComments) {
+        this.draftComments = draftComments;
+    }
 
     @Override
     public String toString() {
