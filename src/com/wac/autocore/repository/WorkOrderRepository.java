@@ -235,7 +235,6 @@ public class WorkOrderRepository {
         booking.setMechanicId(mechanicId == 0 ? null : mechanicId);
         booking.setServices(new ArrayList<>(savedServices));
     }
-    
     public void saveDropInOrder(WorkOrder workOrder, Booking booking) {
         org.hibernate.Session session = HibernateUtil.getSessionFactory().openSession();
         org.hibernate.Transaction tx = null;
