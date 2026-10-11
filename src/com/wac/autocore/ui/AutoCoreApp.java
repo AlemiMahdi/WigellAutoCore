@@ -1,12 +1,15 @@
 package com.wac.autocore.ui;
 
 import java.net.URL;
+
+import com.wac.autocore.service.GarageSystem;
 import com.wac.autocore.ui.language.LanguageManager;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.data.HibernateUtil;
 import com.wac.autocore.model.*;
 import com.wac.autocore.repository.*;
 import com.wac.autocore.ui.views.CreateBookingView;
+import com.wac.autocore.ui.views.CreateDraftWorkOrderView;
 import com.wac.autocore.ui.views.ProcessPaymentView;
 import com.wac.autocore.ui.views.ShowBookingsView;
 import com.wac.autocore.ui.views.ShowPaymentsView;
@@ -48,6 +51,35 @@ import java.util.Map;
  */
 
 public class AutoCoreApp extends Application {
+
+    private static AutoCoreApp instance;
+
+    private final GarageSystem garageSystem;
+    private final WorkOrderRepository workOrderRepository;
+    private final BookingRepository bookingRepository;
+    private final VehicleRepository vehicleRepository;
+
+    // FIX 1: Konstruktorn MÅSTE vara publik i en JavaFX-applikation!
+    public AutoCoreApp() {
+        this.garageSystem = new GarageSystem();
+        this.workOrderRepository = new WorkOrderRepository();
+        this.bookingRepository = new BookingRepository();
+        this.vehicleRepository = new VehicleRepository();
+
+        // Sätt instansen i samma sekund som JavaFX startar appen
+        synchronized (AutoCoreApp.class) {
+            instance = this;
+        }
+    }
+
+    // Global åtkomstpunkt för alla dina vyer
+    public static synchronized AutoCoreApp getInstance() {
+        // Om gränssnittet inte hunnit starta än skapar vi en tillfällig fallback
+        if (instance == null) {
+            instance = new AutoCoreApp();
+        }
+        return instance;
+    }
 
     private static final Logger LOGGER =
             Logger.getLogger(AutoCoreApp.class.getName());
@@ -454,14 +486,16 @@ public class AutoCoreApp extends Application {
                 );
             }
             // Kontrollerar att arbetsorderns mekaniker finns.
-            boolean mechanicsExist = Database.getMechanics().stream()
-                    .anyMatch(mechanic ->
-                            mechanic.getId() == workOrder.getMechanicId());
+            // 0 betyder att ingen mekaniker är vald än (utkast, WAC-63)
+            if (workOrder.getMechanicId() != 0) {
+                boolean mechanicsExist = Database.getMechanics().stream()
+                        .anyMatch(mechanic -> mechanic.getId() == workOrder.getMechanicId());
 
-            if (!mechanicsExist) {
-                throw new IllegalStateException(
-                        "Mechanic missing for work order " + workOrder.getId()
-                );
+                if (!mechanicsExist) {
+                    throw new IllegalStateException(
+                            "Mechanic missing for work order " + workOrder.getId()
+                    );
+                }
             }
             // Kontrollerar att alla arbetsorderns tjänster finns.
             for (int serviceItemId : workOrder.getServiceItemIds()) {
@@ -600,6 +634,8 @@ public class AutoCoreApp extends Application {
         addNavSection(menuBox, "menu.section.workOrders",
                 createNavItem("show-work-orders", "menu.workOrders", () -> showView(new ShowWorkOrdersView().getView())),
                 createNavItem("create-work-order", "menu.createWorkOrder", () -> showView(new CreateWorkOrderView())),
+                createNavItem("create-draft-work-order", "menu.createDraftWorkOrder",
+                        () -> showView(new CreateDraftWorkOrderView().getView())),
                 createNavItem("start-work-order", "menu.startWorkOrder", () -> showView(new StartWorkOrderView())),
                 createNavItem("complete-work-order", "menu.completeWorkOrder", () -> showView(CompleteWorkOrderView.build())));
 
@@ -736,6 +772,22 @@ public class AutoCoreApp extends Application {
         // Byggs om varje gång så att siffrorna alltid är aktuella.
         // (Scrollningen sköts av innehållsytans ScrollPane.)
         showView(new DashboardView());
+    }
+
+    public GarageSystem getGarageSystem() {
+        return garageSystem;
+    }
+
+    public WorkOrderRepository getWorkOrderRepository() {
+        return workOrderRepository;
+    }
+
+    public BookingRepository getBookingRepository() {
+        return bookingRepository;
+    }
+
+    public VehicleRepository getVehicleRepository() {
+        return vehicleRepository;
     }
 
     public static void main(String[] args) {launch(args);

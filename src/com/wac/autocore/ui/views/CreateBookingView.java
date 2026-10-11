@@ -3,7 +3,9 @@ package com.wac.autocore.ui.views;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
 import com.wac.autocore.repository.BookingRepository;
+import com.wac.autocore.repository.WorkOrderRepository;
 import com.wac.autocore.service.GarageSystem;
+import com.wac.autocore.ui.AutoCoreApp;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 
@@ -28,6 +30,9 @@ import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
 import javafx.collections.ListChangeListener;
 import java.util.Locale;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.List;
 
 
 // Formulär för att boka in ett fordon: välj fordon, datum, mekaniker och skriv en beskrivning.
@@ -75,10 +80,21 @@ public class CreateBookingView {
         UiKit.keepPromptWhenCleared(mechanicCombo);
 
         ObservableList<ServiceItem> selectedServices = FXCollections.observableArrayList();
+
+        ComboBox<ServicePackage> packageCombo = new ComboBox<>(
+            FXCollections.observableArrayList(Database.getServicePackages())
+        );
+        packageCombo.promptTextProperty().bind(
+            language.text("createBooking.packagePrompt")
+        );
+        UiKit.keepPromptWhenCleared(packageCombo);
+
         durationField.setEditable(false);
         durationField.setText("0");
 
         Label totalPriceLabel = new Label();
+
+        VBox priceInfo = new VBox(6);
 
         Runnable updateTotals = () -> {
             int totalMinutes = selectedServices.stream().mapToInt(ServiceItem::getEstimatedMinutes).sum();
@@ -87,6 +103,7 @@ public class CreateBookingView {
 
             durationField.setText(String.valueOf(totalMinutes));
             totalPriceLabel.setText(String.format(Locale.ROOT, "%.2f", totalPrice));
+            updatePriceComparison(priceInfo, selectedServices);
         };
 
         selectedServices.addListener((ListChangeListener<ServiceItem>) change -> updateTotals.run());
@@ -116,15 +133,23 @@ public class CreateBookingView {
                                 + " – " + service.getEstimatedMinutes() + " min"
                 );
 
-                checkBox.setSelected(selectedServices.contains(service));
+                checkBox.setSelected(
+                    selectedServices.stream()
+                        .anyMatch(selected -> selected.getId() == service.getId())
+                );
 
                 checkBox.setOnAction(event -> {
                     if (checkBox.isSelected()) {
-                        if (!selectedServices.contains(service)) {
+                        boolean alreadySelected = selectedServices.stream()
+                            .anyMatch(selected -> selected.getId() == service.getId());
+
+                        if (!alreadySelected) {
                             selectedServices.add(service);
                         }
                     } else {
-                        selectedServices.remove(service);
+                        selectedServices.removeIf(
+                            selected -> selected.getId() == service.getId()
+                        );
                     }
                 });
 
@@ -133,6 +158,16 @@ public class CreateBookingView {
         });
 
         TextArea descriptionField = new TextArea();
+
+        packageCombo.setOnAction(event -> {
+            ServicePackage selectedPackage = packageCombo.getValue();
+            if (selectedPackage == null) {
+                return;
+            }
+            selectedServices.setAll(selectedPackage.getServices());
+            serviceList.refresh();
+        });
+
         descriptionField.promptTextProperty().bind(language.text("createBooking.descriptionPrompt"));
         descriptionField.setPrefRowCount(3);
         descriptionField.setWrapText(true);
@@ -164,10 +199,11 @@ public class CreateBookingView {
         Button createButton = UiKit.primaryButton("Create booking");
         createButton.textProperty().bind(language.text("createBooking.button"));
 
-        BookingRepository bookingRepository = new BookingRepository();
-
         createButton.setOnAction(event -> {
-
+            AutoCoreApp app = AutoCoreApp.getInstance();
+            GarageSystem garageSystem = app.getGarageSystem();
+            WorkOrderRepository workOrderRepository = app.getWorkOrderRepository();
+            BookingRepository bookingRepository = app.getBookingRepository();
 
             Vehicle vehicle = vehicleCombo.getValue();
             if (vehicle == null) {
@@ -276,6 +312,8 @@ public class CreateBookingView {
             mechanicCombo.getSelectionModel().clearSelection();
             mechanicCombo.setValue(null);
             selectedServices.clear();
+            packageCombo.getSelectionModel().clearSelection();
+            packageCombo.setValue(null);
             serviceList.refresh();
         });
 
@@ -290,8 +328,9 @@ public class CreateBookingView {
                         UiKit.formField(language.text("createBooking.durationLabel"), durationField),
                         UiKit.formField(language.text("bookings.mechanic"), mechanicCombo)
                 ),
+                UiKit.formField(language.text("createBooking.packageLabel"), packageCombo),
                 UiKit.formField(language.text("createBooking.services"), serviceList),
-                UiKit.formField(language.text("createBooking.totalPrice"), totalPriceLabel),
+                UiKit.formField(language.text("createBooking.totalPrice"), totalPriceLabel), priceInfo,
                 UiKit.formField(language.text("bookings.description"), descriptionField),
                 createButton,
                 messageLabel
@@ -301,6 +340,63 @@ public class CreateBookingView {
         VBox view = new VBox(form);
         view.setAlignment(Pos.TOP_CENTER);
         return view;
+    }
+    // Jämför valda tjänster med originalets sparade priser.
+    private void updatePriceComparison(
+            VBox priceInfo,
+            List<ServiceItem> selectedServices
+    ) {
+        priceInfo.getChildren().clear();
+
+        if (sourceBooking != null) {
+            for (ServiceItem service : selectedServices) {
+                InvoiceLine historicalLine = sourceBooking.getFrozenPrice()
+                        .stream()
+                        .filter(line ->
+                                line.getServiceItemId() == service.getId())
+                        .findFirst()
+                        .orElse(null);
+
+                Label info = new Label();
+                info.setWrapText(true);
+
+                if (historicalLine == null) {
+                    info.textProperty().bind(
+                            language.text("createBooking.priceHistoryMissing")
+                                    .concat(" ")
+                                    .concat(service.getName())
+                    );
+                    priceInfo.getChildren().add(info);
+                    continue;
+                }
+
+                BigDecimal oldPrice = BigDecimal
+                        .valueOf(historicalLine.getPrice())
+                        .setScale(2, RoundingMode.HALF_UP);
+
+                BigDecimal currentPrice = BigDecimal
+                        .valueOf(service.getPrice())
+                        .setScale(2, RoundingMode.HALF_UP);
+
+                if (oldPrice.compareTo(currentPrice) != 0) {
+                    info.textProperty().bind(
+                            language.text("createBooking.priceChanged")
+                                    .concat(" ")
+                                    .concat(service.getName())
+                                    .concat(": ")
+                                    .concat(oldPrice.toPlainString())
+                                    .concat(" → ")
+                                    .concat(currentPrice.toPlainString())
+                                    .concat(" SEK")
+                    );
+                    priceInfo.getChildren().add(info);
+                }
+            }
+        }
+
+        boolean hasMessages = !priceInfo.getChildren().isEmpty();
+        priceInfo.setVisible(hasMessages);
+        priceInfo.setManaged(hasMessages);
     }
 
     // Visar fordon som "ABC123 · Volvo V70" både i listan och i den valda rutan
