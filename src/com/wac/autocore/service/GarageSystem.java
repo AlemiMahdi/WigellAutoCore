@@ -233,7 +233,7 @@ public class GarageSystem {
         return workOrder;
     }
 
-    // Skapar en arbetsorder som utkast med en automatiskt bokning (WAC-63)
+    // Skapar en arbetsorder som utkast med en automatisk bokning (WAC-63)
     public WorkOrder createDraftWorkOrder(int vehicleId, String description, WorkOrderTypeEnum type, Integer originalWorkOrderId) {
          //1. Kontroller allt först
         Vehicle vehicle = findVehicle(vehicleId);
