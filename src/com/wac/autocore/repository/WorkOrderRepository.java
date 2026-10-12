@@ -339,6 +339,7 @@ public class WorkOrderRepository {
                 savedBooking.getServices().addAll(savedServices);
                 savedDraft.setOriginalWorkOrderId(originalWorkOrderId);
                 savedBooking.setFrozenPrice(createFrozenPrices(savedServices));
+                savedBooking.setDescription(savedInstructions);
 
                 // Status, problembeskrivning och historiska priser ändras inte.
                 transaction.commit();

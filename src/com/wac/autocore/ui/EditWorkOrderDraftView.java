@@ -20,10 +20,7 @@ import com.wac.autocore.repository.WorkOrderRepository;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public class EditWorkOrderDraftView {
@@ -175,15 +172,17 @@ public class EditWorkOrderDraftView {
         TextArea instructionsField = new TextArea();
         instructionsField.setPrefRowCount(3);
         instructionsField.setWrapText(true);
-        instructionsField.setText(
-                draft.getCustomerInstructions() == null ? "" : draft.getCustomerInstructions()
-        );
+        if (booking.getDescription() != null) {
+            instructionsField.setText(booking.getDescription());
+        } else {
+            instructionsField.setText(draft.getCustomerInstructions() == null ? "" : draft.getCustomerInstructions());
+        }
 
         TextArea commentsField = new TextArea();
         commentsField.setPrefRowCount(3);
         commentsField.setWrapText(true);
         commentsField.setText(
-                draft.getDraftComments() == null ? "" : draft.getDraftComments()
+                draft.getDraftComments() != null ? "" : draft.getDraftComments()
         );
 
         Label messageLabel = UiKit.feedbackLabel();
@@ -196,6 +195,7 @@ public class EditWorkOrderDraftView {
         ListView<ServiceItem> serviceList = new ListView<>(
                 FXCollections.observableArrayList(Database.getServiceItems())
         );
+        serviceList.prefHeight(150);
 
         ViewHelpMethod.setupServiceChecklist(
                 serviceList,
