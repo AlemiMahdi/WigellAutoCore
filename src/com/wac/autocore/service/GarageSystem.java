@@ -252,7 +252,7 @@ public class GarageSystem {
         int workOrderId = Database.getWorkOrders().size() + 1;
         WorkOrder draft = WorkOrder.createDraft(workOrderId, bookingId, type);
 
-        //3. Skapa den automatiska bokingen
+        //3. Skapa den automatiska bokningen
         Booking booking = new Booking(bookingId, vehicleId, null, description.trim());
         booking.setStatus("WORK_ORDER_CREATED");
 

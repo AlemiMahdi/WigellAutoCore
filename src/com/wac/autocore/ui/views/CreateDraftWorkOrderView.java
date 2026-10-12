@@ -82,7 +82,7 @@ public class CreateDraftWorkOrderView {
                 return;
             }
 
-            //Spara boning och utkast i MySQL i samma transaktion
+            //Spara bokning och utkast i MySQL i samma transaktion
             Booking booking = findBooking(draft.getBookingId());
             try {
                 workOrderRepository.saveWithBooking(draft, booking);
