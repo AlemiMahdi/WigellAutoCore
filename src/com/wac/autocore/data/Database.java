@@ -6,6 +6,7 @@ import com.wac.autocore.model.Invoice;
 import com.wac.autocore.model.Mechanic;
 import com.wac.autocore.model.Payment;
 import com.wac.autocore.model.ServiceItem;
+import com.wac.autocore.model.ServicePackage;
 import com.wac.autocore.model.Vehicle;
 import com.wac.autocore.model.WorkOrder;
 
@@ -23,6 +24,7 @@ public class Database {
     private static final List<WorkOrder> workOrders = new ArrayList<WorkOrder>();
     private static final List<Invoice> invoices = new ArrayList<Invoice>();
     private static final List<Payment> payments = new ArrayList<Payment>();
+    private static final List<ServicePackage> servicePackages = new ArrayList<ServicePackage>();
 
     static {
         loadSampleData();
@@ -179,4 +181,6 @@ public class Database {
     public static List<Payment> getPayments() {
         return payments;
     }
+
+    public static List<ServicePackage> getServicePackages() { return servicePackages; }
 }

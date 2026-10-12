@@ -108,6 +108,15 @@ public final class UiKit {
         return button;
     }
 
+    //Återanvända och skapa en tillbaka knapp
+    public static Button backButton(ObservableValue<String> buttonText, String targetView) {
+        Button backButton = primaryButton("");
+        backButton.textProperty().bind(buttonText);
+        backButton.getStyleClass().add("back-button");
+        backButton.setOnAction(event -> { Navigator.goTo(targetView); });
+        return backButton;
+    }
+
     // ------------------------------------------------------------
     // Badges (små "piller" med status)
     // ------------------------------------------------------------
@@ -144,7 +153,7 @@ public final class UiKit {
             return badgeFromKey("badge.BOOKED", "purple");
         } else if (status.equals("WORK_ORDER_CREATED")) {
             return badgeFromKey("badge.WORK_ORDER_CREATED", "grey");
-        } else if (status.equals("CREATED")) {
+        } else if (status.equals("CREATED") || status.equals("CONFIRMED")) {
             return badgeFromKey("badge.CREATED", "grey");
         } else if (status.equals("IN_PROGRESS")) {
             // Designen kallar "IN_PROGRESS" för STARTED

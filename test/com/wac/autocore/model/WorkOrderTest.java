@@ -1,0 +1,82 @@
+package com.wac.autocore.model;
+
+import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+// Testar att WorkOrder följer statusreglerna när statusen byts (WAC-63).
+// Reglerna själva testas i WorkOrderStatusTest – här testas att WorkOrder använder dem.
+public class WorkOrderTest {
+
+    // Ett tillåtet byte (CONFIRMED → IN_PROGRESS) ska ändra statusen.
+    @Test
+    void allowedChangeUpdatesStatus() {
+        // En ny arbetsorder börjar alltid som CONFIRMED
+        WorkOrder workOrder = new WorkOrder(1, 1, 1, WorkOrderTypeEnum.PLANNED);
+
+        workOrder.changeStatus(WorkOrderStatus.IN_PROGRESS);
+
+        assertEquals(WorkOrderStatus.IN_PROGRESS, workOrder.getStatus());
+    }
+
+    // Ett otillåtet byte (CONFIRMED → COMPLETED) ska stoppas med ett fel,
+    // och statusen ska vara oförändrad efteråt.
+    @Test
+    void forbiddenChangeThrowsAndKeepsStatus() {
+        WorkOrder workOrder = new WorkOrder(1, 1, 1, WorkOrderTypeEnum.PLANNED);
+
+        // Hoppar över IN_PROGRESS – det är inte tillåtet
+        assertThrows(IllegalStateException.class,
+                () -> workOrder.changeStatus(WorkOrderStatus.COMPLETED));
+
+        // Viktigast: felet ska komma INNAN statusen ändras
+        assertEquals(WorkOrderStatus.CONFIRMED, workOrder.getStatus());
+    }
+
+    // Ett nytt utkast ska ha status DRAFT, vald typ, ingen mekaniker (0) och inga tjänster.
+    @Test
+    void createDraftStartsAsDraftWithoutMechanics() {
+        WorkOrder draft = WorkOrder.createDraft(1, 5, WorkOrderTypeEnum.PLANNED);
+
+        assertEquals(WorkOrderStatus.DRAFT, draft.getStatus());
+        assertEquals(WorkOrderTypeEnum.PLANNED, draft.getType());
+        assertEquals(0, draft.getMechanicId());
+        assertTrue(draft.getServiceItemIds().isEmpty());
+    }
+
+    // Ett utkast utan typ ska stoppas direkt (fail fast).
+    @Test
+    void createDraftWithoutTypeThrows() {
+        assertThrows(IllegalArgumentException.class,
+                () -> WorkOrder.createDraft(1, 5, null));
+    }
+
+    // Testar endast statusövergången, inte om uppgifterna är kompletta.
+    @Test
+    void draftCanChangeToConfirmed() {
+        WorkOrder draft = WorkOrder.createDraft(
+                1, 5, WorkOrderTypeEnum.PLANNED
+        );
+
+        draft.changeStatus(WorkOrderStatus.CONFIRMED);
+
+        assertEquals(WorkOrderStatus.CONFIRMED, draft.getStatus());
+    }
+
+    // Ett utkast får inte startas direkt utan bekräftelse.
+    @Test
+    void draftCannotStartBeforeConfirmation() {
+        WorkOrder draft = WorkOrder.createDraft(
+                1, 5, WorkOrderTypeEnum.PLANNED
+        );
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> draft.changeStatus(WorkOrderStatus.IN_PROGRESS)
+        );
+
+        assertEquals(WorkOrderStatus.DRAFT, draft.getStatus());
+    }
+
+}

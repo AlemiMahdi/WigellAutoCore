@@ -48,6 +48,8 @@ public class CreateVehicleView {
         createButton.textProperty().bind(language.text("vehicle.create.save"));
         Label statusLabel = UiKit.feedbackLabel(); // visar resultat/felmeddelande till användaren
 
+        Button backBtn = UiKit.backButton(language.text("createWorkOrder.backBtn"), "create-work-order");
+
         // Körs varje gång användaren klickar på "Create vehicle".
         createButton.setOnAction(actionEvent -> {
             String registrationNumber = regField.getText();
@@ -85,6 +87,9 @@ public class CreateVehicleView {
             try {
                 // Sparar fordonet i MySQL innan bekräftelsen visas.
                 vehicleRepository.save(vehicle);
+                if (!Database.getVehicles().contains(vehicle)) {
+                    Database.getVehicles().add(vehicle);
+                }
             } catch (RuntimeException exception) {
                 // Ångrar tillägget i minnet om databassparandet misslyckas.
                 Database.getVehicles().remove(vehicle);
@@ -107,7 +112,7 @@ public class CreateVehicleView {
         // Rubriken ligger inne i formulärkolumnen, som i designen.
         // Märke och modell hör ihop och står därför bredvid varandra.
         VBox form = UiKit.formContainer(
-                UiKit.pageHeader(language.text("vehicle.create.save"), null),
+                UiKit.pageHeader(language.text("vehicle.create.save"), backBtn),
                 UiKit.formField(language.text("vehicles.registration"), regField),
                 UiKit.formRow(
                         UiKit.formField(language.text("vehicles.brand"), brandField),

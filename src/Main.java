@@ -1,5 +1,6 @@
 
 import com.wac.autocore.service.GarageSystem;
+import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
@@ -214,10 +215,10 @@ public class Main {
         garageSystem.showMechanics();
         int mechanicId = readInt("Mechanic ID: ");
 
-        garageSystem.createWorkOrder(
-                bookingId,
-                mechanicId
-        );
+//        garageSystem.createWorkOrder(
+//                bookingId,
+//                mechanicId, WorkOrderTypeEnum.PLANNED
+//        );
     }
 
     private static void startWorkOrder() {
@@ -258,7 +259,9 @@ public class Main {
 
         garageSystem.createInvoice(
                 workOrderId,
-                discountCode
+                discountCode,
+                "",
+                0.0
         );
     }
 

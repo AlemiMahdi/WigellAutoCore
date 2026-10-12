@@ -1,16 +1,13 @@
 package com.wac.autocore.model;
 
-import javax.persistence.CollectionTable;
-import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.Table;
+import com.wac.autocore.workOrderType.WorkOrderTypeConverter;
+import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
+
+import javax.persistence.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "work_orders")
@@ -25,6 +22,9 @@ public class WorkOrder {
     @Column(name = "mechanic_id")
     private int mechanicId;
 
+    @Column (name = "original_work_order_id")
+    private Integer originalWorkOrderId;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
             name = "work_order_services",
@@ -33,8 +33,22 @@ public class WorkOrder {
     @Column(name = "service_item_id")
     private List<Integer> serviceItemIds = new ArrayList<>();
 
+    @Convert(converter = WorkOrderStatusConverter.class)
     @Column(name = "status")
-    private String status;
+    private WorkOrderStatus status;
+
+   @Convert(converter = WorkOrderTypeConverter.class)
+    @Column(name = "work_order_type")
+    private WorkOrderTypeEnum type;
+
+    @Column(name = "estimated_price", precision = 12, scale = 2)
+    private BigDecimal estimatedPrice;
+
+    @Column(name = "customer_instructions", length = 4000)
+    private String customerInstructions;
+
+    @Column(name = "draft_comments", length = 4000)
+    private String draftComments;
 
     // Hibernate behöver en tom konstruktor.
     public WorkOrder() {
@@ -43,13 +57,30 @@ public class WorkOrder {
     public WorkOrder(
             int id,
             int bookingId,
-            int mechanicId
+            int mechanicId,
+            WorkOrderTypeEnum type
     ) {
         this.id = id;
         this.bookingId = bookingId;
         this.mechanicId = mechanicId;
         this.serviceItemIds = new ArrayList<>();
-        this.status = "CREATED";
+        this.status = WorkOrderStatus.CONFIRMED;
+        this.type = type;
+    }
+
+    public static WorkOrder createDraft(int id, int bookingId, WorkOrderTypeEnum type) {
+        if (type == null) {
+            throw new IllegalArgumentException("Work order type is required");
+        }
+
+        WorkOrder draft = new WorkOrder();
+        draft.id = id;
+        draft.bookingId = bookingId;
+        draft.mechanicId = 0;
+        draft.serviceItemIds = new ArrayList<>();
+        draft.status = WorkOrderStatus.DRAFT;
+        draft.type = type;
+        return draft;
     }
 
     public int getId() {
@@ -84,12 +115,16 @@ public class WorkOrder {
         this.serviceItemIds = serviceItemIds;
     }
 
-    public String getStatus() {
+    public WorkOrderStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
+    public void changeStatus(WorkOrderStatus newStatus) {
+        if (!status.canChangeTo(newStatus)) {
+            throw new IllegalStateException(
+                    "Cannot change status from " + status + " to " + newStatus);
+        }
+        this.status = newStatus;
     }
 
     public void addServiceItem(int serviceItemId) {
@@ -98,6 +133,55 @@ public class WorkOrder {
 
     public void removeServiceItem(int serviceItemId) {
         serviceItemIds.remove(Integer.valueOf(serviceItemId));
+    }
+
+    public WorkOrderTypeEnum getType(){ return type; }
+
+    public void setType(WorkOrderTypeEnum type) { this.type = type;}
+
+    public Integer getOriginalWorkOrderId() { return originalWorkOrderId; }
+    public void setOriginalWorkOrderId(Integer originalWorkOrderId) {
+
+        if (originalWorkOrderId != null) {
+
+            if (this.type != WorkOrderTypeEnum.COMPLAINT) {
+                throw new IllegalStateException(
+                    "Only complaint work orders can reference an original work order."
+                );
+            }
+
+            if (originalWorkOrderId == this.id) {
+                throw new IllegalArgumentException(
+                    "A work order cannot reference itself."
+                );
+            }
+        }
+
+        this.originalWorkOrderId = originalWorkOrderId;
+    }
+
+    public BigDecimal getEstimatedPrice() {
+        return estimatedPrice;
+    }
+
+    public void setEstimatedPrice(BigDecimal estimatedPrice) {
+        this.estimatedPrice = estimatedPrice;
+    }
+
+    public String getCustomerInstructions() {
+        return customerInstructions;
+    }
+
+    public void setCustomerInstructions(String customerInstructions) {
+        this.customerInstructions = customerInstructions;
+    }
+
+    public String getDraftComments() {
+        return draftComments;
+    }
+
+    public void setDraftComments(String draftComments) {
+        this.draftComments = draftComments;
     }
 
     @Override

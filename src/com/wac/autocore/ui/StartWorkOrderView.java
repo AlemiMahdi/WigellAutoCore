@@ -1,11 +1,7 @@
 package com.wac.autocore.ui;
 
 import com.wac.autocore.data.Database;
-import com.wac.autocore.model.Booking;
-import com.wac.autocore.model.Mechanic;
-import com.wac.autocore.model.ServiceItem;
-import com.wac.autocore.model.Vehicle;
-import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.model.*;
 import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.repository.MechanicRepository;
 import com.wac.autocore.repository.WorkOrderRepository;
@@ -17,6 +13,7 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.beans.binding.StringExpression;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -68,10 +65,10 @@ public class StartWorkOrderView extends VBox {
         selectedWorkOrder = null;
         selectedCard = null;
 
-        // Bara ordrar med status CREATED kan startas, så bara de visas i listan
+        // Bara ordrar som enligt statusreglerna får startas visas i listan.
         List<WorkOrder> startable = new ArrayList<WorkOrder>();
         for (WorkOrder workOrder : Database.getWorkOrders()) {
-            if ("CREATED".equals(workOrder.getStatus())) {
+            if (workOrder.getStatus().canChangeTo(WorkOrderStatus.IN_PROGRESS)) {
                 startable.add(workOrder);
             }
         }
@@ -119,7 +116,7 @@ public class StartWorkOrderView extends VBox {
         Label vehicleLabel = new Label(formatVehicle(findVehicle(workOrder), " · "));
         vehicleLabel.getStyleClass().add("select-card-sub");
 
-        HBox badgeRow = new HBox(UiKit.statusBadge(workOrder.getStatus()));
+        HBox badgeRow = new HBox(UiKit.statusBadge(workOrder.getStatus().name()));
         badgeRow.setAlignment(Pos.CENTER_LEFT);
 
         VBox card = UiKit.selectCard(title, vehicleLabel, badgeRow);
@@ -137,6 +134,7 @@ public class StartWorkOrderView extends VBox {
         selectedCard = card;
         UiKit.setSelected(card, true);
 
+        feedbackLabel.textProperty().unbind();
         feedbackLabel.setText("");
         showDetails();
     }
@@ -151,7 +149,7 @@ public class StartWorkOrderView extends VBox {
         if (selectedWorkOrder == null) {
             Label hintLabel = UiKit.emptyText("");
             hintLabel.textProperty().bind(language.text("startWorkOrder.selectHint"));
-            detailCard = UiKit.card(hintLabel, startButton);
+            detailCard = UiKit.card(hintLabel, startButton, feedbackLabel);
         } else {
             Booking booking = findBooking(selectedWorkOrder);
             Mechanic mechanic = findMechanic(selectedWorkOrder);
@@ -168,31 +166,53 @@ public class StartWorkOrderView extends VBox {
             Label servicesLabel = detailText(language.text("createWorkOrder.services").get() + " "
                     + formatServices(selectedWorkOrder));
 
-            detailCard = UiKit.card(heading, bookingLabel, mechanicLabel, servicesLabel, startButton);
+            detailCard = UiKit.card(heading, bookingLabel, mechanicLabel, servicesLabel, startButton, feedbackLabel);
         }
         detailCard.getStyleClass().add("detail-card");
         // Kortet fyller höjden som i designen (vgrow i spalten)
         VBox.setVgrow(detailCard, Priority.ALWAYS);
         detailCard.setMaxWidth(Double.MAX_VALUE);
 
-        detailColumn.getChildren().setAll(detailCard, feedbackLabel);
+        detailColumn.getChildren().setAll(detailCard);
     }
 
     // Samma logik som tidigare: starta via GarageSystem och spara via repositories.
     private void startSelectedWorkOrder() {
+
+        feedbackLabel.textProperty().unbind();
+        feedbackLabel.setText("");
+
         WorkOrder workorder = selectedWorkOrder;
         if (workorder == null) {
             UiKit.showError(feedbackLabel, language.text("startWorkOrder.select").get());
             return;
         }
 
+        List<String> errors =
+                garageSystem.validateWorkOrderForConfirmation(workorder.getId());
+
+        if (!errors.isEmpty()) {
+            StringExpression message = language.text(errors.get(0));
+
+            for (int i = 1; i < errors.size(); i++) {
+                message = message.concat("\n").concat(
+                        language.text(errors.get(i))
+                );
+            }
+
+            feedbackLabel.setWrapText(true);
+            UiKit.showError(feedbackLabel, "");
+            feedbackLabel.textProperty().bind(message);
+            return;
+        }
+
         // Sparar den valda arbetsorderns status innan vi försöker starta den.
-        String previousStatus = workorder.getStatus();
+        WorkOrderStatus previousStatus = workorder.getStatus();
 
         garageSystem.startWorkOrder(workorder.getId());
 
-        if ("CREATED".equals(previousStatus)
-                && "IN_PROGRESS".equals(workorder.getStatus())) {
+        if (previousStatus == WorkOrderStatus.CONFIRMED
+                && workorder.getStatus() == WorkOrderStatus.IN_PROGRESS) {
             // Hämtar bokningen och mekanikern som startWorkOrder har ändrat.
             Booking booking = findBooking(workorder);
             Mechanic mechanic = findMechanic(workorder);
