@@ -7,6 +7,7 @@ import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.model.WorkOrder;
 import com.wac.autocore.model.WorkOrderStatus;
 
+import com.wac.autocore.service.InvoiceService;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 
@@ -85,21 +86,7 @@ public class BookingRepository {
                  * ServiceItem senare ändras.
                  */
                 if (isNew) {
-
-                    List<InvoiceLine> frozenPrices = new ArrayList<>();
-
-                    for (ServiceItem service : serviceItems) {
-
-                        InvoiceLine frozenLine = new InvoiceLine(
-                                service.getId(),
-                                service.getName(),
-                                service.getPrice()
-                        );
-
-                        frozenPrices.add(frozenLine);
-                    }
-
-                    existingBooking.setFrozenPrice(frozenPrices);
+                    existingBooking.setFrozenPrice(InvoiceService.getInstance().createFrozenPrices(serviceItems));
                 }
 
                 // Ändrar mekanikern bara när ett nytt val skickas in.
@@ -449,19 +436,8 @@ public class BookingRepository {
                  * Bokningens tjänster får ändras innan arbetet har börjat.
                  * Därför uppdateras även historical-price-snapshoten.
                  */
-                List<InvoiceLine> frozenPrices = new ArrayList<>();
 
-                for (ServiceItem service : services) {
-
-                    InvoiceLine frozenLine = new InvoiceLine(
-                            service.getId(),
-                            service.getName(),
-                            service.getPrice()
-                    );
-
-                    frozenPrices.add(frozenLine);
-                }
-
+                List<InvoiceLine> frozenPrices = InvoiceService.getInstance().createFrozenPrices(services);
                 booking.getFrozenPrice().clear();
                 booking.getFrozenPrice().addAll(frozenPrices);
 

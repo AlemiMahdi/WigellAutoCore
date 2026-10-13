@@ -401,22 +401,7 @@ public class CreateBookingView {
 
     // Visar fordon som "ABC123 · Volvo V70" både i listan och i den valda rutan
     private StringConverter<Vehicle> vehicleConverter() {
-        return new StringConverter<Vehicle>() {
-            @Override
-            public String toString(Vehicle vehicle) {
-                if (vehicle == null) {
-                    return "";
-                }
-                return vehicle.getRegistrationNumber() + " · "
-                        + vehicle.getBrand() + " " + vehicle.getModel();
-            }
-
-            @Override
-            public Vehicle fromString(String text) {
-                // Används inte – combo-boxen går inte att skriva i
-                return null;
-            }
-        };
+        return ViewHelpMethod.getVehicleStringConverter();
     }
 
     // Visar bara mekanikerns namn i stället för hela toString()

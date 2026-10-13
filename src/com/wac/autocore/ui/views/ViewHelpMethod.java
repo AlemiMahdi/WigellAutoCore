@@ -1,9 +1,11 @@
 package com.wac.autocore.ui.views;
 
 import com.wac.autocore.model.ServiceItem;
+import com.wac.autocore.model.Vehicle;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.scene.control.*;
+import javafx.util.StringConverter;
 
 import java.util.List;
 import java.util.Locale;
@@ -103,6 +105,24 @@ public class ViewHelpMethod {
         // Kör en första beräkning och uppdatera vyn
         updateTotals.run();
         serviceList.refresh();
+    }
+
+    public static StringConverter<Vehicle> getVehicleStringConverter() {
+        return new StringConverter<Vehicle>() {
+            @Override
+            public String toString(Vehicle vehicle) {
+                if(vehicle == null) {
+                    return "";
+                }
+                return  vehicle.getRegistrationNumber() + " · "
+                        + vehicle.getBrand() + " " + vehicle.getModel();
+            }
+
+            @Override
+            public Vehicle fromString(String s) {
+                return null;
+            }
+        };
     }
 }
 

@@ -59,9 +59,4 @@ public class ComplaintWorkOrder implements WorkOrderTypeInterface{
     public void startWorkOrder(int workOrderId) {
 
     }
-
-    @Override
-    public void completeWorkOrder(int workOrderId) {
-
-    }
 }

@@ -2,6 +2,7 @@ package com.wac.autocore.repository;
 
 import com.wac.autocore.data.HibernateUtil;
 import com.wac.autocore.model.*;
+import com.wac.autocore.service.InvoiceService;
 import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
 
 import org.hibernate.Session;
@@ -229,21 +230,7 @@ public class WorkOrderRepository {
             throw new IllegalArgumentException("editWorkOrderDraft.invalidMinutes");
         }
 
-        BigDecimal normalizedPrice = price;
-
-        if (price != null) {
-            try {
-                normalizedPrice = price.setScale(2, RoundingMode.UNNECESSARY);
-            } catch (ArithmeticException exception) {
-                throw new IllegalArgumentException("editWorkOrderDraft.invalidPrice");
-            }
-
-            if (normalizedPrice.signum() < 0
-                    || normalizedPrice.compareTo(
-                    new BigDecimal("9999999999.99")) > 0) {
-                throw new IllegalArgumentException("editWorkOrderDraft.invalidPrice");
-            }
-        }
+        BigDecimal normalizedPrice = getNormalizedPrice(price);
 
         String savedInstructions = instructions == null ? "" : instructions.trim();
         String savedComments = comments == null ? "" : comments.trim();
@@ -338,7 +325,7 @@ public class WorkOrderRepository {
                 savedBooking.getServices().clear();
                 savedBooking.getServices().addAll(savedServices);
                 savedDraft.setOriginalWorkOrderId(originalWorkOrderId);
-                savedBooking.setFrozenPrice(createFrozenPrices(savedServices));
+                savedBooking.setFrozenPrice(InvoiceService.getInstance().createFrozenPrices(savedServices));
                 savedBooking.setDescription(savedInstructions);
 
                 // Status, problembeskrivning och historiska priser ändras inte.
@@ -364,8 +351,29 @@ public class WorkOrderRepository {
         booking.setDurationMinutes(minutes);
         booking.setMechanicId(mechanicId == 0 ? null : mechanicId);
         booking.setServices(new ArrayList<>(savedServices));
-        booking.setFrozenPrice(createFrozenPrices(savedServices));
+        booking.setFrozenPrice(InvoiceService.getInstance().createFrozenPrices(savedServices));
     }
+
+    //Extraherat från updateDraft metoden
+    private BigDecimal getNormalizedPrice(BigDecimal price) {
+        BigDecimal normalizedPrice = price;
+
+        if (price != null) {
+            try {
+                normalizedPrice = price.setScale(2, RoundingMode.UNNECESSARY);
+            } catch (ArithmeticException exception) {
+                throw new IllegalArgumentException("editWorkOrderDraft.invalidPrice");
+            }
+
+            if (normalizedPrice.signum() < 0
+                    || normalizedPrice.compareTo(
+                    new BigDecimal("9999999999.99")) > 0) {
+                throw new IllegalArgumentException("editWorkOrderDraft.invalidPrice");
+            }
+        }
+        return normalizedPrice;
+    }
+
     public void saveDropInOrder(WorkOrder workOrder, Booking booking) {
         org.hibernate.Session session = HibernateUtil.getSessionFactory().openSession();
         org.hibernate.Transaction tx = null;
@@ -385,18 +393,5 @@ public class WorkOrderRepository {
         } finally {
             session.close();
         }
-    }
-
-    private List<InvoiceLine> createFrozenPrices(List<ServiceItem> serviceItems) {
-        List<InvoiceLine> frozenPrices = new ArrayList<>();
-        for (ServiceItem service : serviceItems) {
-            InvoiceLine frozenLine = new InvoiceLine(
-                    service.getId(),
-                    service.getName(),
-                    service.getPrice() // Sparar priset inför faktureringen
-            );
-            frozenPrices.add(frozenLine);
-        }
-        return frozenPrices;
     }
 }

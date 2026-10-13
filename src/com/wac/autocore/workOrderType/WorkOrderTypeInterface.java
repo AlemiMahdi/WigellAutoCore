@@ -12,5 +12,4 @@ public interface WorkOrderTypeInterface {
 
     WorkOrder createWorkOrder(WorkOrderDto workOrderDto);
     void startWorkOrder(int workOrderId);
-    void completeWorkOrder(int workOrderId);
 }

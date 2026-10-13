@@ -20,6 +20,8 @@ import javafx.scene.control.TextArea;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
+import static com.wac.autocore.ui.views.ViewHelpMethod.getVehicleStringConverter;
+
 
 // Formulär för att skapa en arbetsorder som utkast (WAC-63)
 // Bara fordon, typ och en kort problembeskrivning krävs.
@@ -191,21 +193,7 @@ public class CreateDraftWorkOrderView {
 
     //Visar fordon som "ABC123 · Volvo V70"
     private StringConverter<Vehicle> vehicleConverter() {
-        return new StringConverter<Vehicle>() {
-            @Override
-            public String toString(Vehicle vehicle) {
-                if(vehicle == null) {
-                    return "";
-                }
-                return  vehicle.getRegistrationNumber() + " · "
-                        + vehicle.getBrand() + " " + vehicle.getModel();
-            }
-
-            @Override
-            public Vehicle fromString(String s) {
-                return null;
-            }
-        };
+        return getVehicleStringConverter();
     }
 
     //Visar typen med text från språkfilen, t.ex PLANNED -> "planerad"

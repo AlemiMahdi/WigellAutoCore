@@ -39,9 +39,4 @@ public class PlannedWorkOrder implements WorkOrderTypeInterface{
     public void startWorkOrder(int workOrderId) {
 
     }
-
-    @Override
-    public void completeWorkOrder(int workOrderId) {
-
-    }
 }

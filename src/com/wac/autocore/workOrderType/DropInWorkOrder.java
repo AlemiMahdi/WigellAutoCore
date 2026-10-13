@@ -86,10 +86,6 @@ public class DropInWorkOrder implements WorkOrderTypeInterface{
 
     }
 
-    @Override
-    public void completeWorkOrder(int workOrderId) {
-
-    }
     private ServiceItem findServiceItem(int serviceId) {
         return Database.getServiceItems().stream()
                 .filter(s -> s.getId() == serviceId)
