@@ -122,8 +122,7 @@ public class CreateDraftWorkOrderView {
                 WorkOrder originalOrder = originalWorkOrderCombo.getValue();
                 if (originalOrder == null) {
                     // Visar felmeddelande om man glömt att välja vilken order som reklameras
-                    UiKit.showError(messageLabel, "");
-                    messageLabel.textProperty().bind(language.text("createDraft.originalMissing"));
+                    UiKit.showError(messageLabel, language.text("createDraft.originalMissing").get());
                     return;
                 }
                 originalId = originalOrder.getId();

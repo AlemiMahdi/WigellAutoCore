@@ -172,11 +172,7 @@ public class EditWorkOrderDraftView {
         TextArea instructionsField = new TextArea();
         instructionsField.setPrefRowCount(3);
         instructionsField.setWrapText(true);
-        if (booking.getDescription() != null) {
-            instructionsField.setText(booking.getDescription());
-        } else {
-            instructionsField.setText(draft.getCustomerInstructions() == null ? "" : draft.getCustomerInstructions());
-        }
+        instructionsField.setText(draft.getCustomerInstructions() == null ? "" : draft.getCustomerInstructions());
 
         TextArea commentsField = new TextArea();
         commentsField.setPrefRowCount(3);
