@@ -7,10 +7,10 @@ import org.hibernate.Transaction;
 
 import java.util.List;
 
-
 // Hanterar lagring och hämtning av fordon i databasen.
-public class VehicleRepository {
+public class VehicleRepository implements IVehicleRepository {
 
+    @Override
     public void save(Vehicle vehicle) {
         try (Session session =
                      HibernateUtil.getSessionFactory().openSession()) {
@@ -32,6 +32,7 @@ public class VehicleRepository {
         }
     }
 
+    @Override
     public List<Vehicle> findAll() {
         try (Session session =
                      HibernateUtil.getSessionFactory().openSession()) {
@@ -59,24 +60,19 @@ public class VehicleRepository {
         }
     }
 
-    public List<Vehicle> findAllVehicles() {
-        return findAll();
-    }
-
-    public Vehicle findById(int id){
+    @Override
+    public Vehicle findById(int id) {
         try (Session session =
-                     HibernateUtil.getSessionFactory().openSession()) {
+                HibernateUtil.getSessionFactory().openSession()) {
 
             Transaction transaction = session.beginTransaction();
 
             try {
-
                 Vehicle vehicle = session.get(Vehicle.class, id);
 
                 transaction.commit();
 
                 return vehicle;
-
             } catch (RuntimeException exception) {
 
                 if (transaction.isActive()) {
@@ -87,4 +83,5 @@ public class VehicleRepository {
             }
         }
     }
+
 }

@@ -208,7 +208,7 @@ public class AutoCoreApp extends Application {
 
     private void loadVehicles() {
         VehicleRepository repository = new VehicleRepository();
-        List<Vehicle> savedVehicles = repository.findAllVehicles();
+        List<Vehicle> savedVehicles = repository.findAll();
 
         boolean firstRun = savedVehicles.isEmpty();
 
