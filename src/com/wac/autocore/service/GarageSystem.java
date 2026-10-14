@@ -233,8 +233,8 @@ public class GarageSystem {
         return workOrder;
     }
 
-    // Skapar en arbetsorder som utkast med en automatiskt bokning (WAC-63)
-    public WorkOrder createDraftWorkOrder(int vehicleId, String description, WorkOrderTypeEnum type) {
+    // Skapar en arbetsorder som utkast med en automatisk bokning (WAC-63)
+    public WorkOrder createDraftWorkOrder(int vehicleId, String description, WorkOrderTypeEnum type, Integer originalWorkOrderId) {
          //1. Kontroller allt först
         Vehicle vehicle = findVehicle(vehicleId);
         if (vehicle == null) {
@@ -252,7 +252,11 @@ public class GarageSystem {
         int workOrderId = Database.getWorkOrders().size() + 1;
         WorkOrder draft = WorkOrder.createDraft(workOrderId, bookingId, type);
 
-        //3. Skapa den automatiska bokningen
+        if (type == WorkOrderTypeEnum.COMPLAINT && originalWorkOrderId != null) {
+            draft.setOriginalWorkOrderId(originalWorkOrderId);
+        }
+
+        //3. Skapa den automatiska bokingen
         Booking booking = new Booking(bookingId, vehicleId, null, description.trim());
         booking.setStatus("WORK_ORDER_CREATED");
 

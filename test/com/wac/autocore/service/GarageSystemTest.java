@@ -22,7 +22,7 @@ public class GarageSystemTest {
     @Test
     void createDraftWorkOrderCreateDraftAndBooking() {
         WorkOrder draft = garageSystem.createDraftWorkOrder(
-                1, " Konstigt ljud från bromsarna ", WorkOrderTypeEnum.DROP_IN);
+                1, " Konstigt ljud från bromsarna ", WorkOrderTypeEnum.DROP_IN, 27);
 
         assertEquals(WorkOrderStatus.DRAFT, draft.getStatus());
         assertEquals(WorkOrderTypeEnum.DROP_IN, draft.getType());
@@ -42,7 +42,7 @@ public class GarageSystemTest {
         int workOrdersBefore = Database.getWorkOrders().size();
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> garageSystem.createDraftWorkOrder(999, "Ljud", WorkOrderTypeEnum.PLANNED));
+                () -> garageSystem.createDraftWorkOrder(999, "Ljud", WorkOrderTypeEnum.PLANNED, 27));
 
         assertEquals("createDraft.vehicleMissing", exception.getMessage());
         assertEquals(bookingsBefore, Database.getBookings().size());
@@ -53,7 +53,7 @@ public class GarageSystemTest {
     @Test
     void createDraftWorkOrderWithBlankDescriptionThrow() {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> garageSystem.createDraftWorkOrder(1, " ", WorkOrderTypeEnum.PLANNED));
+                () -> garageSystem.createDraftWorkOrder(1, " ", WorkOrderTypeEnum.PLANNED, 27));
 
         assertEquals("createDraft.descriptionMissing", exception.getMessage());
     }
@@ -64,7 +64,7 @@ public class GarageSystemTest {
         int bookingsBefore = Database.getBookings().size();
 
         assertThrows(IllegalArgumentException.class,
-                () -> garageSystem.createDraftWorkOrder(1, "Ljud", null));
+                () -> garageSystem.createDraftWorkOrder(1, "Ljud", null, 22));
 
         assertEquals(bookingsBefore, Database.getBookings().size());
     }
@@ -72,7 +72,7 @@ public class GarageSystemTest {
     @Test
     void incompleteDraftReportsMissingMechanicAndServices() {
         WorkOrder draft = garageSystem.createDraftWorkOrder(
-                1, "Kontroll av bromsar", WorkOrderTypeEnum.PLANNED
+                1, "Kontroll av bromsar", WorkOrderTypeEnum.PLANNED, 27
         );
         Booking booking = findBooking(draft.getBookingId());
 
@@ -92,7 +92,7 @@ public class GarageSystemTest {
     @Test
     void completeDraftPassesValidationWithoutOptionalFields() {
         WorkOrder draft = garageSystem.createDraftWorkOrder(
-                1, "Kontroll av bromsar", WorkOrderTypeEnum.PLANNED
+                1, "Kontroll av bromsar", WorkOrderTypeEnum.PLANNED, 27
         );
         Booking booking = findBooking(draft.getBookingId());
 
@@ -116,7 +116,7 @@ public class GarageSystemTest {
     @Test
     void confirmedOrderWithoutServicesCannotStart() {
         WorkOrder draft = garageSystem.createDraftWorkOrder(
-                1, "Kontroll av bromsar", WorkOrderTypeEnum.PLANNED
+                1, "Kontroll av bromsar", WorkOrderTypeEnum.PLANNED, 27
         );
         Booking booking = findBooking(draft.getBookingId());
         Mechanic mechanic = Database.getMechanics().get(0);
