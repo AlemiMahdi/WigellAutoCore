@@ -182,7 +182,7 @@ public class EditWorkOrderDraftView {
         commentsField.setPrefRowCount(3);
         commentsField.setWrapText(true);
         commentsField.setText(
-                draft.getDraftComments() != null ? "" : draft.getDraftComments()
+                draft.getDraftComments() == null ? "" : draft.getDraftComments()
         );
 
         Label messageLabel = UiKit.feedbackLabel();
