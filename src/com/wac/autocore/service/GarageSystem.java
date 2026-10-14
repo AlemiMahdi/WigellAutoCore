@@ -55,19 +55,7 @@ public class GarageSystem {
         }
     }
 
-    public void showServiceItems() {
-        System.out.println();
-        System.out.println("=== SERVICES ===");
 
-        if (Database.getServiceItems().isEmpty()) {
-            System.out.println("No services found.");
-            return;
-        }
-
-        for (ServiceItem serviceItem : Database.getServiceItems()) {
-            System.out.println(serviceItem);
-        }
-    }
 
     public void showMechanics() {
         System.out.println();

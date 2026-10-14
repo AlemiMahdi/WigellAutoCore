@@ -1,5 +1,6 @@
 
 import com.wac.autocore.service.GarageSystem;
+import com.wac.autocore.service.ServiceItemService;
 import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
 
 import java.time.LocalDate;
@@ -50,7 +51,7 @@ public class Main {
                     break;
 
                 case 7:
-                    garageSystem.showServiceItems();
+                  //  ServiceItemService.showServiceItems();
                     break;
 
                 case 8:

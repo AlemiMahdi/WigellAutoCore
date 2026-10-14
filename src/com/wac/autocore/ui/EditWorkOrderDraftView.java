@@ -1,5 +1,6 @@
 package com.wac.autocore.ui;
 
+import com.wac.autocore.service.ServiceItemService;
 import com.wac.autocore.ui.views.ViewHelpMethod;
 import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
 import com.wac.autocore.ui.UiKit;
@@ -193,7 +194,7 @@ public class EditWorkOrderDraftView {
         );
         serviceList.setPrefHeight(150);
 
-        ViewHelpMethod.setupServiceChecklist(
+        ServiceItemService.setupServiceChecklist(
                 serviceList,
                 selectedServiceIds,
                 estimatedMinutesField,

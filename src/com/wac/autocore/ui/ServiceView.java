@@ -3,6 +3,7 @@ package com.wac.autocore.ui;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.repository.ServiceItemRepository;
+import com.wac.autocore.service.ServiceItemService;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
@@ -58,7 +59,7 @@ public class ServiceView extends VBox {
 
         TableColumn<ServiceItem, String> priceColumn = new TableColumn<ServiceItem, String>("Price");
         priceColumn.setCellValueFactory(cell ->
-                new ReadOnlyStringWrapper(formatPrice(cell.getValue().getPrice())));
+                new ReadOnlyStringWrapper(ServiceItemService.formatPrice(cell.getValue().getPrice())));
         priceColumn.getStyleClass().add("cell-right");
 
         TableColumn<ServiceItem, String> timeColumn = new TableColumn<ServiceItem, String>("Est. time");
@@ -124,21 +125,13 @@ public class ServiceView extends VBox {
         durationField.promptTextProperty().bind(language.text("services.minutesPrompt"));
         durationField.setPrefColumnCount(10);
 
+        ServiceItem selected = table.getSelectionModel().getSelectedItem();
+
         Button saveButton = UiKit.primaryButton("Save duration");
         saveButton.textProperty().bind(language.text("services.save"));
-        saveButton.setOnAction(event -> saveDuration());
+        saveButton.setOnAction(event -> ServiceItemService.saveDuration(selected, feedbackLabel, language, durationField, table));
 
-        HBox inputRow = new HBox(12, durationField, saveButton);
-        inputRow.setAlignment(Pos.CENTER_LEFT);
-        HBox.setHgrow(durationField, Priority.NEVER);
-
-        // Tomt meddelande ska inte lämna ett hål längst ner i kortet
-        feedbackLabel.managedProperty().bind(feedbackLabel.textProperty().isNotEmpty());
-        feedbackLabel.visibleProperty().bind(feedbackLabel.textProperty().isNotEmpty());
-
-        VBox card = UiKit.card(heading, hint, inputRow, feedbackLabel);
-        card.getStyleClass().add("detail-card");
-        return card;
+        return inputRow(heading, hint, saveButton);
     }
 
     private VBox buildPriceCard() {
@@ -154,116 +147,29 @@ public class ServiceView extends VBox {
         priceField.promptTextProperty().bind(language.text("services.pricePlaceholder"));
         priceField.setPrefColumnCount(10);
 
+        ServiceItem selected = table.getSelectionModel().getSelectedItem();
         Button saveButton = UiKit.primaryButton("Save price");
         saveButton.textProperty().bind(language.text("services.savePrice"));
-        saveButton.setOnAction(event -> savePrice());
+        saveButton.setOnAction(event -> ServiceItemService.savePrice(table, priceFeedbackLabel, language, priceField, selected));
 
-        HBox inputRow = new HBox(12, priceField, saveButton);
-        inputRow.setAlignment(Pos.CENTER_LEFT);
-        HBox.setHgrow(priceField, Priority.NEVER);
-
-        // Tomt meddelande ska inte lämna ett hål längst ner i kortet
-        priceFeedbackLabel.managedProperty().bind(priceFeedbackLabel.textProperty().isNotEmpty());
-        priceFeedbackLabel.visibleProperty().bind(priceFeedbackLabel.textProperty().isNotEmpty());
-
-        VBox card = UiKit.card(heading, hint, inputRow, priceFeedbackLabel);
-        card.getStyleClass().add("detail-card");
-        return card;
-    }
-
-    // Samma validering och sparning som tidigare, via ServiceItemRepository.
-    private void saveDuration() {
-        ServiceItem selected = table.getSelectionModel().getSelectedItem();
-
-        if (selected == null) {
-            UiKit.showError(feedbackLabel, language.text("services.select").get());
-            return;
-        }
-
-        int minutes;
-
-        try {
-            minutes = Integer.parseInt(durationField.getText().trim());
-        } catch (NumberFormatException exception) {
-            UiKit.showError(feedbackLabel, language.text("services.invalidNumber").get());
-            return;
-        }
-
-        if (minutes <= 0) {
-            UiKit.showError(feedbackLabel, language.text("services.invalidDuration").get());
-            return;
-        }
-
-        // Behåller det gamla värdet om sparandet misslyckas.
-        int previousMinutes = selected.getEstimatedMinutes();
-        selected.setEstimatedMinutes(minutes);
-
-        try {
-            repository.save(selected);
-        } catch (RuntimeException exception) {
-            selected.setEstimatedMinutes(previousMinutes);
-            table.refresh();
-
-            UiKit.showError(feedbackLabel, language.text("services.error").get());
-            exception.printStackTrace();
-            return;
-        }
-
-        table.refresh();
-        UiKit.showSuccess(feedbackLabel, language.text("services.saved").get());
-    }
-
-    private void savePrice() {
-        ServiceItem selected = table.getSelectionModel().getSelectedItem();
-
-        if (selected == null) {
-            UiKit.showError(priceFeedbackLabel, language.text("services.select").get());
-            return;
-        }
-
-        double price;
-
-        try {
-            price = Double.parseDouble(priceField.getText().trim().replace(",", "."));
-        } catch (NumberFormatException exception) {
-            UiKit.showError(priceFeedbackLabel, language.text("services.invalidPrice").get());
-            return;
-        }
-
-        if (price <= 0) {
-            UiKit.showError(priceFeedbackLabel, language.text("services.invalidPrice").get());
-            return;
-        }
-
-        // Behåller det gamla värdet om sparandet misslyckas.
-        double previousPrice = selected.getPrice();
-        selected.setPrice(price);
-
-        try {
-            repository.save(selected);
-        } catch (RuntimeException exception) {
-            selected.setPrice(previousPrice);
-            table.refresh();
-
-            UiKit.showError(priceFeedbackLabel, language.text("services.priceError").get());
-            exception.printStackTrace();
-            return;
-        }
-
-        table.refresh();
-        UiKit.showSuccess(priceFeedbackLabel, language.text("services.priceSaved").get());
+        return inputRow(heading, hint, saveButton);
     }
 
     private void setColumnWeight(TableColumn<ServiceItem, String> column, int percent) {
         column.setMaxWidth(percent * 100000.0);
     }
 
-    // 1450.0 -> "1 450 SEK" (mellanslag som tusentalsavgränsare, som i designen)
-    private String formatPrice(double price) {
-        DecimalFormatSymbols symbols = new DecimalFormatSymbols();
-        symbols.setGroupingSeparator(' ');
-        DecimalFormat format = new DecimalFormat("#,##0", symbols);
-        format.setRoundingMode(RoundingMode.HALF_UP);
-        return format.format(price) + " SEK";
+    private VBox inputRow(Label heading, Label hint, Button saveButton){
+        HBox inputRow = new HBox(12, durationField, saveButton);
+        inputRow.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(durationField, Priority.NEVER);
+
+        // Tomt meddelande ska inte lämna ett hål längst ner i kortet
+        feedbackLabel.managedProperty().bind(feedbackLabel.textProperty().isNotEmpty());
+        feedbackLabel.visibleProperty().bind(feedbackLabel.textProperty().isNotEmpty());
+
+        VBox card = UiKit.card(heading, hint, inputRow, feedbackLabel);
+        card.getStyleClass().add("detail-card");
+        return card;
     }
 }

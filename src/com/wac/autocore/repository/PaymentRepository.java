@@ -9,7 +9,7 @@ import org.hibernate.Transaction;
 
 import java.util.List;
 
-public class PaymentRepository {
+public class PaymentRepository implements IPaymentRepository {
 
     public void save(Payment payment) {
 
