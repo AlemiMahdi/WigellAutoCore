@@ -3,8 +3,11 @@ package com.wac.autocore.ui;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Customer;
 import com.wac.autocore.repository.CustomerRepository;
+import com.wac.autocore.service.CustomerService;
 import com.wac.autocore.service.GarageSystem;
 import com.wac.autocore.ui.language.LanguageManager;
+
+import javafx.beans.binding.Bindings;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -15,8 +18,8 @@ import javafx.scene.layout.VBox;
 public class CreateCustomerView extends VBox {
 
     private final LanguageManager language = LanguageManager.getInstance();
-    private final GarageSystem garageSystem = new GarageSystem();
-    private final CustomerRepository customerRepository = new CustomerRepository();
+    
+    private final CustomerService customerService = new CustomerService(new CustomerRepository());
 
     // Kunduppgifter
     private final TextField nameField = new TextField();
@@ -53,29 +56,56 @@ public class CreateCustomerView extends VBox {
 
     /** Skapar kunden via GarageSystem och sparar den i databasen. */
     private void saveCustomer() {
-        Customer customer = garageSystem.createCustomer(
-                nameField.getText(),
-                phoneField.getText(),
-                emailField.getText()
-        );
+
+        // Ta bort tidigare bindning innan meddelandet ändras
+        feedback.textProperty().unbind();
 
         try {
-            // Sparar kunden i MySQL innan vi visar en bekräftelse.
-            customerRepository.save(customer);
+            Customer customer = customerService.createCustomer(
+                    nameField.getText(),
+                    phoneField.getText(),
+                    emailField.getText()
+            );
+
+            UiKit.showSuccess(
+                    feedback,
+                    language.text("customer.create.success").get() + "\n" + customer
+            );
+
+            // Lyckatmeddelandet uppdateras vid språkbyte
+            feedback.textProperty().bind(
+                    Bindings.concat(
+                            language.text("customer.create.success"),
+                            "\n",
+                            customer.toString()
+                    )
+            );
+
+            nameField.clear();
+            phoneField.clear();
+            emailField.clear();
+
+        } catch (IllegalArgumentException exception) {
+
+            String errorKey = exception.getMessage();
+
+            UiKit.showError(feedback, language.text(errorKey).get());
+
+            // Felmeddelandet uppdateras vid språkbyte
+            feedback.textProperty().bind(language.text(errorKey));
+
         } catch (RuntimeException exception) {
-            // Tar bort kunden ur minnet om databassparandet misslyckas.
-            Database.getCustomers().remove(customer);
 
-            UiKit.showError(feedback, language.text("customer.create.error").get());
+            UiKit.showError(
+                    feedback,
+                    language.text("customer.create.error").get()
+            );
+
+            feedback.textProperty().bind(
+                    language.text("customer.create.error")
+            );
+
             exception.printStackTrace();
-            return;
         }
-
-        UiKit.showSuccess(feedback, language.text("customer.create.success").get() + "\n" + customer);
-
-        // Tömmer fälten först när kunden har sparats.
-        nameField.clear();
-        phoneField.clear();
-        emailField.clear();
     }
 }

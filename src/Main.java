@@ -29,10 +29,6 @@ public class Main {
                     garageSystem.showCustomers();
                     break;
 
-                case 2:
-                    createCustomer();
-                    break;
-
                 case 3:
                     garageSystem.showVehicles();
                     break;
@@ -137,22 +133,7 @@ public class Main {
         System.out.println("===========================================");
     }
 
-    private static void createCustomer() {
-
-        System.out.println();
-        System.out.println("=== CREATE CUSTOMER ===");
-
-        System.out.print("Name: ");
-        String name = scanner.nextLine();
-
-        System.out.print("Phone: ");
-        String phone = scanner.nextLine();
-
-        System.out.print("Email: ");
-        String email = scanner.nextLine();
-
-        garageSystem.createCustomer(name, phone, email);
-    }
+    
 
     private static void createVehicle() {
 

@@ -22,6 +22,7 @@ import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 import javafx.collections.ObservableList;
 import java.util.ArrayList;
+import com.wac.autocore.service.CustomerService;
 
 import javafx.scene.control.ListView;
 

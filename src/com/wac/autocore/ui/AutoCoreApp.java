@@ -183,20 +183,30 @@ public class AutoCoreApp extends Application {
         List<Customer> savedCustomers = repository.findAllCustomers();
 
         if (savedCustomers.isEmpty()) {
-            // Sparar originalets exempelkunder vid första starten.
-            for (Customer customer : Database.getCustomers()) {
-                repository.save(customer);
-            }
-            return;
-        }
 
-        // Kontrollerar ID-ordningen eftersom originalet använder kundlistans storlek + 1 för att skapa nästa ID.
-        for (int i = 0; i < savedCustomers.size(); i++) {
-            if (savedCustomers.get(i).getId() != i + 1) {
-                throw new IllegalStateException(
-                        "Customer IDs must be consecutive, starting at 1."
-                );
+            Map<Integer, Integer> customerIdMapping = new HashMap<>();
+
+            // Spara exempelkunder och registrera deras nya ID:n
+            for (Customer customer : Database.getCustomers()) {
+
+                int oldId = customer.getId();
+                repository.save(customer);
+                int newId = customer.getId();
+                customerIdMapping.put(oldId, newId);
             }
+
+            // Uppdatera exempelfordonens kopplingar till kunderna
+            for (Vehicle vehicle : Database.getVehicles()) {
+
+                Integer newCustomerId =
+                        customerIdMapping.get(vehicle.getCustomerId());
+
+                if (newCustomerId != null) {
+                    vehicle.setCustomerId(newCustomerId);
+                }
+            }
+
+            return;
         }
 
         // Ersätter kunderna i minnet med de sparade kunderna.
