@@ -216,16 +216,7 @@ public class AutoCoreApp extends Application {
                 ? Database.getVehicles()
                 : savedVehicles;
 
-        for (int i = 0; i < vehicles.size(); i++) {
-            Vehicle vehicle = vehicles.get(i);
-
-            // Originalet använder listans storlek + 1 för nästa ID.
-            if (vehicle.getId() != i + 1) {
-                throw new IllegalStateException(
-                        "Vehicle IDs must be consecutive, starting at 1."
-                );
-            }
-
+        for (Vehicle vehicle : vehicles) {
             // Kontrollerar att fordonets kund finns.
             boolean customerExists = Database.getCustomers().stream()
                     .anyMatch(customer ->
@@ -241,6 +232,7 @@ public class AutoCoreApp extends Application {
         if (firstRun) {
             // Sparar originalets exempelfordon när tabellen är tom.
             for (Vehicle vehicle : vehicles) {
+                vehicle.setId(0); // id 0 betyder "nytt" så MySQL ger fordonet ett id.
                 repository.save(vehicle);
             }
         } else {
@@ -267,17 +259,6 @@ public class AutoCoreApp extends Application {
             }
 
             return;
-
-        }
-
-        // Kontrollerar att ID:n följer originalets struktur.
-        for (int i = 0; i < savedServiceItems.size(); i++) {
-
-            if (savedServiceItems.get(i).getId() != i + 1) {
-                throw new IllegalStateException(
-                        "Service item IDs must be consecutive, starting at 1."
-                );
-            }
 
         }
 
