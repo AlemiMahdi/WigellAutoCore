@@ -14,6 +14,8 @@ import com.wac.autocore.ui.views.ProcessPaymentView;
 import com.wac.autocore.ui.views.ShowBookingsView;
 import com.wac.autocore.ui.views.ShowPaymentsView;
 import com.wac.autocore.ui.views.ShowWorkOrdersView;
+import com.wac.autocore.repository.IMechanicRepository;
+import com.wac.autocore.repository.IInvoiceRepository;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -295,7 +297,7 @@ public class AutoCoreApp extends Application {
     }
     private void loadMechanics() {
 
-        MechanicRepository repository =
+        IMechanicRepository repository =
                 new MechanicRepository();
 
         List<Mechanic> savedMechanics =
@@ -329,7 +331,7 @@ public class AutoCoreApp extends Application {
 
     private void loadInvoices() {
 
-        InvoiceRepository repository =
+        IInvoiceRepository repository =
                 new InvoiceRepository();
 
         List<Invoice> savedInvoices =

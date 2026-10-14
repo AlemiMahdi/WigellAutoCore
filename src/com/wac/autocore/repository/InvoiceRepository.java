@@ -8,8 +8,9 @@ import org.hibernate.Transaction;
 
 import java.util.List;
 
-public class InvoiceRepository {
+public class InvoiceRepository implements IInvoiceRepository {
 
+    @Override
     public void save(Invoice invoice) {
 
         try (Session session =
@@ -35,6 +36,7 @@ public class InvoiceRepository {
         }
     }
 
+    @Override
     public List<Invoice> findAll() {
 
         try (Session session =
@@ -67,6 +69,7 @@ public class InvoiceRepository {
         }
     }
 
+    @Override
     public List<Invoice> findAllInvoices() {
         return findAll();
     }

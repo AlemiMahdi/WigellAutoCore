@@ -7,8 +7,9 @@ import org.hibernate.Transaction;
 
 import java.util.List;
 
-public class MechanicRepository {
+public class MechanicRepository implements IMechanicRepository {
 
+    @Override
     public void save(Mechanic mechanic) {
         try (Session session =
                      HibernateUtil.getSessionFactory().openSession()) {
@@ -30,6 +31,7 @@ public class MechanicRepository {
         }
     }
 
+    @Override
     public List<Mechanic> findAll() {
         try (Session session =
                      HibernateUtil.getSessionFactory().openSession()) {
@@ -57,6 +59,7 @@ public class MechanicRepository {
         }
     }
 
+    @Override
     public List<Mechanic> findAllMechanics() {
         return findAll();
     }

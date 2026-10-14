@@ -7,6 +7,7 @@ import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.service.GarageSystem;
 import com.wac.autocore.ui.language.LanguageManager;
 import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
+import com.wac.autocore.repository.IInvoiceRepository;
 
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -28,7 +29,7 @@ public class CreateInvoiceView {
     public static VBox build(){
         LanguageManager language = LanguageManager.getInstance();
         GarageSystem garageSystem = new GarageSystem();
-        InvoiceRepository invoiceRepository = new InvoiceRepository();
+        IInvoiceRepository invoiceRepository = new InvoiceRepository();
         BookingRepository bookingRepository = new BookingRepository();
 
 
