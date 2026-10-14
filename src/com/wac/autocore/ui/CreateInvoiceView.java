@@ -154,19 +154,11 @@ public class CreateInvoiceView {
             complaintCosts.setVisible(isComplaint);
             complaintCosts.setManaged(isComplaint);
             if (isComplaint) {
-                getComplaintPrice(selected, extraCostAmountField, extraCostDescriptionField);
+                fillComplaintPrice(selected, extraCostAmountField, extraCostDescriptionField, language);
             }
-                updateTotal.run();
+            updateTotal.run();
 
         });
-
-//        workOrderBox.valueProperty().addListener(
-//            (obs, oldValue, selected) -> {
-//                extraCostDescriptionField.clear();
-//                extraCostAmountField.clear();
-//                updateTotal.run();
-//            }
-//        );
 
         extraCostAmountField.textProperty().addListener(
             (obs, oldValue, newValue) -> updateTotal.run()
@@ -284,13 +276,14 @@ public class CreateInvoiceView {
 
     }
 
-    private static void getComplaintPrice(WorkOrder selected,
-                                   TextField extraCostAmountField,
-                                   TextField extraCostDescriptionField){
+    private static void fillComplaintPrice(WorkOrder selected,
+                                           TextField extraCostAmountField,
+                                           TextField extraCostDescriptionField, LanguageManager language) {
         boolean isComplaint = selected != null && selected.getType() == WorkOrderTypeEnum.COMPLAINT;
-        if (isComplaint && selected.getEstimatedPrice() != null) {
+        assert selected != null;
+        if (selected.getEstimatedPrice() != null) {
             extraCostAmountField.setText(selected.getEstimatedPrice().toPlainString());
-            extraCostDescriptionField.setText("Kostnad enligt arbetsutkast");
+            extraCostDescriptionField.setText(language.text("createInvoice.getComplaintCost").get());
         } else {
             extraCostDescriptionField.clear();
             extraCostAmountField.clear();
