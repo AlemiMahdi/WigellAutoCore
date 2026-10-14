@@ -3,6 +3,7 @@ package com.wac.autocore.ui.views;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Invoice;
 import com.wac.autocore.model.Payment;
+import com.wac.autocore.service.PaymentService;
 import com.wac.autocore.ui.ShowInvoiceView;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
@@ -63,7 +64,7 @@ public class ShowPaymentsView {
 
         paymentTypeColumn.setCellValueFactory(cellData ->
                 new SimpleStringProperty(
-                        ProcessPaymentView.formatPaymentType(cellData.getValue().getPaymentType())
+                        PaymentService.formatPaymentType(cellData.getValue().getPaymentType())
                 )
         );
         paymentTypeColumn.getStyleClass().add("cell-muted");

@@ -30,7 +30,6 @@ public class ServiceView extends VBox {
     private final Label feedbackLabel = UiKit.feedbackLabel();
     private final TextField priceField = new TextField();
     private final Label priceFeedbackLabel = UiKit.feedbackLabel();
-    private final ServiceItemRepository repository = new ServiceItemRepository();
 
     public ServiceView() {
         setSpacing(20);
