@@ -1,15 +1,13 @@
 package com.wac.autocore.model;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 @Entity
 @Table(name = "vehicles")
 public class Vehicle {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
     @Column(name = "registration_number")
@@ -34,6 +32,14 @@ public class Vehicle {
     public Vehicle(int id, String registrationNumber, String brand,
                    String model, int year, int customerId) {
         this.id = id;
+        this.registrationNumber = registrationNumber;
+        this.brand = brand;
+        this.model = model;
+        this.year = year;
+        this.customerId = customerId;
+    }
+
+    public Vehicle(String registrationNumber, String brand, String model, int year, int customerId) {
         this.registrationNumber = registrationNumber;
         this.brand = brand;
         this.model = model;
