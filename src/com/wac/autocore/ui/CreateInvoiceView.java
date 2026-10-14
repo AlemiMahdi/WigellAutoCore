@@ -93,14 +93,6 @@ public class CreateInvoiceView {
         complaintCosts.setVisible(false);
         complaintCosts.setManaged(false);
 
-        workOrderBox.valueProperty().addListener((obs, oldValue, selected) -> {
-            boolean isComplaint = selected != null
-                && selected.getType() == WorkOrderTypeEnum.COMPLAINT;
-
-            complaintCosts.setVisible(isComplaint);
-            complaintCosts.setManaged(isComplaint);
-        });
-
         // --- Rabatt ---
         // Rabatten anges som en rabattkod (t.ex. WELCOME10 eller SERVICE200)
         TextField discoutField = new TextField();
@@ -122,11 +114,7 @@ public class CreateInvoiceView {
                 totalValue.setText(ShowInvoiceView.formatSek(0));
                 return;
             }
-
-            Booking booking = bookingRepository.findById(selected.getBookingId());
-            double amount = sumServicePrices(selected, booking);
-
-            
+            double amount = 0.0;
 
             if (selected.getType() == WorkOrderTypeEnum.COMPLAINT) {
                 String input = extraCostAmountField.getText().trim();
@@ -149,18 +137,28 @@ public class CreateInvoiceView {
                         return;
                     }
                 }
+            } else {
+                Booking booking = bookingRepository.findById(selected.getBookingId());
+                amount = sumServicePrices(selected, booking);
             }
             amountField.setText(ShowInvoiceView.formatSek(amount));
             totalValue.setText(ShowInvoiceView.formatSek(amount));
         };
 
-        workOrderBox.valueProperty().addListener(
-            (obs, oldValue, selected) -> {
-                extraCostDescriptionField.clear();
-                extraCostAmountField.clear();
-                updateTotal.run();
+        workOrderBox.valueProperty().addListener((obs, oldValue, selected) -> {
+            extraCostDescriptionField.clear();
+            extraCostAmountField.clear();
+            boolean isComplaint = selected != null
+                    && selected.getType() == WorkOrderTypeEnum.COMPLAINT;
+
+            complaintCosts.setVisible(isComplaint);
+            complaintCosts.setManaged(isComplaint);
+            if (isComplaint) {
+                fillComplaintPrice(selected, extraCostAmountField, extraCostDescriptionField, language);
             }
-        );
+            updateTotal.run();
+
+        });
 
         extraCostAmountField.textProperty().addListener(
             (obs, oldValue, newValue) -> updateTotal.run()
@@ -278,6 +276,20 @@ public class CreateInvoiceView {
 
     }
 
+    private static void fillComplaintPrice(WorkOrder selected,
+                                           TextField extraCostAmountField,
+                                           TextField extraCostDescriptionField, LanguageManager language) {
+        boolean isComplaint = selected != null && selected.getType() == WorkOrderTypeEnum.COMPLAINT;
+        assert selected != null;
+        if (selected.getEstimatedPrice() != null) {
+            extraCostAmountField.setText(selected.getEstimatedPrice().toPlainString());
+            extraCostDescriptionField.setText(language.text("createInvoice.getComplaintCost").get());
+        } else {
+            extraCostDescriptionField.clear();
+            extraCostAmountField.clear();
+        }
+    }
+
     private static void loadCompletedWorkOrders(ComboBox<WorkOrder> workOrderBox) {
         for (WorkOrder workOrder : Database.getWorkOrders()) {
 
@@ -356,5 +368,4 @@ public class CreateInvoiceView {
         }
         return sum;
     }
-
 }
