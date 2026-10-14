@@ -195,7 +195,7 @@ public class EditWorkOrderDraftView {
         ListView<ServiceItem> serviceList = new ListView<>(
                 FXCollections.observableArrayList(Database.getServiceItems())
         );
-        serviceList.prefHeight(150);
+        serviceList.setPrefHeight(150);
 
         ViewHelpMethod.setupServiceChecklist(
                 serviceList,
