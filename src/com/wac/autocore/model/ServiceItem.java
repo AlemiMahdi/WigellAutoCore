@@ -1,15 +1,14 @@
 package com.wac.autocore.model;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 @Entity
 @Table(name = "service_items")
 public class ServiceItem {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column()
     private int id;
 
     @Column(name = "name")
