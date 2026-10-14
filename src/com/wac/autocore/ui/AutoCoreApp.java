@@ -190,6 +190,7 @@ public class AutoCoreApp extends Application {
             return;
         }
 
+        //borde kolla att idt är större än föregående istället för att kolla att det är lika med föregående + 1
         // Kontrollerar ID-ordningen eftersom originalet använder kundlistans storlek + 1 för att skapa nästa ID.
         for (int i = 0; i < savedCustomers.size(); i++) {
             if (savedCustomers.get(i).getId() != i + 1) {
