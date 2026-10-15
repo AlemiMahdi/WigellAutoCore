@@ -610,7 +610,7 @@ public class AutoCoreApp extends Application {
                 createNavItem("show-customers", "menu.customers", () -> showView(new CustomerView())),
                 createNavItem("create-customer", "menu.createCustomer", () -> showView(new CreateCustomerView())),
                 createNavItem("show-vehicles", "menu.vehicles", () -> showView(ShowVehicleView.build(vehicleService))),
-                createNavItem("create-vehicle", "menu.createVehicle", () -> showView(CreateVehicleView.build())));
+                createNavItem("create-vehicle", "menu.createVehicle", () -> showView(CreateVehicleView.build(vehicleService))));
 
         addNavSection(menuBox, "menu.section.bookings",
                 createNavItem("show-bookings", "menu.bookings", () -> showView(new ShowBookingsView().getView())),
