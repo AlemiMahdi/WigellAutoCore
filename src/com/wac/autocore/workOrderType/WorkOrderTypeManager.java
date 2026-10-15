@@ -38,9 +38,8 @@ public class WorkOrderTypeManager {
                 default:
                     throw new IllegalStateException("Unknown workOrderType");
         }
-        WorkOrder newOrder = orderStrategy.createWorkOrder(dto);
+        WorkOrder newOrder = orderStrategy.createWorkOrder(dto, language, feedbackLabel);
         createdWorkOrders.add(newOrder);
         return newOrder;
     }
-
 }

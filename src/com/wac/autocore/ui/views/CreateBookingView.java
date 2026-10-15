@@ -202,7 +202,6 @@ public class CreateBookingView {
         createButton.setOnAction(event -> {
             AutoCoreApp app = AutoCoreApp.getInstance();
             GarageSystem garageSystem = app.getGarageSystem();
-            WorkOrderRepository workOrderRepository = app.getWorkOrderRepository();
             BookingRepository bookingRepository = app.getBookingRepository();
 
             Vehicle vehicle = vehicleCombo.getValue();

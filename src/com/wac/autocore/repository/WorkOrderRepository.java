@@ -17,7 +17,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 
-public class WorkOrderRepository {
+public class WorkOrderRepository implements IWorkOrderRepository {
 
     public void save(WorkOrder workOrder) {
 
@@ -229,21 +229,7 @@ public class WorkOrderRepository {
             throw new IllegalArgumentException("editWorkOrderDraft.invalidMinutes");
         }
 
-        BigDecimal normalizedPrice = price;
-
-        if (price != null) {
-            try {
-                normalizedPrice = price.setScale(2, RoundingMode.UNNECESSARY);
-            } catch (ArithmeticException exception) {
-                throw new IllegalArgumentException("editWorkOrderDraft.invalidPrice");
-            }
-
-            if (normalizedPrice.signum() < 0
-                    || normalizedPrice.compareTo(
-                    new BigDecimal("9999999999.99")) > 0) {
-                throw new IllegalArgumentException("editWorkOrderDraft.invalidPrice");
-            }
-        }
+        BigDecimal normalizedPrice = getBigDecimalPrice(price);
 
         String savedInstructions = instructions == null ? "" : instructions.trim();
         String savedComments = comments == null ? "" : comments.trim();
@@ -365,6 +351,26 @@ public class WorkOrderRepository {
         booking.setServices(new ArrayList<>(savedServices));
         booking.setFrozenPrice(createFrozenPrices(savedServices));
     }
+
+    private BigDecimal getBigDecimalPrice(BigDecimal price) {
+        BigDecimal normalizedPrice = price;
+
+        if (price != null) {
+            try {
+                normalizedPrice = price.setScale(2, RoundingMode.UNNECESSARY);
+            } catch (ArithmeticException exception) {
+                throw new IllegalArgumentException("editWorkOrderDraft.invalidPrice");
+            }
+
+            if (normalizedPrice.signum() < 0
+                    || normalizedPrice.compareTo(
+                    new BigDecimal("9999999999.99")) > 0) {
+                throw new IllegalArgumentException("editWorkOrderDraft.invalidPrice");
+            }
+        }
+        return normalizedPrice;
+    }
+
     public void saveDropInOrder(WorkOrder workOrder, Booking booking) {
         org.hibernate.Session session = HibernateUtil.getSessionFactory().openSession();
         org.hibernate.Transaction tx = null;
@@ -386,7 +392,7 @@ public class WorkOrderRepository {
         }
     }
 
-    private List<InvoiceLine> createFrozenPrices(List<ServiceItem> serviceItems) {
+    public List<InvoiceLine> createFrozenPrices(List<ServiceItem> serviceItems) {
         List<InvoiceLine> frozenPrices = new ArrayList<>();
         for (ServiceItem service : serviceItems) {
             InvoiceLine frozenLine = new InvoiceLine(

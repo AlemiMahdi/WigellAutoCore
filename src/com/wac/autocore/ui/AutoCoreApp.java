@@ -3,6 +3,7 @@ package com.wac.autocore.ui;
 import java.net.URL;
 
 import com.wac.autocore.service.GarageSystem;
+import com.wac.autocore.service.WorkOrderService;
 import com.wac.autocore.ui.language.LanguageManager;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.data.HibernateUtil;
@@ -55,7 +56,7 @@ public class AutoCoreApp extends Application {
     private static AutoCoreApp instance;
 
     private final GarageSystem garageSystem;
-    private final WorkOrderRepository workOrderRepository;
+    private final IWorkOrderRepository workOrderRepository;
     private final BookingRepository bookingRepository;
     private final VehicleRepository vehicleRepository;
 
@@ -634,7 +635,7 @@ public class AutoCoreApp extends Application {
 
         addNavSection(menuBox, "menu.section.workOrders",
                 createNavItem("show-work-orders", "menu.workOrders", () -> showView(new ShowWorkOrdersView().getView())),
-                createNavItem("create-work-order", "menu.createWorkOrder", () -> showView(new CreateWorkOrderView())),
+                createNavItem("create-work-order", "menu.createWorkOrder", () -> showView(new CreateWorkOrderView(new WorkOrderService(workOrderRepository, bookingRepository)))),
                 createNavItem("create-draft-work-order", "menu.createDraftWorkOrder",
                         () -> showView(new CreateDraftWorkOrderView().getView())),
                 createNavItem("start-work-order", "menu.startWorkOrder", () -> showView(new StartWorkOrderView())),
@@ -777,10 +778,6 @@ public class AutoCoreApp extends Application {
 
     public GarageSystem getGarageSystem() {
         return garageSystem;
-    }
-
-    public WorkOrderRepository getWorkOrderRepository() {
-        return workOrderRepository;
     }
 
     public BookingRepository getBookingRepository() {

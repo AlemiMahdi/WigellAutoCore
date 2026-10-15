@@ -1,17 +1,22 @@
 package com.wac.autocore.workOrderType;
 
 import com.wac.autocore.DTO.WorkOrderDto;
-import com.wac.autocore.model.Booking;
-import com.wac.autocore.model.WorkOrderStatus;
-import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.DTO.WorkOrderResult;
+import com.wac.autocore.model.*;
 import com.wac.autocore.data.Database;
+import com.wac.autocore.ui.UiKit;
+import com.wac.autocore.ui.language.LanguageManager;
+import javafx.scene.control.Label;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class ComplaintWorkOrder implements WorkOrderTypeInterface{
 
 
     @Override
-    public WorkOrder createWorkOrder(WorkOrderDto dto) {
+    public WorkOrder createWorkOrder(WorkOrderDto dto, LanguageManager language, Label feedbackLabel) {
 
         Integer originalId = dto.getOriginalWorkOrderId();
 
@@ -35,14 +40,14 @@ public class ComplaintWorkOrder implements WorkOrderTypeInterface{
                 .filter(b -> b.getId() == original.getBookingId())
                 .findFirst()
                 .orElse(null);
-
+    //Lägg in språk hantering här
         if (booking == null) {
-            System.out.println("Booking not found: " + original.getBookingId());
+            UiKit.showError(feedbackLabel, "");
+            feedbackLabel.textProperty().bind(language.text("createWorkOrder.bookingNotFound"));
             return null;
         }
 
         WorkOrder order = new WorkOrder(
-                0,
                 booking.getId(),
                 dto.getMechanicId(),
                 WorkOrderTypeEnum.COMPLAINT
@@ -51,7 +56,6 @@ public class ComplaintWorkOrder implements WorkOrderTypeInterface{
         for (Integer serviceId : original.getServiceItemIds()) {
             order.addServiceItem(serviceId);
         }
-
         return order;
     }
 

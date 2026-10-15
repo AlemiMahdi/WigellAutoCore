@@ -5,11 +5,13 @@ import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.ui.language.LanguageManager;
+import javafx.scene.control.Label;
 
 public class PlannedWorkOrder implements WorkOrderTypeInterface{
 
     @Override
-    public WorkOrder createWorkOrder(WorkOrderDto dto) {
+    public WorkOrder createWorkOrder(WorkOrderDto dto, LanguageManager language, Label feedbackLabel) {
 
         Booking booking = Database.getBookings().stream()
                 .filter(b -> b.getId() == dto.getBookingId())
@@ -23,11 +25,11 @@ public class PlannedWorkOrder implements WorkOrderTypeInterface{
         //Skapa variabel och sätt in type enum
         WorkOrder order = new WorkOrder(
                 0,
-                dto.getBookingId(),
                 dto.getMechanicId(),
                 WorkOrderTypeEnum.PLANNED
         );
 
+        order.setBookingId(booking.getId());
         for (ServiceItem serviceItem : booking.getServices()) {
             order.addServiceItem(serviceItem.getId());
         }
