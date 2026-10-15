@@ -26,6 +26,11 @@ public class EditWorkOrderDraftView {
 
     private final LanguageManager language =
             LanguageManager.getInstance();
+    private final ServiceItemService serviceItemService;
+
+    public EditWorkOrderDraftView(ServiceItemService serviceItemService) {
+        this.serviceItemService = serviceItemService;
+    }
 
     private void showFeedback(Label label, String key, boolean success) {
         label.textProperty().unbind();
@@ -192,7 +197,7 @@ public class EditWorkOrderDraftView {
         );
         serviceList.setPrefHeight(150);
 
-        ServiceItemService.setupServiceChecklist(
+        serviceItemService.setupServiceChecklist(
                 serviceList,
                 selectedServiceIds,
                 estimatedMinutesField,

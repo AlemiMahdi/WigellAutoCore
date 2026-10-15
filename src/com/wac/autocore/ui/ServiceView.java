@@ -26,8 +26,10 @@ public class ServiceView extends VBox {
     private final Label feedbackLabel = UiKit.feedbackLabel();
     private final TextField priceField = new TextField();
     private final Label priceFeedbackLabel = UiKit.feedbackLabel();
+    private final ServiceItemService serviceItemService;
 
-    public ServiceView() {
+    public ServiceView(ServiceItemService serviceItemService) {
+        this.serviceItemService = serviceItemService;
         setSpacing(20);
 
         buildTable();
@@ -54,7 +56,7 @@ public class ServiceView extends VBox {
 
         TableColumn<ServiceItem, String> priceColumn = new TableColumn<>("Price");
         priceColumn.setCellValueFactory(cell ->
-                new ReadOnlyStringWrapper(ServiceItemService.formatPrice(cell.getValue().getPrice())));
+                new ReadOnlyStringWrapper(serviceItemService.formatPrice(cell.getValue().getPrice())));
         priceColumn.getStyleClass().add("cell-right");
 
         TableColumn<ServiceItem, String> timeColumn = new TableColumn<>("Est. time");
@@ -124,7 +126,7 @@ public class ServiceView extends VBox {
 
         Button saveButton = UiKit.primaryButton("Save duration");
         saveButton.textProperty().bind(language.text("services.save"));
-        saveButton.setOnAction(event -> ServiceItemService.saveDuration(selected, feedbackLabel, language, durationField, table));
+        saveButton.setOnAction(event -> serviceItemService.saveDuration(selected, feedbackLabel, language, durationField, table));
 
         return inputRow(heading, hint, saveButton);
     }
@@ -145,7 +147,7 @@ public class ServiceView extends VBox {
         ServiceItem selected = table.getSelectionModel().getSelectedItem();
         Button saveButton = UiKit.primaryButton("Save price");
         saveButton.textProperty().bind(language.text("services.savePrice"));
-        saveButton.setOnAction(event -> ServiceItemService.savePrice(table, priceFeedbackLabel, language, priceField, selected));
+        saveButton.setOnAction(event -> serviceItemService.savePrice(table, priceFeedbackLabel, language, priceField, selected));
 
         return inputRow(heading, hint, saveButton);
     }

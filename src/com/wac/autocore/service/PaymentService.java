@@ -3,7 +3,7 @@ package com.wac.autocore.service;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Invoice;
 import com.wac.autocore.model.Payment;
-import com.wac.autocore.repository.PaymentRepository;
+import com.wac.autocore.repository.IPaymentRepository;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.scene.control.ComboBox;
@@ -12,9 +12,12 @@ import javafx.scene.control.Label;
 
 public class PaymentService {
 
-    static PaymentRepository paymentRepository = new  PaymentRepository();
+    private final IPaymentRepository paymentRepository;
+    public PaymentService(IPaymentRepository paymentRepository) {
+        this.paymentRepository = paymentRepository;
+    }
 
-public static void processPayment(ComboBox<Invoice> invoiceBox, ComboBox<String> paymentTypeBox, Label messageLabel, LanguageManager language) {
+public void processPayment(ComboBox<Invoice> invoiceBox, ComboBox<String> paymentTypeBox, Label messageLabel, LanguageManager language) {
     Invoice selectedInvoice = invoiceBox.getValue();
 
     if (selectedInvoice == null) {
@@ -56,7 +59,7 @@ public static void processPayment(ComboBox<Invoice> invoiceBox, ComboBox<String>
     }
 try {
     selectedInvoice.setPaid(true);
-        paymentRepository.savePaymentAndInvoice(
+    paymentRepository.savePaymentAndInvoice(
                 payment, selectedInvoice
         );
     Database.getPayments().add(payment);
@@ -89,7 +92,7 @@ try {
 
     // En ComboBox ritar inte om texterna av sig själv när ett objekt ändras
     // (här: paid blev true). Genom att lägga in samma objekt igen uppdateras de.
-    public static void refreshInvoiceTexts(ComboBox<Invoice> invoiceBox) {
+    public void refreshInvoiceTexts(ComboBox<Invoice> invoiceBox) {
         invoiceBox.getItems().clear();
         for(Invoice invoice : Database.getInvoices()) {
             if(!invoice.isPaid()) {
@@ -101,7 +104,7 @@ try {
     /**
      * "CARD" -> "Kort"/"Card" via språkfilen. Används även i ShowPaymentsView så att betalsätt ser likadana ut.
      */
-    public static String formatPaymentType(String type) {
+    public String formatPaymentType(String type) {
         if (type == null || type.trim().isEmpty()) {
             return "—";
         }

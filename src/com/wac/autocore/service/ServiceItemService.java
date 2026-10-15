@@ -1,8 +1,7 @@
 package com.wac.autocore.service;
 
-import com.wac.autocore.data.Database;
 import com.wac.autocore.model.ServiceItem;
-import com.wac.autocore.repository.ServiceItemRepository;
+import com.wac.autocore.repository.IServiceItemRepository;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.collections.ListChangeListener;
@@ -17,25 +16,13 @@ import java.util.Locale;
 
 public class ServiceItemService {
 
-    private static final ServiceItemRepository repository = new ServiceItemRepository();
-
-    //Från GarageSystem för LoadSampleData, används inte just nu, men ska finnas kvar
-    public void showServiceItems() {
-        System.out.println();
-        System.out.println("=== SERVICES ===");
-
-        if (Database.getServiceItems().isEmpty()) {
-            System.out.println("No services found.");
-            return;
-        }
-
-        for (ServiceItem serviceItem : Database.getServiceItems()) {
-            System.out.println(serviceItem);
-        }
+    private final IServiceItemRepository repository;
+    public ServiceItemService(IServiceItemRepository repository) {
+        this.repository = repository;
     }
 
     // 1450.0 -> "1 450 SEK" (mellanslag som tusentalsavgränsare, som i designen)
-    public static String formatPrice(double price) {
+    public String formatPrice(double price) {
         DecimalFormatSymbols symbols = new DecimalFormatSymbols();
         symbols.setGroupingSeparator(' ');
         DecimalFormat format = new DecimalFormat("#,##0", symbols);
@@ -45,7 +32,7 @@ public class ServiceItemService {
 
     //Metod för att Automatiskt hämta tjänsterna och priser, tid för dem
     //Minska koden i själva vyerna
-    public static void setupServiceChecklist(
+    public void setupServiceChecklist(
             ListView<ServiceItem> serviceList,
             ObservableList<ServiceItem> selectedServices,
             TextField durationField,
@@ -138,7 +125,7 @@ public class ServiceItemService {
     }
 
     // Samma validering och sparande som tidigare, via ServiceItemRepository.
-    public static void saveDuration(ServiceItem selected, Label feedbackLabel,
+    public void saveDuration(ServiceItem selected, Label feedbackLabel,
                                     LanguageManager language, TextField durationField, TableView<ServiceItem> table) {
 
 
@@ -180,7 +167,7 @@ public class ServiceItemService {
         UiKit.showSuccess(feedbackLabel, language.text("services.saved").get());
     }
 
-    public static void savePrice(TableView<ServiceItem> table, Label priceFeedbackLabel,
+    public void savePrice(TableView<ServiceItem> table, Label priceFeedbackLabel,
                                  LanguageManager language, TextField priceField, ServiceItem selected) {
 
         if (selected == null) {
@@ -220,4 +207,19 @@ public class ServiceItemService {
         table.refresh();
         UiKit.showSuccess(priceFeedbackLabel, language.text("services.priceSaved").get());
     }
+
+    //Från GarageSystem för LoadSampleData, används inte just nu, men ska finnas kvar
+//    public void showServiceItems() {
+//        System.out.println();
+//        System.out.println("=== SERVICES ===");
+//
+//        if (Database.getServiceItems().isEmpty()) {
+//            System.out.println("No services found.");
+//            return;
+//        }
+//
+//        for (ServiceItem serviceItem : Database.getServiceItems()) {
+//            System.out.println(serviceItem);
+//        }
+//    }
 }

@@ -20,6 +20,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 
 public class ShowPaymentsView {
+    private final PaymentService paymentService;
+    public ShowPaymentsView(PaymentService paymentService) {
+        this.paymentService = paymentService;
+    }
 
     // Datum och klockslag utan sekunder, t.ex. "2026-09-18 14:02"
     private static final DateTimeFormatter DATE_TIME_FORMAT =
@@ -62,7 +66,7 @@ public class ShowPaymentsView {
 
         paymentTypeColumn.setCellValueFactory(cellData ->
                 new SimpleStringProperty(
-                        PaymentService.formatPaymentType(cellData.getValue().getPaymentType())
+                        paymentService.formatPaymentType(cellData.getValue().getPaymentType())
                 )
         );
         paymentTypeColumn.getStyleClass().add("cell-muted");

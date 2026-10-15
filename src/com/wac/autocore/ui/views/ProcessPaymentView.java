@@ -1,6 +1,7 @@
 package com.wac.autocore.ui.views;
 
 import com.wac.autocore.model.Invoice;
+import com.wac.autocore.repository.IPaymentRepository;
 import com.wac.autocore.service.PaymentService;
 import com.wac.autocore.ui.ShowInvoiceView;
 import com.wac.autocore.ui.UiKit;
@@ -18,6 +19,10 @@ import javafx.util.StringConverter;
 public class ProcessPaymentView {
 
     private final LanguageManager language = LanguageManager.getInstance();
+    private final PaymentService paymentService;
+    public ProcessPaymentView(PaymentService paymentService) {
+        this.paymentService = paymentService;
+    }
 
     public VBox getView() {
 
@@ -35,7 +40,7 @@ public class ProcessPaymentView {
                 return null; // Används inte – listan går inte att skriva i
             }
         });
-        PaymentService.refreshInvoiceTexts(invoiceBox);
+        paymentService.refreshInvoiceTexts(invoiceBox);
 
         invoiceBox.promptTextProperty().bind(language.text(
                 invoiceBox.getItems().isEmpty() ? "processPayment.noInvoicesPrompt" : "processPayment.invoiceSelectPrompt"
@@ -77,7 +82,7 @@ public class ProcessPaymentView {
         paymentTypeBox.setConverter(new StringConverter<String>() {
             @Override
             public String toString(String type) {
-                return type == null ? "" : PaymentService.formatPaymentType(type);
+                return type == null ? "" : paymentService.formatPaymentType(type);
             }
 
             @Override
@@ -102,7 +107,7 @@ public class ProcessPaymentView {
 
 
         processButton.setOnAction(event -> {
-            PaymentService.processPayment(invoiceBox,  paymentTypeBox,  messageLabel, language);
+            paymentService.processPayment(invoiceBox,  paymentTypeBox,  messageLabel, language);
         });
 
 

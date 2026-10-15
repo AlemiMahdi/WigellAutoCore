@@ -3,6 +3,8 @@ package com.wac.autocore.ui;
 import java.net.URL;
 
 import com.wac.autocore.service.GarageSystem;
+import com.wac.autocore.service.PaymentService;
+import com.wac.autocore.service.ServiceItemService;
 import com.wac.autocore.ui.language.LanguageManager;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.data.HibernateUtil;
@@ -58,6 +60,8 @@ public class AutoCoreApp extends Application {
     private final WorkOrderRepository workOrderRepository;
     private final BookingRepository bookingRepository;
     private final VehicleRepository vehicleRepository;
+    private final IPaymentRepository paymentRepository;
+    private final IServiceItemRepository serviceRepository;
 
     // FIX 1: Konstruktorn MÅSTE vara publik i en JavaFX-applikation!
     public AutoCoreApp() {
@@ -65,6 +69,8 @@ public class AutoCoreApp extends Application {
         this.workOrderRepository = new WorkOrderRepository();
         this.bookingRepository = new BookingRepository();
         this.vehicleRepository = new VehicleRepository();
+        this.paymentRepository = new PaymentRepository();
+        this.serviceRepository = new ServiceItemRepository();
 
         // Sätt instansen i samma sekund som JavaFX startar appen
         synchronized (AutoCoreApp.class) {
@@ -633,7 +639,7 @@ public class AutoCoreApp extends Application {
                 createNavItem("create-booking", "menu.createBooking", () -> showView(new CreateBookingView().getView())));
 
         addNavSection(menuBox, "menu.section.workOrders",
-                createNavItem("show-work-orders", "menu.workOrders", () -> showView(new ShowWorkOrdersView().getView())),
+                createNavItem("show-work-orders", "menu.workOrders", () -> showView(new ShowWorkOrdersView(new ServiceItemService(serviceRepository)).getView())),
                 createNavItem("create-work-order", "menu.createWorkOrder", () -> showView(new CreateWorkOrderView())),
                 createNavItem("create-draft-work-order", "menu.createDraftWorkOrder",
                         () -> showView(new CreateDraftWorkOrderView().getView())),
@@ -641,7 +647,7 @@ public class AutoCoreApp extends Application {
                 createNavItem("complete-work-order", "menu.completeWorkOrder", () -> showView(CompleteWorkOrderView.build())));
 
         addNavSection(menuBox, "menu.section.servicesMechanics",
-                createNavItem("show-services", "menu.services", () -> showView(new ServiceView())),
+                createNavItem("show-services", "menu.services", () -> showView(new ServiceView(new ServiceItemService(serviceRepository)))),
                 createNavItem("create-service-package", "menu.createServicePackage",
                         () -> showView(new CreateServicePackageView().getView())),
                 createNavItem("manage-service-package", "menu.manageServicePackage", () -> showView(new ManageServicePackageView().getView())),
@@ -651,8 +657,8 @@ public class AutoCoreApp extends Application {
         addNavSection(menuBox, "menu.section.invoicesPayments",
                 createNavItem("show-invoices", "menu.invoices", () -> showView(ShowInvoiceView.build())),
                 createNavItem("create-invoice", "menu.createInvoice", () -> showView(CreateInvoiceView.build())),
-                createNavItem("show-payments", "menu.payments", () -> showView(new ShowPaymentsView().getView())),
-                createNavItem("process-payment", "menu.processPayment", () -> showView(new ProcessPaymentView().getView())));
+                createNavItem("show-payments", "menu.payments", () -> showView(new ShowPaymentsView(new PaymentService(paymentRepository)).getView())),
+                createNavItem("process-payment", "menu.processPayment", () -> showView(new ProcessPaymentView(new PaymentService(paymentRepository)).getView())));
 
         // Tunn linje och sedan Exit längst ned, i rött
         Region divider = new Region();
@@ -789,6 +795,14 @@ public class AutoCoreApp extends Application {
 
     public VehicleRepository getVehicleRepository() {
         return vehicleRepository;
+    }
+
+    public IPaymentRepository getPaymentRepository() {
+        return this.paymentRepository;
+    }
+
+    public IServiceItemRepository getServiceRepository() {
+        return this.serviceRepository;
     }
 
     public static void main(String[] args) {launch(args);
