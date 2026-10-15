@@ -3,6 +3,7 @@ package com.wac.autocore.ui;
 import java.net.URL;
 
 import com.wac.autocore.service.GarageSystem;
+import com.wac.autocore.service.ServicePackageService;
 import com.wac.autocore.service.VehicleService;
 import com.wac.autocore.ui.language.LanguageManager;
 import com.wac.autocore.data.Database;
@@ -60,6 +61,7 @@ public class AutoCoreApp extends Application {
     private final BookingRepository bookingRepository;
     private final VehicleRepository vehicleRepository;
     private final VehicleService vehicleService;
+    private final ServicePackageService servicePackageService;
 
     // FIX 1: Konstruktorn MÅSTE vara publik i en JavaFX-applikation!
     public AutoCoreApp() {
@@ -68,6 +70,7 @@ public class AutoCoreApp extends Application {
         this.bookingRepository = new BookingRepository();
         this.vehicleRepository = new VehicleRepository();
         this.vehicleService = new VehicleService(vehicleRepository);
+        this.servicePackageService = new ServicePackageService(new ServicePackageRepository());
 
         // Sätt instansen i samma sekund som JavaFX startar appen
         synchronized (AutoCoreApp.class) {
@@ -627,7 +630,7 @@ public class AutoCoreApp extends Application {
         addNavSection(menuBox, "menu.section.servicesMechanics",
                 createNavItem("show-services", "menu.services", () -> showView(new ServiceView())),
                 createNavItem("create-service-package", "menu.createServicePackage",
-                        () -> showView(new CreateServicePackageView().getView())),
+                        () -> showView(new CreateServicePackageView(servicePackageService).getView())),
                 createNavItem("manage-service-package", "menu.manageServicePackage", () -> showView(new ManageServicePackageView().getView())),
                 createNavItem("show-mechanics", "menu.mechanics", () -> showView(new MechanicView())),
                 createNavItem("mechanic-schedule", "menu.schedule", () -> showView(new MechanicScheduleView().getView())));
