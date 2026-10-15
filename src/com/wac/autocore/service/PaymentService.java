@@ -9,28 +9,12 @@ import com.wac.autocore.ui.language.LanguageManager;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 
-import static com.wac.autocore.service.GarageSystem.findInvoice;
 
 public class PaymentService {
 
-    GarageSystem garageSystem = new  GarageSystem();
     static PaymentRepository paymentRepository = new  PaymentRepository();
 
-    //Används inte, gamla konsol appens funktion
-//    public void showPayments() {
-//        System.out.println();
-//        System.out.println("=== PAYMENTS ===");
-//
-//        if (Database.getPayments().isEmpty()) {
-//            System.out.println("No payments found.");
-//            return;
-//        }
-//
-//        for (Payment payment : Database.getPayments()) {
-//            System.out.println(payment);
-//        }
-//    }
-public static void processPaymentsNew(ComboBox<Invoice> invoiceBox, ComboBox<String> paymentTypeBox, Label messageLabel, LanguageManager language) {
+public static void processPayment(ComboBox<Invoice> invoiceBox, ComboBox<String> paymentTypeBox, Label messageLabel, LanguageManager language) {
     Invoice selectedInvoice = invoiceBox.getValue();
 
     if (selectedInvoice == null) {
@@ -45,7 +29,6 @@ public static void processPaymentsNew(ComboBox<Invoice> invoiceBox, ComboBox<Str
         UiKit.showError(messageLabel, language.text("processPayment.alreadyPaid").get());
         return;
     }
-//    int invoiceId = selectedInvoice.getId();
 
     String paymentType = paymentTypeBox.getValue();
     if (paymentType == null) {
@@ -55,62 +38,40 @@ public static void processPaymentsNew(ComboBox<Invoice> invoiceBox, ComboBox<Str
         return;
     }
 
-//    Invoice invoice = Database.getInvoices().stream()
-//            .filter(existingInvoice ->
-//                    existingInvoice.getId() == invoiceId)
-//            .findFirst()
-//            .orElse(null);
-
-    //boolean previousPaidStatus = invoice != null && invoice.isPaid();
     boolean previousPaidStatus = selectedInvoice.isPaid();
 
-//    Payment payment = PaymentService.processPayment(invoiceId, paymentType);
-
-
-//    if (payment == null) {
-//
-//        UiKit.showError(messageLabel,
-//                language.text("processPayment.processError").get()
-//        );
-//
-//        return;
-//    }
     Payment payment = new Payment(
             selectedInvoice.getId(), selectedInvoice.getTotalAmount(), paymentType
     );
 
-    boolean successful = false;
+    boolean successful = "CARD".equalsIgnoreCase(paymentType) ||
+            "SWISH".equalsIgnoreCase(paymentType) ||
+            "CASH".equalsIgnoreCase(paymentType);
+    payment.setSuccessful(successful);
 
-//    if (paymentType.equalsIgnoreCase("CARD")) || paymentType.equalsIgnoreCase("SWISH") ||
-//            paymentType.equalsIgnoreCase("CASH")){
-//    successful = true;
-//    }
-//    payment.setSuccessful(successful);
-    try {
-
+    // Om betalningen inte är godkänd, avbryt innan vi rör databasen
+    if (!payment.isSuccessful()) {
+        UiKit.showError(messageLabel, language.text("processPayment.failed").get());
+        return;
+    }
+try {
+    selectedInvoice.setPaid(true);
         paymentRepository.savePaymentAndInvoice(
                 payment, selectedInvoice
         );
-        selectedInvoice.setPaid(true);
+    Database.getPayments().add(payment);
     } catch (RuntimeException exception) {
-
-        // Återställ ändringarna som GarageSystem gjorde i minnet.
-//        Database.getPayments().remove(payment);
-//        invoice.setPaid(previousPaidStatus);
+        // Återställ ändringarna som Database gjorde i minnet.
+        Database.getPayments().remove(payment);
+        selectedInvoice.setPaid(previousPaidStatus);
 
         refreshInvoiceTexts(invoiceBox);
-
-        UiKit.showError(messageLabel,
-                language.text("processPayment.saveError").get()
-        );
-
+        UiKit.showError(messageLabel, language.text("processPayment.saveError").get());
         exception.printStackTrace();
-
         return;
     }
 
     if (payment.isSuccessful()) {
-
         UiKit.showSuccess(messageLabel,
                 language.text("processPayment.success").get()
         );
@@ -125,67 +86,6 @@ public static void processPaymentsNew(ComboBox<Invoice> invoiceBox, ComboBox<Str
         UiKit.showError(messageLabel, language.text("processPayment.failed").get());
     }
 }
-
-
-    //DUBBELKOLLA findInvoice metoden sen om den behöver hämtas från annan klass
-    public static Payment processPayment(int invoiceId, String paymentType) {
-        Invoice invoice = findInvoice(invoiceId);
-
-        if (invoice == null) {
-            System.out.println("Invoice with ID " + invoiceId + " does not exist.");
-            return null;
-        }
-
-        if (invoice.isPaid()) {
-            System.out.println("Invoice has already been paid.");
-            return null;
-        }
-
-        Payment payment = new Payment(
-                invoiceId,
-                invoice.getTotalAmount(),
-                paymentType
-        );
-
-        boolean successful = false;
-
-        if (paymentType.equalsIgnoreCase("CARD")) {
-
-            System.out.println("Connecting directly to SuperCardPayment...");
-            System.out.println("Card payment approved.");
-            successful = true;
-
-        } else if (paymentType.equalsIgnoreCase("SWISH")) {
-
-            System.out.println("Calling Swish payment service...");
-            System.out.println("Swish payment approved.");
-            successful = true;
-
-        } else if (paymentType.equalsIgnoreCase("CASH")) {
-
-            System.out.println("Registering cash payment...");
-            successful = true;
-
-        } else {
-
-            System.out.println("Unknown payment type.");
-        }
-
-        payment.setSuccessful(successful);
-        Database.getPayments().add(payment);
-
-        if (successful) {
-            invoice.setPaid(true);
-
-            System.out.println("Payment completed successfully.");
-            System.out.println("Sending payment confirmation to customer...");
-            System.out.println("Confirmation sent.");
-        } else {
-            System.out.println("Payment failed.");
-        }
-
-        return payment;
-    }
 
     // En ComboBox ritar inte om texterna av sig själv när ett objekt ändras
     // (här: paid blev true). Genom att lägga in samma objekt igen uppdateras de.
@@ -232,5 +132,78 @@ public static void processPaymentsNew(ComboBox<Invoice> invoiceBox, ComboBox<Str
 //                invoiceId,
 //                paymentType
 //        );
+//    }
+    //Används inte, gamla konsol appens funktion
+//    public void showPayments() {
+//        System.out.println();
+//        System.out.println("=== PAYMENTS ===");
+//
+//        if (Database.getPayments().isEmpty()) {
+//            System.out.println("No payments found.");
+//            return;
+//        }
+//
+//        for (Payment payment : Database.getPayments()) {
+//            System.out.println(payment);
+//        }
+//    }
+    //DUBBELKOLLA findInvoice metoden sen om den behöver hämtas från annan klass
+//    public static Payment oldProcessPayment(int invoiceId, String paymentType) {
+//        Invoice invoice = findInvoice(invoiceId);
+//
+//        if (invoice == null) {
+//            System.out.println("Invoice with ID " + invoiceId + " does not exist.");
+//            return null;
+//        }
+//
+//        if (invoice.isPaid()) {
+//            System.out.println("Invoice has already been paid.");
+//            return null;
+//        }
+//
+//        Payment payment = new Payment(
+//                invoiceId,
+//                invoice.getTotalAmount(),
+//                paymentType
+//        );
+//
+//        boolean successful = false;
+//
+//        if (paymentType.equalsIgnoreCase("CARD")) {
+//
+//            System.out.println("Connecting directly to SuperCardPayment...");
+//            System.out.println("Card payment approved.");
+//            successful = true;
+//
+//        } else if (paymentType.equalsIgnoreCase("SWISH")) {
+//
+//            System.out.println("Calling Swish payment service...");
+//            System.out.println("Swish payment approved.");
+//            successful = true;
+//
+//        } else if (paymentType.equalsIgnoreCase("CASH")) {
+//
+//            System.out.println("Registering cash payment...");
+//            successful = true;
+//
+//        } else {
+//
+//            System.out.println("Unknown payment type.");
+//        }
+//
+//        payment.setSuccessful(successful);
+//        Database.getPayments().add(payment);
+//
+//        if (successful) {
+//            invoice.setPaid(true);
+//
+//            System.out.println("Payment completed successfully.");
+//            System.out.println("Sending payment confirmation to customer...");
+//            System.out.println("Confirmation sent.");
+//        } else {
+//            System.out.println("Payment failed.");
+//        }
+//
+//        return payment;
 //    }
 }

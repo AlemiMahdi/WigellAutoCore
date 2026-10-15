@@ -82,7 +82,8 @@ public class PaymentRepository implements IPaymentRepository {
             try {
 
                 session.saveOrUpdate(payment);
-                session.saveOrUpdate(invoice);
+                //gör en update på ändrade invoice fält
+                session.merge(invoice);
 
                 transaction.commit();
 

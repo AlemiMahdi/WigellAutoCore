@@ -38,7 +38,7 @@ public class ServiceItem {
     public int getId() {
         return id;
     }
-
+    //Använd inte setId
     public void setId(int id) {
         this.id = id;
     }

@@ -47,7 +47,7 @@ public class Payment {
     public int getId() {
         return id;
     }
-
+    //Använda inte setId
     public void setId(int id) {
         this.id = id;
     }

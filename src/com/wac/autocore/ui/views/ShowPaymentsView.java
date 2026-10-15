@@ -34,8 +34,6 @@ public class ShowPaymentsView {
         emptyLabel.textProperty().bind(language.text("payments.empty"));
         table.setPlaceholder(emptyLabel);
 
-
-
         // Invoice – visas som "WO-1 invoice" så man ser vilken arbetsorder det gäller
         TableColumn<Payment, String> invoiceColumn =
                 new TableColumn<>("Invoice");

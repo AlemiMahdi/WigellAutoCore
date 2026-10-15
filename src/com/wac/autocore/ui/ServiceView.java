@@ -2,7 +2,6 @@ package com.wac.autocore.ui;
 
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.ServiceItem;
-import com.wac.autocore.repository.ServiceItemRepository;
 import com.wac.autocore.service.ServiceItemService;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.beans.property.ReadOnlyStringWrapper;
@@ -17,15 +16,12 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
-import java.math.RoundingMode;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 
 // Visar befintliga tjänster i en tabell och låter användaren ändra tidsåtgången.
 public class ServiceView extends VBox {
 
     private final LanguageManager language = LanguageManager.getInstance();
-    private final TableView<ServiceItem> table = new TableView<ServiceItem>();
+    private final TableView<ServiceItem> table = new TableView<>();
     private final TextField durationField = new TextField();
     private final Label feedbackLabel = UiKit.feedbackLabel();
     private final TextField priceField = new TextField();
@@ -46,22 +42,22 @@ public class ServiceView extends VBox {
 
     // Tabell: Service (fet) / Description (dämpad) / Price / Est. time (högerställda)
     private void buildTable() {
-        TableColumn<ServiceItem, String> nameColumn = new TableColumn<ServiceItem, String>("Service");
+        TableColumn<ServiceItem, String> nameColumn = new TableColumn<>("Service");
         nameColumn.setCellValueFactory(cell ->
                 new ReadOnlyStringWrapper(cell.getValue().getName()));
         nameColumn.getStyleClass().add("cell-strong");
 
-        TableColumn<ServiceItem, String> descriptionColumn = new TableColumn<ServiceItem, String>("Description");
+        TableColumn<ServiceItem, String> descriptionColumn = new TableColumn<>("Description");
         descriptionColumn.setCellValueFactory(cell ->
                 new ReadOnlyStringWrapper(cell.getValue().getDescription()));
         descriptionColumn.getStyleClass().add("cell-muted");
 
-        TableColumn<ServiceItem, String> priceColumn = new TableColumn<ServiceItem, String>("Price");
+        TableColumn<ServiceItem, String> priceColumn = new TableColumn<>("Price");
         priceColumn.setCellValueFactory(cell ->
                 new ReadOnlyStringWrapper(ServiceItemService.formatPrice(cell.getValue().getPrice())));
         priceColumn.getStyleClass().add("cell-right");
 
-        TableColumn<ServiceItem, String> timeColumn = new TableColumn<ServiceItem, String>("Est. time");
+        TableColumn<ServiceItem, String> timeColumn = new TableColumn<>("Est. time");
         timeColumn.setCellValueFactory(cell ->
                 new ReadOnlyStringWrapper(cell.getValue().getEstimatedMinutes() + " min"));
         timeColumn.getStyleClass().addAll("cell-right", "cell-muted");
@@ -110,7 +106,7 @@ public class ServiceView extends VBox {
         );
     }
 
-    // Kort under tabellen där man ändrar "Est. time" för vald tjänst.
+    // Kort under tabellen där man ändrar "Est. Time" för vald tjänst.
     private VBox buildEditCard() {
         Label heading = new Label("Change estimated time");
         heading.textProperty().bind(language.text("services.editTitle"));

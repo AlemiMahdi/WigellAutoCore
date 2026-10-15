@@ -102,7 +102,7 @@ public class ProcessPaymentView {
 
 
         processButton.setOnAction(event -> {
-            PaymentService.processPaymentsNew(invoiceBox,  paymentTypeBox,  messageLabel, language);
+            PaymentService.processPayment(invoiceBox,  paymentTypeBox,  messageLabel, language);
         });
 
 
