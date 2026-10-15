@@ -12,7 +12,7 @@ import com.wac.autocore.repository.MechanicRepository;
 import com.wac.autocore.repository.WorkOrderRepository;
 import com.wac.autocore.service.GarageSystem;
 import com.wac.autocore.ui.language.LanguageManager;
-import com.wac.autocore.repository.IMechanicRepository;
+import com.wac.autocore.service.MechanicService;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
@@ -31,7 +31,7 @@ public class CompleteWorkOrderView {
     private final GarageSystem garageSystem = new GarageSystem();
     private final WorkOrderRepository workOrderRepository = new WorkOrderRepository();
     private final BookingRepository bookingRepository = new BookingRepository();
-    private final IMechanicRepository mechanicRepository = new MechanicRepository();
+    private final MechanicService MechanicService = new MechanicService(new MechanicRepository());
 
     // Meddelandet ligger ovanför korten så att det syns kvar när korten byggs om
     private final Label statusLabel = UiKit.feedbackLabel();
@@ -179,7 +179,7 @@ public class CompleteWorkOrderView {
             }
 
             if (mechanic != null) {
-                mechanicRepository.save(mechanic);
+                MechanicService.save(mechanic);
             }
 
             UiKit.showSuccess(statusLabel, language.text("completeWorkOrder.success").get());

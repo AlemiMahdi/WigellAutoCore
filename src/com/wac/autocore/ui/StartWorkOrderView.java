@@ -7,7 +7,7 @@ import com.wac.autocore.repository.MechanicRepository;
 import com.wac.autocore.repository.WorkOrderRepository;
 import com.wac.autocore.service.GarageSystem;
 import com.wac.autocore.ui.language.LanguageManager;
-import com.wac.autocore.repository.IMechanicRepository;
+import com.wac.autocore.service.MechanicService;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -26,7 +26,7 @@ public class StartWorkOrderView extends VBox {
     private final GarageSystem garageSystem = new GarageSystem();
     private final WorkOrderRepository workOrderRepository = new WorkOrderRepository();
     private final BookingRepository bookingRepository = new BookingRepository();
-    private final IMechanicRepository mechanicRepository = new MechanicRepository();
+    private final MechanicService MechanicService = new MechanicService(new MechanicRepository());
 
     // Vänster spalt (korten) och höger spalt (detaljkortet)
     private final VBox listColumn = new VBox(12);
@@ -227,7 +227,7 @@ public class StartWorkOrderView extends VBox {
                 }
 
                 if (mechanic != null) {
-                    mechanicRepository.save(mechanic);
+                    MechanicService.save(mechanic);
                 }
 
                 UiKit.showSuccess(feedbackLabel,

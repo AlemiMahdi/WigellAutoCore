@@ -7,7 +7,8 @@ import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.service.GarageSystem;
 import com.wac.autocore.ui.language.LanguageManager;
 import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
-import com.wac.autocore.repository.IInvoiceRepository;
+
+import com.wac.autocore.service.InvoiceService;
 
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -29,7 +30,7 @@ public class CreateInvoiceView {
     public static VBox build(){
         LanguageManager language = LanguageManager.getInstance();
         GarageSystem garageSystem = new GarageSystem();
-        IInvoiceRepository invoiceRepository = new InvoiceRepository();
+        InvoiceService invoiceService = new InvoiceService(new InvoiceRepository());
         BookingRepository bookingRepository = new BookingRepository();
 
 
@@ -232,7 +233,7 @@ public class CreateInvoiceView {
 
                 try {
 
-                    invoiceRepository.save(invoice);
+                    invoiceService.save(invoice);
 
                     UiKit.showSuccess(statusLabel, language.text("createInvoice.successFor").get() + " "
                             + ShowInvoiceView.workOrderCode(workOrderId)

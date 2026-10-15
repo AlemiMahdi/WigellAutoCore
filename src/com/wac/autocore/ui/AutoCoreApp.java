@@ -16,6 +16,8 @@ import com.wac.autocore.ui.views.ShowPaymentsView;
 import com.wac.autocore.ui.views.ShowWorkOrdersView;
 import com.wac.autocore.repository.IMechanicRepository;
 import com.wac.autocore.repository.IInvoiceRepository;
+import com.wac.autocore.service.InvoiceService;
+import com.wac.autocore.service.MechanicService;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -297,17 +299,16 @@ public class AutoCoreApp extends Application {
     }
     private void loadMechanics() {
 
-        IMechanicRepository repository =
-                new MechanicRepository();
+        MechanicService mechanicService =
+                new MechanicService(new MechanicRepository());
 
         List<Mechanic> savedMechanics =
-                repository.findAllMechanics();
-
+                mechanicService.findAll();
         if (savedMechanics.isEmpty()) {
 
             // Första starten: sparar originalets exempeldata.
             for (Mechanic mechanic : Database.getMechanics()) {
-                repository.save(mechanic);
+                mechanicService.save(mechanic);
             }
 
             return;
@@ -331,17 +332,17 @@ public class AutoCoreApp extends Application {
 
     private void loadInvoices() {
 
-        IInvoiceRepository repository =
-                new InvoiceRepository();
+        InvoiceService invoiceService =
+                new InvoiceService(new InvoiceRepository());
 
         List<Invoice> savedInvoices =
-                repository.findAllInvoices();
+                invoiceService.findAll();
 
         if (savedInvoices.isEmpty()) {
 
             // Sparar eventuell befintlig data första gången.
             for (Invoice invoice : Database.getInvoices()) {
-                repository.save(invoice);
+                invoiceService.save(invoice);
             }
 
             return;
