@@ -771,10 +771,6 @@ public class AutoCoreApp extends Application {
         return bookingRepository;
     }
 
-    public VehicleRepository getVehicleRepository() {
-        return vehicleRepository;
-    }
-
     public static void main(String[] args) {launch(args);
     }
 }
