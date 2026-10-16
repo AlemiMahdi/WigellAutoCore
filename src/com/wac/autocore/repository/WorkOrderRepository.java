@@ -64,6 +64,14 @@ public class WorkOrderRepository implements IWorkOrderRepository {
         }
     }
 
+    public WorkOrder findWorkOrder(int id) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.get(WorkOrder.class, id);
+        } catch (Exception e) {
+            throw new RuntimeException("Kunde inte hämta arbetsorder med ID: " + id, e);
+        }
+    }
+
     public List<WorkOrder> findAll() {
 
         try (Session session =
@@ -263,7 +271,7 @@ public class WorkOrderRepository implements IWorkOrderRepository {
                         throw new IllegalArgumentException("confirmWorkOrder.originalWrongType");
                     }
 
-                    if (originalWorkOrderId.intValue() == savedDraft.getId()) {
+                    if (originalWorkOrderId == savedDraft.getId()) {
                         throw new IllegalArgumentException("confirmWorkOrder.originalSelfReference");
                     }
 
@@ -372,23 +380,19 @@ public class WorkOrderRepository implements IWorkOrderRepository {
     }
 
     public void saveDropInOrder(WorkOrder workOrder, Booking booking) {
-        org.hibernate.Session session = HibernateUtil.getSessionFactory().openSession();
-        org.hibernate.Transaction tx = null;
-        try {
-            tx = session.beginTransaction();
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Transaction transaction = session.beginTransaction();
+            try {
+                // 1. Spara bokningen först så att MySQL genererar dess data och fordonet länkas
+                session.save(booking);
+                workOrder.setBookingId(booking.getId());
+                session.save(workOrder);
 
-            // 1. Spara bokningen först så att MySQL genererar dess data och fordonet länkas
-            session.save(booking);
-            session.save(workOrder);
-
-            tx.commit();
-            System.out.println("Drop-in order och skuggbokning sparades i samma transaktion via DI!");
-        } catch (Exception e) {
-            if (tx != null) tx.rollback();
-            e.printStackTrace();
-            throw new RuntimeException("Kunde inte spara drop-in-order via repository: " + e.getMessage());
-        } finally {
-            session.close();
+                transaction.commit();
+            } catch (Exception e) {
+                if (transaction != null) transaction.rollback();
+                throw new RuntimeException("workOrders.couldNotSaveDropIn");
+            }
         }
     }
 

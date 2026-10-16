@@ -7,7 +7,6 @@ import com.wac.autocore.model.WorkOrderTypeEnum;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import com.wac.autocore.repository.WorkOrderRepository;
 
 public class GarageSystem {
 
@@ -81,19 +80,19 @@ public class GarageSystem {
         }
     }
 
-    public void showWorkOrders() {
-        System.out.println();
-        System.out.println("=== WORK ORDERS ===");
-
-        if (Database.getWorkOrders().isEmpty()) {
-            System.out.println("No work orders found.");
-            return;
-        }
-
-        for (WorkOrder workOrder : Database.getWorkOrders()) {
-            System.out.println(workOrder);
-        }
-    }
+//    public void showWorkOrders() {
+//        System.out.println();
+//        System.out.println("=== WORK ORDERS ===");
+//
+//        if (Database.getWorkOrders().isEmpty()) {
+//            System.out.println("No work orders found.");
+//            return;
+//        }
+//
+//        for (WorkOrder workOrder : Database.getWorkOrders()) {
+//            System.out.println(workOrder);
+//        }
+//    }
 
     public void showInvoices() {
         System.out.println();
@@ -231,132 +230,7 @@ public class GarageSystem {
 //        return workOrder;
 //    }
 
-    // Skapar en arbetsorder som utkast med en automatisk bokning (WAC-63)
-    public WorkOrder createDraftWorkOrder(int vehicleId, String description, WorkOrderTypeEnum type, Integer originalWorkOrderId) {
-         //1. Kontroller allt först
-        Vehicle vehicle = findVehicle(vehicleId);
-        if (vehicle == null) {
-            throw new IllegalArgumentException("createDraft.vehicleMissing");
-        }
-        if (findCustomer(vehicle.getCustomerId()) == null) {
-            throw new IllegalArgumentException("createDraft.customerMissing");
-        }
-        if (description == null || description.trim().isEmpty()) {
-            throw new IllegalArgumentException("createDraft.descriptionMissing");
-        }
 
-        //2. Skapa utkastet (kastar fel om typ saknas)
-        int bookingId = Database.getBookings().size() + 1;
-        int workOrderId = Database.getWorkOrders().size() + 1;
-        WorkOrder draft = WorkOrder.createDraft(workOrderId, bookingId, type);
-
-        if (type == WorkOrderTypeEnum.COMPLAINT && originalWorkOrderId != null) {
-            draft.setOriginalWorkOrderId(originalWorkOrderId);
-        }
-
-        //3. Skapa den automatiska bokingen
-        Booking booking = new Booking(bookingId, vehicleId, null, description.trim());
-        booking.setStatus("WORK_ORDER_CREATED");
-
-        //4. Lägg till båda i listorna
-        Database.getBookings().add(booking);
-        Database.getWorkOrders().add(draft);
-
-        return draft;
-    }
-
-    public List<String> validateWorkOrderForConfirmation(int workOrderId) {
-        List<String> errors = new ArrayList<>();
-        WorkOrder workOrder = findWorkOrder(workOrderId);
-
-        if (workOrder == null) {
-            errors.add("confirmWorkOrder.orderMissing");
-            return errors;
-        }
-
-        if (workOrder.getType() == null) {
-            errors.add("confirmWorkOrder.typeMissing");
-        }
-
-        if (workOrder.getType() == WorkOrderTypeEnum.COMPLAINT) {
-            Integer originalId = workOrder.getOriginalWorkOrderId();
-
-            if (originalId == null) {
-                errors.add("confirmWorkOrder.originalRequired");
-            } else if (originalId.intValue() == workOrder.getId()) {
-                errors.add("confirmWorkOrder.originalSelfReference");
-            } else {
-                WorkOrder original = findWorkOrder(originalId);
-
-                if (original == null) {
-                    errors.add("confirmWorkOrder.originalMissing");
-                } else if (original.getStatus() != WorkOrderStatus.COMPLETED) {
-                    errors.add("confirmWorkOrder.originalNotCompleted");
-                }
-            }
-        }
-
-        Booking booking = findBooking(workOrder.getBookingId());
-
-        if (booking == null) {
-            errors.add("confirmWorkOrder.bookingMissing");
-        } else {
-            Vehicle vehicle = findVehicle(booking.getVehicleId());
-
-            if (vehicle == null) {
-                errors.add("confirmWorkOrder.vehicleMissing");
-            } else if (findCustomer(vehicle.getCustomerId()) == null) {
-                errors.add("confirmWorkOrder.customerMissing");
-            }
-        }
-
-        if (findMechanic(workOrder.getMechanicId()) == null) {
-            errors.add("confirmWorkOrder.mechanicMissing");
-        }
-
-        List<Integer> serviceIds = workOrder.getServiceItemIds();
-
-        if (serviceIds == null || serviceIds.isEmpty()) {
-            errors.add("confirmWorkOrder.servicesMissing");
-        } else {
-            for (Integer serviceId : serviceIds) {
-                boolean exists = serviceId != null
-                        && Database.getServiceItems().stream()
-                        .anyMatch(service -> service.getId() == serviceId);
-
-                if (!exists) {
-                    errors.add("confirmWorkOrder.serviceMissing");
-                    break;
-                }
-            }
-        }
-
-        return errors;
-    }
-
-    public List<String> confirmWorkOrder(int workOrderId) {
-        WorkOrder workOrder = findWorkOrder(workOrderId);
-        List<String> errors = new ArrayList<>();
-
-        if (workOrder == null) {
-            errors.add("confirmWorkOrder.orderMissing");
-            return errors;
-        }
-
-        if (workOrder.getStatus() != WorkOrderStatus.DRAFT) {
-            errors.add("confirmWorkOrder.onlyDraft");
-            return errors;
-        }
-
-        errors = new WorkOrderRepository().confirmDraft(workOrderId);
-
-        if (errors.isEmpty()) {
-            // Uppdatera minnet först när databasen har sparats.
-            workOrder.changeStatus(WorkOrderStatus.CONFIRMED);
-        }
-
-        return errors;
-    }
 
     public void startWorkOrder(int workOrderId) {
         WorkOrder workOrder = findWorkOrder(workOrderId);

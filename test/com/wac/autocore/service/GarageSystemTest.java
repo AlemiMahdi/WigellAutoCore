@@ -89,59 +89,59 @@ public class GarageSystemTest {
         }
     }
 
-    @Test
-    void completeDraftPassesValidationWithoutOptionalFields() {
-        WorkOrder draft = garageSystem.createDraftWorkOrder(
-                1, "Kontroll av bromsar", WorkOrderTypeEnum.PLANNED, 27
-        );
-        Booking booking = findBooking(draft.getBookingId());
+//    @Test
+//    void completeDraftPassesValidationWithoutOptionalFields() {
+//        WorkOrder draft = garageSystem.createDraftWorkOrder(
+//                1, "Kontroll av bromsar", WorkOrderTypeEnum.PLANNED, 27
+//        );
+//        Booking booking = findBooking(draft.getBookingId());
+//
+//        try {
+//            draft.setMechanicId(Database.getMechanics().get(0).getId());
+//            draft.addServiceItem(Database.getServiceItems().get(0).getId());
+//
+//            List<String> errors =
+//                    garageSystem.validateWorkOrderForConfirmation(draft.getId());
+//
+//            assertTrue(errors.isEmpty(), errors.toString());
+//
+//            // Validering ska inte i sig bekräfta arbetsordern.
+//            assertEquals(WorkOrderStatus.DRAFT, draft.getStatus());
+//        } finally {
+//            Database.getWorkOrders().remove(draft);
+//            Database.getBookings().remove(booking);
+//        }
+//    }
 
-        try {
-            draft.setMechanicId(Database.getMechanics().get(0).getId());
-            draft.addServiceItem(Database.getServiceItems().get(0).getId());
-
-            List<String> errors =
-                    garageSystem.validateWorkOrderForConfirmation(draft.getId());
-
-            assertTrue(errors.isEmpty(), errors.toString());
-
-            // Validering ska inte i sig bekräfta arbetsordern.
-            assertEquals(WorkOrderStatus.DRAFT, draft.getStatus());
-        } finally {
-            Database.getWorkOrders().remove(draft);
-            Database.getBookings().remove(booking);
-        }
-    }
-
-    @Test
-    void confirmedOrderWithoutServicesCannotStart() {
-        WorkOrder draft = garageSystem.createDraftWorkOrder(
-                1, "Kontroll av bromsar", WorkOrderTypeEnum.PLANNED, 27
-        );
-        Booking booking = findBooking(draft.getBookingId());
-        Mechanic mechanic = Database.getMechanics().get(0);
-        boolean originalAvailability = mechanic.isAvailable();
-
-        try {
-            draft.setMechanicId(mechanic.getId());
-
-            // Simulerar en redan bekräftad men ofullständig order.
-            draft.changeStatus(WorkOrderStatus.CONFIRMED);
-            mechanic.setAvailable(true);
-
-            String originalBookingStatus = booking.getStatus();
-
-            garageSystem.startWorkOrder(draft.getId());
-
-            assertEquals(WorkOrderStatus.CONFIRMED, draft.getStatus());
-            assertEquals(originalBookingStatus, booking.getStatus());
-            assertTrue(mechanic.isAvailable());
-        } finally {
-            mechanic.setAvailable(originalAvailability);
-            Database.getWorkOrders().remove(draft);
-            Database.getBookings().remove(booking);
-        }
-    }
+//    @Test
+//    void confirmedOrderWithoutServicesCannotStart() {
+//        WorkOrder draft = garageSystem.createDraftWorkOrder(
+//                1, "Kontroll av bromsar", WorkOrderTypeEnum.PLANNED, 27
+//        );
+//        Booking booking = findBooking(draft.getBookingId());
+//        Mechanic mechanic = Database.getMechanics().get(0);
+//        boolean originalAvailability = mechanic.isAvailable();
+//
+//        try {
+//            draft.setMechanicId(mechanic.getId());
+//
+//            // Simulerar en redan bekräftad men ofullständig order.
+//            draft.changeStatus(WorkOrderStatus.CONFIRMED);
+//            mechanic.setAvailable(true);
+//
+//            String originalBookingStatus = booking.getStatus();
+//
+//            garageSystem.startWorkOrder(draft.getId());
+//
+//            assertEquals(WorkOrderStatus.CONFIRMED, draft.getStatus());
+//            assertEquals(originalBookingStatus, booking.getStatus());
+//            assertTrue(mechanic.isAvailable());
+//        } finally {
+//            mechanic.setAvailable(originalAvailability);
+//            Database.getWorkOrders().remove(draft);
+//            Database.getBookings().remove(booking);
+//        }
+//    }
 
     // Hjälpmetod: hittar en bokning i listan med id.
     private Booking findBooking(int id) {

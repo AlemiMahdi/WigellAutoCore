@@ -110,6 +110,7 @@ public class CreateWorkOrderView  extends VBox {
         durationField.setText("0");
 
         Label totalPriceLabel = new Label();
+        Label feedbackLabel = UiKit.feedbackLabel();
 
         // Automatisk beräkning av tid och pris
         Runnable updateTotals = () -> {
@@ -201,22 +202,23 @@ public class CreateWorkOrderView  extends VBox {
         );
         originalWorkOrderCombo.setConverter(new StringConverter<WorkOrder>() {
 
-
             @Override
             public String toString(WorkOrder workOrder) {
                 if (workOrder == null) {
                     return "";
                 }
-                return language.text("createWorkOrder.WO").get() + workOrder.getId() + " - "
-                        + language.text("createWorkOrder.BookingId").get() + workOrder.getBookingId() + " - "
-                        + language.text("createWorkOrder.infoPrice").get() + workOrder.getEstimatedPrice();
+                String baseText = language.text("createWorkOrder.WO").get() + " " + workOrder.getId() + " - "
+                        + language.text("createWorkOrder.BookingId").get() + " " + workOrder.getBookingId();
+
+                if (workOrder.getCustomerInstructions() != null) {
+                    return baseText + " " + language.text("createWorkOrder.CustomerInfo").get() + " " + workOrder.getCustomerInstructions();
+                } else return baseText;
             }
 
             @Override
             public WorkOrder fromString(String text) {
                 return null;
             }
-
 
         });
 
@@ -253,26 +255,11 @@ public class CreateWorkOrderView  extends VBox {
                             .findFirst()
                             .orElse(null);
 
-                    bookingComboBox.setValue(matchingBooking);
-                }
-        );
-
-        // Lås bokningsfältet för reklamationer.
-        bookingComboBox.disableProperty().bind(
-                typeComboBox.valueProperty().isEqualTo(WorkOrderTypeEnum.COMPLAINT)
-        );
-
-        // Återställ bokningsvalet när arbetsordertypen ändras.
-        typeComboBox.valueProperty().addListener(
-                (obs, oldType, newType) -> {
-
-                    if (newType == WorkOrderTypeEnum.COMPLAINT) {
-                        originalWorkOrderCombo.setValue(null);
-                        bookingComboBox.setValue(null);
-                    } else if (oldType == WorkOrderTypeEnum.COMPLAINT) {
-                        originalWorkOrderCombo.setValue(null);
-                        bookingComboBox.setValue(null);
+                    if (matchingBooking == null) {
+                        UiKit.showError(feedbackLabel, "");
+                        feedbackLabel.textProperty().bind(language.text("createWorkOrder.bookingNotFound"));
                     }
+                    bookingComboBox.setValue(matchingBooking);
                 }
         );
 
@@ -318,10 +305,10 @@ public class CreateWorkOrderView  extends VBox {
         priceField.setVisible(false);
         priceField.setManaged(false);
 
-        Label feedbackLabel = UiKit.feedbackLabel();
-
         typeComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
             boolean isDropIn = (newValue == WorkOrderTypeEnum.DROP_IN);
+            boolean isPLANNED = (newValue == WorkOrderTypeEnum.PLANNED);
+            boolean isCOMPLAINT =  (newValue == WorkOrderTypeEnum.COMPLAINT);
             // Rensa felmeddelande vid byte av typ
             feedbackLabel.setText("");
 
@@ -329,13 +316,24 @@ public class CreateWorkOrderView  extends VBox {
             vehicleField.setManaged(isDropIn);
             serviceField.setVisible(isDropIn);
             serviceField.setManaged(isDropIn);
-            // Göm bokningsfältet om det är Drop-in
-            bookingField.setVisible(!isDropIn);
-            bookingField.setManaged(!isDropIn);
+
             dateTimeRow.setVisible(isDropIn);
             dateTimeRow.setManaged(isDropIn);
             priceField.setVisible(isDropIn);
             priceField.setManaged(isDropIn);
+
+            // Göm bokningsfältet om det är Drop-in elr complaint
+            bookingField.setVisible(isPLANNED);
+            bookingField.setManaged(isPLANNED);
+
+                    if (newValue == WorkOrderTypeEnum.COMPLAINT) {
+                        originalWorkOrderCombo.setValue(null);
+                        bookingComboBox.setValue(null);
+                    } else if (oldValue == WorkOrderTypeEnum.COMPLAINT) {
+                        originalWorkOrderCombo.setValue(null);
+                        bookingComboBox.setValue(null);
+                    }
+
             durationMechanicRow.getChildren().clear();
             if (isDropIn) {
                 durationMechanicRow.getChildren().addAll(
@@ -351,6 +349,7 @@ public class CreateWorkOrderView  extends VBox {
         saveButton.textProperty().bind(language.text("createWorkOrder.title"));
 
         saveButton.setOnAction(event -> {
+            //!! Lägga till BookingRepo injection enligt nytt när det är fixat med refaktoriseringen
             AutoCoreApp app = AutoCoreApp.getInstance();
             BookingRepository bookingRepository = app.getBookingRepository();
 
@@ -371,8 +370,6 @@ public class CreateWorkOrderView  extends VBox {
                 return;
             }
 
-            Booking booking = null;
-            String previousBookingStatus = null;
             WorkOrderDto dto;
             Booking originalBooking = null;
 
@@ -380,45 +377,51 @@ public class CreateWorkOrderView  extends VBox {
                 Vehicle vehicle = vehicleComboBox.getValue();
 
                 if (vehicle == null || selectedServices.isEmpty()) {
-                    UiKit.showError(feedbackLabel, language.text("createWorkOrder.noSelection").get());
+                    UiKit.showError(feedbackLabel, "");
+                    feedbackLabel.textProperty().bind(language.text("createWorkOrder.noSelection"));
                     return;
                 }
-                int customerId = vehicle.getCustomerId();
 
                 LocalDate date = datePicker.getValue();
                 if (date == null) {
-                    UiKit.showError(feedbackLabel, language.text("createBooking.selectDate").get());
+                    UiKit.showError(feedbackLabel, "");
+                    feedbackLabel.textProperty().bind(language.text("createBooking.selectDate"));
                     return;
                 }
                 LocalTime startTime;
                 try {
                     startTime = LocalTime.parse(startTimeField.getText().trim());
                 } catch (DateTimeParseException exception) {
-                    UiKit.showError(feedbackLabel, language.text("createBooking.invalidStartTime").get());
+                    UiKit.showError(feedbackLabel, "");
+                    feedbackLabel.textProperty().bind(language.text("createBooking.invalidStartTime"));
                     return;
                 }
                 int durationMinutes;
                 try {
                     durationMinutes = Integer.parseInt(durationField.getText().trim());
                 } catch (NumberFormatException exception) {
-                    UiKit.showError(feedbackLabel, language.text("createBooking.invalidDuration").get());
+                    UiKit.showError(feedbackLabel, "");
+                    feedbackLabel.textProperty().bind(language.text("createBooking.invalidDuration"));
                     return;
                 }
                 if (durationMinutes <= 0) {
-                    UiKit.showError(feedbackLabel, language.text("createBooking.durationGreaterThanZero").get());
+                    UiKit.showError(feedbackLabel, "");
+                    feedbackLabel.textProperty().bind(language.text("createBooking.durationGreaterThanZero"));
                     return;
                 }
                 if (selectedServices.isEmpty()) {
-                    UiKit.showError(feedbackLabel, language.text("createBooking.selectService").get());
+                    UiKit.showError(feedbackLabel, "");
+                    feedbackLabel.textProperty().bind(language.text("createBooking.selectService"));
                     return;
                 }
+                //Hämta den från service sen, inte BookingRepo!
  //Validering för krockande/överlappande bokningar
                 boolean overlapping = bookingRepository.hasOverlappingBooking(mechanic.getId(), date, startTime, durationMinutes);
                 if (overlapping) {
-                    UiKit.showError(feedbackLabel, language.text("createBooking.overlapping").get());
+                    UiKit.showError(feedbackLabel, "");
+                    feedbackLabel.textProperty().bind(language.text("createBooking.overlapping"));
                     return;
                 }
-// Sätt värdena på DTO så att strategiklass kan läsa in dem till autobokningen
 
                 double totalPrice = selectedServices.stream()
                         .mapToDouble(ServiceItem::getPrice)
@@ -436,7 +439,8 @@ public class CreateWorkOrderView  extends VBox {
             } else {
                 originalBooking = bookingComboBox.getValue();
                 if (originalBooking == null) {
-                    UiKit.showError(feedbackLabel, language.text("createWorkOrder.noSelection").get());
+                    UiKit.showError(feedbackLabel, "");
+                    feedbackLabel.textProperty().bind(language.text("createWorkOrder.noSelection"));
                     return;
                 }
 
@@ -446,19 +450,18 @@ public class CreateWorkOrderView  extends VBox {
                 }
             }
 
-// Skicka DTO:n till vår helt generella metod i servicen!
+        // Skicka DTO till den generella metoden i servicen
             try {
                 workOrderService.createAndSaveWorkOrder(selectedType, dto, originalBooking, mechanic, language);
 
-                // Töm GUI-fält (din befintliga tömningslogik...)
-                UiKit.showSuccess(feedbackLabel, language.text("createWorkOrder.success").get());
+                UiKit.showSuccess(feedbackLabel, "");
+                feedbackLabel.textProperty().bind(language.text("createWorkOrder.success"));
 
             } catch (RuntimeException exception) {
                 String errorKey = "createWorkOrder.saveError".equals(exception.getMessage()) ? "createWorkOrder.saveError" : "createWorkOrder.createError";
                 UiKit.showError(feedbackLabel, language.text(errorKey).get());
                 exception.printStackTrace();
             }
-
 
             //tömmer valen efter registreringen har lyckats.
             bookingComboBox.getSelectionModel().clearSelection();
@@ -474,8 +477,8 @@ public class CreateWorkOrderView  extends VBox {
             startTimeField.clear();
             selectedServices.clear();
 
-            UiKit.showSuccess(feedbackLabel, language.text("createWorkOrder.success").get());
-
+            UiKit.showSuccess(feedbackLabel, "");
+            feedbackLabel.textProperty().bind(language.text("createWorkOrder.success"));
         });
 
         getChildren().add(UiKit.formContainer(
@@ -508,7 +511,7 @@ public class CreateWorkOrderView  extends VBox {
 
             @Override
             public Booking fromString(String text) {
-                // Används inte – combo-boxen går inte att skriva i
+                // Används inte – combo-boxen går inte att skriva i, men behövs i koden.
                 return null;
             }
         };

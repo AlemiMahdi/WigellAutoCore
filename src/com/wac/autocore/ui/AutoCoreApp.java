@@ -460,51 +460,44 @@ public class AutoCoreApp extends Application {
             return;
         }
 
-        for (int i = 0; i < savedWorkOrders.size(); i++) {
-            WorkOrder workOrder = savedWorkOrders.get(i);
-
-            // Originalet räknar ut nästa ID som listans storlek + 1,
-            // så ID:na måste vara 1, 2, 3... utan luckor.
-            if (workOrder.getId() != i + 1) {
-                throw new IllegalStateException(
-                        "Work order IDs must be consecutive, starting at 1."
-                );
-            }
-            // Kontrollerar att arbetsorderns bokning finns.
-            boolean bookingExists = Database.getBookings().stream()
-                    .anyMatch(booking ->
-                            booking.getId() == workOrder.getBookingId());
-
-            if (!bookingExists) {
-                throw new IllegalStateException(
-                        "Booking missing for work order " + workOrder.getId()
-                );
-            }
-            // Kontrollerar att arbetsorderns mekaniker finns.
-            // 0 betyder att ingen mekaniker är vald än (utkast, WAC-63)
-            if (workOrder.getMechanicId() != 0) {
-                boolean mechanicsExist = Database.getMechanics().stream()
-                        .anyMatch(mechanic -> mechanic.getId() == workOrder.getMechanicId());
-
-                if (!mechanicsExist) {
-                    throw new IllegalStateException(
-                            "Mechanic missing for work order " + workOrder.getId()
-                    );
-                }
-            }
-            // Kontrollerar att alla arbetsorderns tjänster finns.
-            for (int serviceItemId : workOrder.getServiceItemIds()) {
-                boolean serviceItemExists = Database.getServiceItems().stream().
-                        anyMatch(serviceItem ->
-                                serviceItem.getId() == serviceItemId);
-
-                if (!serviceItemExists) {
-                    throw new IllegalStateException(
-                            "Service item missing for work order " + workOrder.getId()
-                    );
-                }
-            }
-        }
+//        for (int i = 0; i < savedWorkOrders.size(); i++) {
+//            WorkOrder workOrder = savedWorkOrders.get(i);
+//
+//            // Kontrollerar att arbetsorderns bokning finns.
+//            boolean bookingExists = Database.getBookings().stream()
+//                    .anyMatch(booking ->
+//                            booking.getId() == workOrder.getBookingId());
+//
+//            if (!bookingExists) {
+//                throw new IllegalStateException(
+//                        "Booking missing for work order " + workOrder.getId()
+//                );
+//            }
+//            // Kontrollerar att arbetsorderns mekaniker finns.
+//            // 0 betyder att ingen mekaniker är vald än (utkast, WAC-63)
+//            if (workOrder.getMechanicId() != 0) {
+//                boolean mechanicsExist = Database.getMechanics().stream()
+//                        .anyMatch(mechanic -> mechanic.getId() == workOrder.getMechanicId());
+//
+//                if (!mechanicsExist) {
+//                    throw new IllegalStateException(
+//                            "Mechanic missing for work order " + workOrder.getId()
+//                    );
+//                }
+//            }
+//            // Kontrollerar att alla arbetsorderns tjänster finns.
+//            for (int serviceItemId : workOrder.getServiceItemIds()) {
+//                boolean serviceItemExists = Database.getServiceItems().stream().
+//                        anyMatch(serviceItem ->
+//                                serviceItem.getId() == serviceItemId);
+//
+//                if (!serviceItemExists) {
+//                    throw new IllegalStateException(
+//                            "Service item missing for work order " + workOrder.getId()
+//                    );
+//                }
+//            }
+//        }
         // Ersätter arbetsordrarna i minnet med de sparade arbetsordrarna.
         Database.getWorkOrders().clear();
         Database.getWorkOrders().addAll(savedWorkOrders);
@@ -627,7 +620,7 @@ public class AutoCoreApp extends Application {
                 createNavItem("create-booking", "menu.createBooking", () -> showView(new CreateBookingView().getView())));
 
         addNavSection(menuBox, "menu.section.workOrders",
-                createNavItem("show-work-orders", "menu.workOrders", () -> showView(new ShowWorkOrdersView().getView())),
+                createNavItem("show-work-orders", "menu.workOrders", () -> showView(new ShowWorkOrdersView(new WorkOrderService(workOrderRepository, bookingRepository)).getView())),
                 createNavItem("create-work-order", "menu.createWorkOrder", () -> showView(new CreateWorkOrderView(new WorkOrderService(workOrderRepository, bookingRepository)))),
                 createNavItem("create-draft-work-order", "menu.createDraftWorkOrder",
                         () -> showView(new CreateDraftWorkOrderView().getView())),
