@@ -279,34 +279,7 @@ public class GarageSystem {
         System.out.println("Work order " + workOrderId + " has been started.");
     }
 
-    public void completeWorkOrder(int workOrderId) {
-        WorkOrder workOrder = findWorkOrder(workOrderId);
 
-        if (workOrder == null) {
-            System.out.println("Work order with ID " + workOrderId + " does not exist.");
-            return;
-        }
-
-        if (!workOrder.getStatus().canChangeTo(WorkOrderStatus.COMPLETED)) {
-            System.out.println("Only work orders in progress can be completed.");
-            return;
-        }
-
-        Mechanic mechanic = findMechanic(workOrder.getMechanicId());
-        Booking booking = findBooking(workOrder.getBookingId());
-
-        workOrder.changeStatus(WorkOrderStatus.COMPLETED);
-
-        if (mechanic != null) {
-            mechanic.setAvailable(true);
-        }
-
-        if (booking != null && !sharesOriginalBooking(workOrder)) {
-            booking.setStatus("COMPLETED");
-        }
-
-        System.out.println("Work order " + workOrderId + " has been completed.");
-    }
 
     public Invoice createInvoice(
             int workOrderId, 
@@ -564,16 +537,16 @@ public class GarageSystem {
 
         return null;
     }
-
-    private WorkOrder findWorkOrder(int id) {
-        for (WorkOrder workOrder : Database.getWorkOrders()) {
-            if (workOrder.getId() == id) {
-                return workOrder;
-            }
-        }
-
-        return null;
-    }
+//
+//    private WorkOrder findWorkOrder(int id) {
+//        for (WorkOrder workOrder : Database.getWorkOrders()) {
+//            if (workOrder.getId() == id) {
+//                return workOrder;
+//            }
+//        }
+//
+//        return null;
+//    }
 
     private Invoice findInvoice(int id) {
         for (Invoice invoice : Database.getInvoices()) {

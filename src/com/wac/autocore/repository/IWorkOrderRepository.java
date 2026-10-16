@@ -18,18 +18,19 @@ public interface IWorkOrderRepository {
     List<WorkOrder> findAllWorkOrders();
     List<String> confirmDraft(int workOrderId);
     void updateDraft(
-            WorkOrder draft,
-            Booking booking,
-            List<Integer> serviceIds,
+            int draft,
+            int bookingId,
+            List<Integer> selectedIds,
             int mechanicId,
+            BigDecimal normalizedPrice,
+            String savedInstructions,
+            String savedComments,
+            Integer originalWorkOrderId,
             LocalDate plannedDate,
-            int minutes,
-            BigDecimal price,
-            String instructions,
-            String comments,
-            Integer originalWorkOrderId
+            int minutes
     );
     void saveDropInOrder(WorkOrder workOrder, Booking booking);
     List<InvoiceLine> createFrozenPrices(List<ServiceItem> serviceItems);
+    void completeWorkOrder(int workOrderId);
 
 }

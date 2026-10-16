@@ -214,49 +214,25 @@ public class WorkOrderRepository implements IWorkOrderRepository {
     }
 
     public void updateDraft(
-            WorkOrder draft,
-            Booking booking,
-            List<Integer> serviceIds,
+            int draft,
+            int bookingId,
+            List<Integer> selectedIds,
             int mechanicId,
+            BigDecimal normalizedPrice,
+            String savedInstructions,
+            String savedComments,
+            Integer originalWorkOrderId,
             LocalDate plannedDate,
-            int minutes,
-            BigDecimal price,
-            String instructions,
-            String comments,
-            Integer originalWorkOrderId
+            int minutes
     ) {
-        if (draft == null || draft.getStatus() != WorkOrderStatus.DRAFT) {
-            throw new IllegalArgumentException("editWorkOrderDraft.onlyDraft");
-        }
 
-        if (booking == null || booking.getId() != draft.getBookingId()) {
-            throw new IllegalArgumentException("editWorkOrderDraft.bookingMissing");
-        }
-
-        if (minutes < 0) {
-            throw new IllegalArgumentException("editWorkOrderDraft.invalidMinutes");
-        }
-
-        BigDecimal normalizedPrice = getBigDecimalPrice(price);
-
-        String savedInstructions = instructions == null ? "" : instructions.trim();
-        String savedComments = comments == null ? "" : comments.trim();
-
-        if (savedInstructions.length() > 4000 || savedComments.length() > 4000) {
-            throw new IllegalArgumentException("editWorkOrderDraft.textTooLong");
-        }
-
-        List<Integer> selectedIds =
-                new ArrayList<>(new LinkedHashSet<>(serviceIds));
-
-        List<ServiceItem> savedServices = new ArrayList<>();
 
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             Transaction transaction = session.beginTransaction();
 
             try {
                 WorkOrder savedDraft = session.get(
-                        WorkOrder.class, draft.getId(), LockMode.PESSIMISTIC_WRITE
+                        WorkOrder.class, draft, LockMode.PESSIMISTIC_WRITE
                 );
 
                 if (savedDraft == null
@@ -292,7 +268,7 @@ public class WorkOrderRepository implements IWorkOrderRepository {
                         LockMode.PESSIMISTIC_WRITE
                 );
 
-                if (savedBooking == null || savedBooking.getId() != booking.getId()) {
+                if (savedBooking == null || savedBooking.getId() != bookingId) {
                     throw new IllegalArgumentException(
                             "editWorkOrderDraft.bookingMissing"
                     );
@@ -305,18 +281,15 @@ public class WorkOrderRepository implements IWorkOrderRepository {
                     );
                 }
 
+                List<ServiceItem> savedServices = new ArrayList<>();
                 for (Integer serviceId : selectedIds) {
-                    ServiceItem service = serviceId == null
-                            ? null
-                            : session.get(ServiceItem.class, serviceId);
-
-                    if (service == null) {
-                        throw new IllegalArgumentException(
-                                "editWorkOrderDraft.serviceMissing"
-                        );
+                    if (serviceId != null) {
+                        ServiceItem service = session.get(ServiceItem.class, serviceId);
+                        if (service == null) {
+                            throw new IllegalArgumentException("editWorkOrderDraft.serviceMissing");
+                        }
+                        savedServices.add(service);
                     }
-
-                    savedServices.add(service);
                 }
 
                 savedDraft.getServiceItemIds().clear();
@@ -344,39 +317,6 @@ public class WorkOrderRepository implements IWorkOrderRepository {
                 throw exception;
             }
         }
-
-        // Uppdaterar appens objekt först efter lyckad commit.
-        draft.setServiceItemIds(new ArrayList<>(selectedIds));
-        draft.setMechanicId(mechanicId);
-        draft.setEstimatedPrice(normalizedPrice);
-        draft.setCustomerInstructions(savedInstructions);
-        draft.setDraftComments(savedComments);
-        draft.setOriginalWorkOrderId(originalWorkOrderId);
-
-        booking.setDate(plannedDate);
-        booking.setDurationMinutes(minutes);
-        booking.setMechanicId(mechanicId == 0 ? null : mechanicId);
-        booking.setServices(new ArrayList<>(savedServices));
-        booking.setFrozenPrice(createFrozenPrices(savedServices));
-    }
-
-    private BigDecimal getBigDecimalPrice(BigDecimal price) {
-        BigDecimal normalizedPrice = price;
-
-        if (price != null) {
-            try {
-                normalizedPrice = price.setScale(2, RoundingMode.UNNECESSARY);
-            } catch (ArithmeticException exception) {
-                throw new IllegalArgumentException("editWorkOrderDraft.invalidPrice");
-            }
-
-            if (normalizedPrice.signum() < 0
-                    || normalizedPrice.compareTo(
-                    new BigDecimal("9999999999.99")) > 0) {
-                throw new IllegalArgumentException("editWorkOrderDraft.invalidPrice");
-            }
-        }
-        return normalizedPrice;
     }
 
     public void saveDropInOrder(WorkOrder workOrder, Booking booking) {
@@ -407,5 +347,59 @@ public class WorkOrderRepository implements IWorkOrderRepository {
             frozenPrices.add(frozenLine);
         }
         return frozenPrices;
+    }
+
+    public void completeWorkOrder(int workOrderId) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Transaction tx = null;
+            try {
+                tx = session.beginTransaction();
+
+                WorkOrder workOrder = session.get(WorkOrder.class, workOrderId);
+                Mechanic mechanic = session.get(Mechanic.class, workOrder.getMechanicId());
+                Booking booking = session.get(Booking.class, workOrder.getBookingId());
+
+                workOrder.changeStatus(WorkOrderStatus.COMPLETED);
+
+                if (mechanic != null) {
+                    mechanic.setAvailable(true);
+                    session.merge(mechanic);
+                }
+
+                if (booking != null && !sharesOriginalBooking(booking.getId(), workOrderId)) {
+                    booking.setStatus("COMPLETED");
+                    session.merge(booking);
+                }
+
+                session.merge(workOrder);
+
+                tx.commit();
+            } catch (RuntimeException exception) {
+                if (tx != null && tx.isActive()) {
+                    tx.rollback();
+                }
+                throw exception;
+            }
+        }
+    }
+
+    // Returnerar true om någon annan order delar på denna bokning
+    private boolean sharesOriginalBooking(int workOrderId, int bookingId) {
+        if (bookingId == 0) return false;
+
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Transaction transaction = session.beginTransaction();
+            {
+                Long count = session.createQuery(
+                                "select count(w) from WorkOrder w where w.bookingId = :bId and w.id != :currentId", Long.class)
+                        .setParameter("bId", bookingId)
+                        .setParameter("currentId", workOrderId)
+                        .getSingleResult();
+
+                return count > 0;
+            }
+        } catch (RuntimeException e) {
+            throw new RuntimeException("createWorkOrder.bookingNotFound");
+        }
     }
 }

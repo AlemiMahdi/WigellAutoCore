@@ -41,6 +41,7 @@ import java.util.logging.Level;
 import java.util.HashMap;
 
 import com.wac.autocore.ui.views.MechanicScheduleView;
+import org.hibernate.jdbc.Work;
 
 import java.util.List;
 import java.util.Map;
@@ -59,6 +60,7 @@ public class AutoCoreApp extends Application {
     private final IWorkOrderRepository workOrderRepository;
     private final BookingRepository bookingRepository;
     private final VehicleRepository vehicleRepository;
+    private final IServiceItemRepository serviceItemRepository;
 
     // FIX 1: Konstruktorn MÅSTE vara publik i en JavaFX-applikation!
     public AutoCoreApp() {
@@ -66,6 +68,7 @@ public class AutoCoreApp extends Application {
         this.workOrderRepository = new WorkOrderRepository();
         this.bookingRepository = new BookingRepository();
         this.vehicleRepository = new VehicleRepository();
+        this.serviceItemRepository = new IServiceItemRepository();
 
         // Sätt instansen i samma sekund som JavaFX startar appen
         synchronized (AutoCoreApp.class) {
@@ -620,12 +623,12 @@ public class AutoCoreApp extends Application {
                 createNavItem("create-booking", "menu.createBooking", () -> showView(new CreateBookingView().getView())));
 
         addNavSection(menuBox, "menu.section.workOrders",
-                createNavItem("show-work-orders", "menu.workOrders", () -> showView(new ShowWorkOrdersView(new WorkOrderService(workOrderRepository, bookingRepository)).getView())),
-                createNavItem("create-work-order", "menu.createWorkOrder", () -> showView(new CreateWorkOrderView(new WorkOrderService(workOrderRepository, bookingRepository)))),
+                createNavItem("show-work-orders", "menu.workOrders", () -> showView(new ShowWorkOrdersView(new WorkOrderService(workOrderRepository, bookingRepository, serviceItemRepository)).getView())),
+                createNavItem("create-work-order", "menu.createWorkOrder", () -> showView(new CreateWorkOrderView(new WorkOrderService(workOrderRepository, bookingRepository, serviceItemRepository)))),
                 createNavItem("create-draft-work-order", "menu.createDraftWorkOrder",
                         () -> showView(new CreateDraftWorkOrderView().getView())),
                 createNavItem("start-work-order", "menu.startWorkOrder", () -> showView(new StartWorkOrderView())),
-                createNavItem("complete-work-order", "menu.completeWorkOrder", () -> showView(CompleteWorkOrderView.build())));
+                createNavItem("complete-work-order", "menu.completeWorkOrder", () -> showView(new CompleteWorkOrderView(new WorkOrderService(workOrderRepository, bookingRepository, serviceItemRepository)).getView())));
 
         addNavSection(menuBox, "menu.section.servicesMechanics",
                 createNavItem("show-services", "menu.services", () -> showView(new ServiceView())),

@@ -10,18 +10,24 @@ import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.beans.binding.StringExpression;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 public class WorkOrderService {
     private final IWorkOrderRepository workOrderRepository;
     private final BookingRepository bookingRepository;
     private final WorkOrderTypeManager typeManager = new WorkOrderTypeManager();
+    private final IServiceItemRepository serviceItemRepository;
 
     //Får ändra BookingRepo hämtning sen
-    public WorkOrderService(IWorkOrderRepository workOrderRepository,  BookingRepository bookingRepository) {
+    public WorkOrderService(IWorkOrderRepository workOrderRepository,  BookingRepository bookingRepository, IServiceItemRepository serviceItemRepository) {
         this.workOrderRepository = workOrderRepository;
         this.bookingRepository = bookingRepository;
+        this.serviceItemRepository = serviceItemRepository;
     }
 
     public WorkOrder createAndSaveWorkOrder(WorkOrderTypeEnum selectedType, WorkOrderDto dto, Booking originalBooking,
@@ -123,6 +129,7 @@ public class WorkOrderService {
         }
     }
 
+    //byt till repository sökning
     public static ServiceItem findServiceItem(int serviceId) {
         return Database.getServiceItems().stream()
                 .filter(s -> s.getId() == serviceId)
@@ -154,38 +161,93 @@ public class WorkOrderService {
         return errors;
     }
 
+    public void completeWorkOrder(int workOrderId) {
+
+        WorkOrder workOrder = workOrderRepository.findWorkOrder(workOrderId);
+        if (workOrder == null) {
+            throw new IllegalArgumentException("workOrder.notFound");
+        }
+
+        if (!workOrder.getStatus().canChangeTo(WorkOrderStatus.COMPLETED)) {
+            throw new IllegalArgumentException("workOrder.cannotCompleteStatus");
+        }
+        workOrderRepository.completeWorkOrder(workOrderId);
+    }
+
     // Skapar en arbetsorder som utkast med en automatisk bokning (WAC-63)
-    public WorkOrder createDraftWorkOrder(int vehicleId, String description, WorkOrderTypeEnum type, Integer originalWorkOrderId) {
+    public void createDraftWorkOrder(WorkOrder draft,
+                                          Booking booking,
+                                          List<Integer> serviceIds,
+                                          int mechanicId,
+                                          LocalDate plannedDate,
+                                          int minutes,
+                                          BigDecimal price,
+                                          String savedInstructions,
+                                          String comments,
+                                          Integer originalWorkOrderId) {
         //1. Kontroller allt först
-        Vehicle vehicle = findVehicle(vehicleId);
-        if (vehicle == null) {
-            throw new IllegalArgumentException("createDraft.vehicleMissing");
-        }
-        if (findCustomer(vehicle.getCustomerId()) == null) {
-            throw new IllegalArgumentException("createDraft.customerMissing");
-        }
-        if (description == null || description.trim().isEmpty()) {
-            throw new IllegalArgumentException("createDraft.descriptionMissing");
+        if (draft == null || draft.getStatus() != WorkOrderStatus.DRAFT) {
+            throw new IllegalArgumentException("editWorkOrderDraft.onlyDraft");
         }
 
-        //2. Skapa utkastet (kastar fel om typ saknas)
-        int bookingId = Database.getBookings().size() + 1;
-        int workOrderId = Database.getWorkOrders().size() + 1;
-        WorkOrder draft = WorkOrder.createDraft(workOrderId, bookingId, type);
-
-        if (type == WorkOrderTypeEnum.COMPLAINT && originalWorkOrderId != null) {
-            draft.setOriginalWorkOrderId(originalWorkOrderId);
+        if (booking == null || booking.getId() != draft.getBookingId()) {
+            throw new IllegalArgumentException("editWorkOrderDraft.bookingMissing");
         }
 
-        //3. Skapa den automatiska bokingen
-        Booking booking = new Booking(bookingId, vehicleId, null, description.trim());
-        booking.setStatus("WORK_ORDER_CREATED");
+        if (minutes < 0) {
+            throw new IllegalArgumentException("editWorkOrderDraft.invalidMinutes");
+        }
+        BigDecimal normalizedPrice = getBigDecimalPrice(price);
 
-        //4. Lägg till båda i listorna
-        Database.getBookings().add(booking);
-        Database.getWorkOrders().add(draft);
+        String instructions = savedInstructions == null ? "" : savedInstructions.trim();
+        String savedComments = comments == null ? "" : comments.trim();
 
-        return draft;
+        if (instructions.length() > 4000 || savedComments.length() > 4000) {
+            throw new IllegalArgumentException("editWorkOrderDraft.textTooLong");
+        }
+
+        List<Integer> selectedIds = new ArrayList<>(new LinkedHashSet<>(serviceIds));
+
+        workOrderRepository.updateDraft(
+                draft.getId(), booking.getId(), selectedIds, mechanicId, normalizedPrice,
+                savedInstructions, savedComments, originalWorkOrderId, plannedDate, minutes
+        );
+        draft.setServiceItemIds(new ArrayList<>(selectedIds));
+        draft.setMechanicId(mechanicId);
+        draft.setEstimatedPrice(normalizedPrice);
+        draft.setCustomerInstructions(savedInstructions);
+        draft.setDraftComments(savedComments);
+        draft.setOriginalWorkOrderId(originalWorkOrderId);
+
+        booking.setDate(plannedDate);
+        booking.setDurationMinutes(minutes);
+        booking.setMechanicId(mechanicId == 0 ? null : mechanicId);
+
+        List<ServiceItem> updatedServices = new ArrayList<>();
+        for (Integer serviceItem : selectedIds) {
+            updatedServices.add(serviceItemRepository.findServiceItem(serviceItem)); // Förutsätter findServiceItem i ditt serviceRepository
+        }
+        booking.setServices(updatedServices);
+        booking.setFrozenPrice(workOrderRepository.createFrozenPrices(updatedServices));
+    }
+
+    private BigDecimal getBigDecimalPrice(BigDecimal price) {
+        BigDecimal normalizedPrice = price;
+
+        if (price != null) {
+            try {
+                normalizedPrice = price.setScale(2, RoundingMode.UNNECESSARY);
+            } catch (ArithmeticException exception) {
+                throw new IllegalArgumentException("editWorkOrderDraft.invalidPrice");
+            }
+
+            if (normalizedPrice.signum() < 0
+                    || normalizedPrice.compareTo(
+                    new BigDecimal("9999999999.99")) > 0) {
+                throw new IllegalArgumentException("editWorkOrderDraft.invalidPrice");
+            }
+        }
+        return normalizedPrice;
     }
 
     public List<String> validateWorkOrderForConfirmation(int workOrderId) {
@@ -326,5 +388,7 @@ public class WorkOrderService {
         // Inget kort väljs automatiskt, så man startar inte nästa order av misstag.
         reloadList(false);
     }
+
+
 }
 
