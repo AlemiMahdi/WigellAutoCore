@@ -62,6 +62,8 @@ public class AutoCoreApp extends Application {
     private final WorkOrderRepository workOrderRepository;
     private final BookingRepository bookingRepository;
     private final VehicleRepository vehicleRepository;
+    private final InvoiceService invoiceService = new InvoiceService(new InvoiceRepository());
+    private final MechanicService mechanicService = new MechanicService(new MechanicRepository());
 
     // FIX 1: Konstruktorn MÅSTE vara publik i en JavaFX-applikation!
     public AutoCoreApp() {
@@ -331,9 +333,6 @@ public class AutoCoreApp extends Application {
 
 
     private void loadInvoices() {
-
-        InvoiceService invoiceService =
-                new InvoiceService(new InvoiceRepository());
 
         List<Invoice> savedInvoices =
                 invoiceService.findAll();
@@ -640,8 +639,8 @@ public class AutoCoreApp extends Application {
                 createNavItem("create-work-order", "menu.createWorkOrder", () -> showView(new CreateWorkOrderView())),
                 createNavItem("create-draft-work-order", "menu.createDraftWorkOrder",
                         () -> showView(new CreateDraftWorkOrderView().getView())),
-                createNavItem("start-work-order", "menu.startWorkOrder", () -> showView(new StartWorkOrderView())),
-                createNavItem("complete-work-order", "menu.completeWorkOrder", () -> showView(CompleteWorkOrderView.build())));
+                createNavItem("start-work-order", "menu.startWorkOrder", () -> showView(new StartWorkOrderView(mechanicService))),
+                createNavItem("complete-work-order", "menu.completeWorkOrder", () -> showView(CompleteWorkOrderView.build(mechanicService))));
 
         addNavSection(menuBox, "menu.section.servicesMechanics",
                 createNavItem("show-services", "menu.services", () -> showView(new ServiceView())),
@@ -653,7 +652,7 @@ public class AutoCoreApp extends Application {
 
         addNavSection(menuBox, "menu.section.invoicesPayments",
                 createNavItem("show-invoices", "menu.invoices", () -> showView(ShowInvoiceView.build())),
-                createNavItem("create-invoice", "menu.createInvoice", () -> showView(CreateInvoiceView.build())),
+                createNavItem("create-invoice", "menu.createInvoice", () -> showView(CreateInvoiceView.build(invoiceService))),
                 createNavItem("show-payments", "menu.payments", () -> showView(new ShowPaymentsView().getView())),
                 createNavItem("process-payment", "menu.processPayment", () -> showView(new ProcessPaymentView().getView())));
 

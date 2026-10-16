@@ -31,7 +31,7 @@ public class CompleteWorkOrderView {
     private final GarageSystem garageSystem = new GarageSystem();
     private final WorkOrderRepository workOrderRepository = new WorkOrderRepository();
     private final BookingRepository bookingRepository = new BookingRepository();
-    private final MechanicService MechanicService = new MechanicService(new MechanicRepository());
+    private final MechanicService mechanicService;
 
     // Meddelandet ligger ovanför korten så att det syns kvar när korten byggs om
     private final Label statusLabel = UiKit.feedbackLabel();
@@ -39,11 +39,13 @@ public class CompleteWorkOrderView {
     private final VBox root;
 
     // AutoCoreApp anropar build() – den skapar vyn och lämnar ut dess rot-VBox
-    public static VBox build() {
-        return new CompleteWorkOrderView().root;
+    public static VBox build(MechanicService mechanicService) {
+        return new CompleteWorkOrderView(mechanicService).root;
     }
 
-    private CompleteWorkOrderView() {
+    private CompleteWorkOrderView(MechanicService mechanicService) {
+        this.mechanicService = mechanicService;
+
         statusLabel.setMaxWidth(CARD_MAX_WIDTH);
         // Tomt meddelande ska inte ta plats ovanför korten
         statusLabel.managedProperty().bind(statusLabel.textProperty().isNotEmpty());
@@ -179,7 +181,7 @@ public class CompleteWorkOrderView {
             }
 
             if (mechanic != null) {
-                MechanicService.save(mechanic);
+                mechanicService.save(mechanic);
             }
 
             UiKit.showSuccess(statusLabel, language.text("completeWorkOrder.success").get());

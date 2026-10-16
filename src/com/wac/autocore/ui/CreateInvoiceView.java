@@ -19,18 +19,15 @@ import javafx.scene.layout.VBox;
 
 import javafx.util.StringConverter;
 
-import com.wac.autocore.repository.InvoiceRepository;
-
 
 import java.time.LocalDate;
 
 
 public class CreateInvoiceView {
 
-    public static VBox build(){
+    public static VBox build(InvoiceService invoiceService){
         LanguageManager language = LanguageManager.getInstance();
         GarageSystem garageSystem = new GarageSystem();
-        InvoiceService invoiceService = new InvoiceService(new InvoiceRepository());
         BookingRepository bookingRepository = new BookingRepository();
 
 
