@@ -2,7 +2,7 @@ package com.wac.autocore.repository;
 
 import com.wac.autocore.data.HibernateUtil;
 import com.wac.autocore.model.*;
-import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
+import com.wac.autocore.model.WorkOrderTypeEnum;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;

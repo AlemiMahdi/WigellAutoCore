@@ -6,8 +6,6 @@ import com.wac.autocore.model.*;
 import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.repository.IWorkOrderRepository;
 import com.wac.autocore.ui.language.LanguageManager;
-import com.wac.autocore.workOrderType.*;
-import javafx.scene.control.Label;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +13,7 @@ import java.util.List;
 public class WorkOrderService {
     private final IWorkOrderRepository workOrderRepository;
     private final BookingRepository bookingRepository;
+    private final WorkOrderTypeManager typeManager = new WorkOrderTypeManager();
 
     //Får ändra BookingRepo hämtning sen
     public WorkOrderService(IWorkOrderRepository workOrderRepository,  BookingRepository bookingRepository) {
@@ -23,11 +22,9 @@ public class WorkOrderService {
     }
 
     public WorkOrder createAndSaveWorkOrder(WorkOrderTypeEnum selectedType, WorkOrderDto dto, Booking originalBooking,
-                                            Mechanic mechanic, LanguageManager language, Label feedbackLabel) {
-        WorkOrderTypeInterface strategy = getStrategy(selectedType);
+                                            Mechanic mechanic, LanguageManager language) {
+        WorkOrder workOrder = typeManager.createWorkOrderType(selectedType, dto, language);
 
-        // 2. Skapa arbetsordern via strategiklassen (Returnerar en ren WorkOrder!)
-        WorkOrder workOrder = strategy.createWorkOrder(dto, language, feedbackLabel);
         if (workOrder == null) {
             throw new IllegalStateException("createWorkOrder.createError");
         }
@@ -125,20 +122,7 @@ public class WorkOrderService {
         return Database.getServiceItems().stream()
                 .filter(s -> s.getId() == serviceId)
                 .findFirst()
-                .orElse(null);
-    }
-
-    private WorkOrderTypeInterface getStrategy(WorkOrderTypeEnum type) {
-        switch (type) {
-            case PLANNED:
-                return new PlannedWorkOrder();
-            case COMPLAINT:
-                return new ComplaintWorkOrder();
-            case DROP_IN:
-                return new DropInWorkOrder();
-            default:
-                throw new IllegalArgumentException("Okänd typ: " + type);
-        }
+                .orElseThrow(() -> new IllegalArgumentException("createWorkOrder.empty"));
     }
 }
 

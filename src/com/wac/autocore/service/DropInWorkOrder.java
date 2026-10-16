@@ -1,21 +1,19 @@
-package com.wac.autocore.workOrderType;
+package com.wac.autocore.service;
 
 import com.wac.autocore.DTO.WorkOrderDto;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
-import com.wac.autocore.service.WorkOrderService;
 import com.wac.autocore.ui.language.LanguageManager;
-import javafx.scene.control.Label;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class DropInWorkOrder implements WorkOrderTypeInterface{
+public class DropInWorkOrder implements WorkOrderTypeInterface {
 
     @Override
-    public WorkOrder createWorkOrder(WorkOrderDto workOrderDto, LanguageManager language, Label feedbackLabel) {
+    public WorkOrder createWorkOrder(WorkOrderDto workOrderDto, LanguageManager language) {
         if (workOrderDto == null || workOrderDto.getVehicleId() == null) {
-            throw new IllegalArgumentException("Fordons-ID saknas i begäran.");
+            throw new IllegalArgumentException("createWorkOrder.vehicleNotFound");
         }
 
         Booking automaticBooking = new Booking();
@@ -64,15 +62,5 @@ public class DropInWorkOrder implements WorkOrderTypeInterface{
         }
 
         return workOrder;
-    }
-
-    @Override
-    public void startWorkOrder(int workOrderId) {
-
-    }
-
-    @Override
-    public void completeWorkOrder(int workOrderId) {
-
     }
 }

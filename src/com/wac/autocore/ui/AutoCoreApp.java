@@ -422,13 +422,14 @@ public class AutoCoreApp extends Application {
         for (int i = 0; i < bookings.size(); i++) {
             Booking booking = bookings.get(i);
 
+            //Ska inte behövas
             // Originalet räknar ut nästa ID som listans storlek + 1,
             // så ID:na måste vara 1, 2, 3... utan luckor.
-            if (booking.getId() != i + 1) {
-                throw new IllegalStateException(
-                        "Booking IDs must be consecutive, starting at 1."
-                );
-            }
+//            if (booking.getId() != i + 1) {
+//                throw new IllegalStateException(
+//                        "Booking IDs must be consecutive, starting at 1."
+//                );
+//            }
 
             // Kontrollerar att bokningens fordon finns.
             boolean vehicleExists = Database.getVehicles().stream()

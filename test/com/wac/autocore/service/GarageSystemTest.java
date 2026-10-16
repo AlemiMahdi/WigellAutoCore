@@ -4,7 +4,7 @@ import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.WorkOrder;
 import com.wac.autocore.model.WorkOrderStatus;
-import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
+import com.wac.autocore.model.WorkOrderTypeEnum;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

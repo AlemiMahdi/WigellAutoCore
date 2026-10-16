@@ -1,27 +1,23 @@
-package com.wac.autocore.workOrderType;
+package com.wac.autocore.service;
 
 import com.wac.autocore.DTO.WorkOrderDto;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.model.WorkOrderTypeEnum;
 import com.wac.autocore.ui.language.LanguageManager;
-import javafx.scene.control.Label;
 
-public class PlannedWorkOrder implements WorkOrderTypeInterface{
+public class PlannedWorkOrder implements WorkOrderTypeInterface {
 
     @Override
-    public WorkOrder createWorkOrder(WorkOrderDto dto, LanguageManager language, Label feedbackLabel) {
+    public WorkOrder createWorkOrder(WorkOrderDto dto, LanguageManager language) {
 
         Booking booking = Database.getBookings().stream()
                 .filter(b -> b.getId() == dto.getBookingId())
                 .findFirst()
-                .orElse(null);
+                .orElseThrow(() -> new IllegalArgumentException("createWorkOrder.bookingNotFound"));
 
-        if (booking == null) {
-            System.out.println("Booking with ID " + dto.getBookingId() + " does not exist.");
-            return null;
-        }
         //Skapa variabel och sätt in type enum
         WorkOrder order = new WorkOrder(
                 0,
@@ -34,16 +30,5 @@ public class PlannedWorkOrder implements WorkOrderTypeInterface{
             order.addServiceItem(serviceItem.getId());
         }
         return order;
-    }
-
-    //ifall de behövs, kan ta bort de sen annars, om man vill ha det på olika sätt
-    @Override
-    public void startWorkOrder(int workOrderId) {
-
-    }
-
-    @Override
-    public void completeWorkOrder(int workOrderId) {
-
     }
 }

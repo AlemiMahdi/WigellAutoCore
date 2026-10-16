@@ -9,7 +9,7 @@ import com.wac.autocore.repository.WorkOrderRepository;
 import com.wac.autocore.service.GarageSystem;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
-import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
+import com.wac.autocore.model.WorkOrderTypeEnum;
 
 import javafx.collections.FXCollections;
 import javafx.geometry.Pos;

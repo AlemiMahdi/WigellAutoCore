@@ -6,7 +6,7 @@ import com.wac.autocore.model.*;
 import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.service.WorkOrderService;
 import com.wac.autocore.ui.language.LanguageManager;
-import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
+import com.wac.autocore.model.WorkOrderTypeEnum;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -440,7 +440,7 @@ public class CreateWorkOrderView  extends VBox {
 
 // Skicka DTO:n till vår helt generella metod i servicen!
             try {
-                workOrderService.createAndSaveWorkOrder(selectedType, dto, originalBooking, mechanic, language, feedbackLabel);
+                workOrderService.createAndSaveWorkOrder(selectedType, dto, originalBooking, mechanic, language);
 
                 // Töm GUI-fält (din befintliga tömningslogik...)
                 UiKit.showSuccess(feedbackLabel, language.text("createWorkOrder.success").get());

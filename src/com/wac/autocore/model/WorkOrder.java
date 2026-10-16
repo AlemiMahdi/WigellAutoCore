@@ -1,7 +1,6 @@
 package com.wac.autocore.model;
 
-import com.wac.autocore.workOrderType.WorkOrderTypeConverter;
-import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
+import com.wac.autocore.repository.WorkOrderTypeConverter;
 
 import javax.persistence.*;
 

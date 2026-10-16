@@ -1,12 +1,9 @@
 package com.wac.autocore.service;
 
-import com.wac.autocore.DTO.WorkOrderDto;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
-import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
-import com.wac.autocore.workOrderType.WorkOrderTypeManager;
+import com.wac.autocore.model.WorkOrderTypeEnum;
 
-import java.awt.print.Book;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -198,40 +195,41 @@ public class GarageSystem {
         return booking;
     }
 
-    public WorkOrder createWorkOrder(WorkOrderDto dto, WorkOrderTypeEnum type) {
-
-        Mechanic mechanic = findMechanic(dto.getMechanicId());
-        if (mechanic == null) {
-            System.out.println("Mechanic with ID " + dto.getMechanicId() + " does not exist or is not available.");
-            return null;
-        }
-
-        WorkOrderTypeManager manager = new WorkOrderTypeManager();
-        manager.setStrategy(type);
-        WorkOrder workOrder = manager.createWorkOrderType(dto);
-        if (workOrder == null) {
-            System.out.println("WorkOrder does not exist.");
-            return null;
-        }
-
-        Booking booking = findBooking(workOrder.getBookingId());
-        if (booking != null && type != WorkOrderTypeEnum.COMPLAINT) {
-            booking.setStatus("WORK_ORDER_CREATED");
-        }
-
-        int id = Database.getWorkOrders().stream()
-        .mapToInt(WorkOrder::getId)
-        .max()
-        .orElse(0) + 1;
-
-        workOrder.setId(id);
-
-        System.out.println("Work order created successfully.");
-        System.out.println(workOrder);
-
-        Database.getWorkOrders().add(workOrder);
-        return workOrder;
-    }
+    //Konsol app gammal metod, no longer in use!
+//    public WorkOrder createWorkOrder(WorkOrderDto dto, WorkOrderTypeEnum type) {
+//
+//        Mechanic mechanic = findMechanic(dto.getMechanicId());
+//        if (mechanic == null) {
+//            System.out.println("Mechanic with ID " + dto.getMechanicId() + " does not exist or is not available.");
+//            return null;
+//        }
+//
+//        WorkOrderTypeManager manager = new WorkOrderTypeManager();
+//        manager.setStrategy(type);
+//        WorkOrder workOrder = manager.createWorkOrderType(dto, language);
+//        if (workOrder == null) {
+//            System.out.println("WorkOrder does not exist.");
+//            return null;
+//        }
+//
+//        Booking booking = findBooking(workOrder.getBookingId());
+//        if (booking != null && type != WorkOrderTypeEnum.COMPLAINT) {
+//            booking.setStatus("WORK_ORDER_CREATED");
+//        }
+//
+//        int id = Database.getWorkOrders().stream()
+//        .mapToInt(WorkOrder::getId)
+//        .max()
+//        .orElse(0) + 1;
+//
+//        workOrder.setId(id);
+//
+//        System.out.println("Work order created successfully.");
+//        System.out.println(workOrder);
+//
+//        Database.getWorkOrders().add(workOrder);
+//        return workOrder;
+//    }
 
     // Skapar en arbetsorder som utkast med en automatisk bokning (WAC-63)
     public WorkOrder createDraftWorkOrder(int vehicleId, String description, WorkOrderTypeEnum type, Integer originalWorkOrderId) {

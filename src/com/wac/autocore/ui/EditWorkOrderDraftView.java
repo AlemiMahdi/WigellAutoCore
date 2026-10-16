@@ -1,8 +1,7 @@
 package com.wac.autocore.ui;
 
 import com.wac.autocore.ui.views.ViewHelpMethod;
-import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
-import com.wac.autocore.ui.UiKit;
+import com.wac.autocore.model.WorkOrderTypeEnum;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
