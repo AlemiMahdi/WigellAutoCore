@@ -22,11 +22,11 @@ public class ServicePackageService {
             throw new IllegalArgumentException("createServicePackage.nameRequired");
         }
         ServicePackage servicePackage = new ServicePackage(name.trim());
-        servicePackageRepository.save(servicePackage);
+        ServicePackage saved = servicePackageRepository.save(servicePackage);
         // Tillfällig, annan kod i CreateBookingView läser listan
-        Database.getServicePackages().add(servicePackage);
+        Database.getServicePackages().add(saved);
 
-        return servicePackage;
+        return saved;
     }
 
     // Läser listan i minnet, eftersom CreateBookingView delar samma objekt.
@@ -52,7 +52,7 @@ public class ServicePackageService {
 
         } catch (RuntimeException exception) {
             servicePackage.setServices(previousServices);
-            throw exception;
+            throw new RuntimeException("Kunde inte uppdatera tjänster för servicepaket " + servicePackage.getId(), exception);
 
         }
 

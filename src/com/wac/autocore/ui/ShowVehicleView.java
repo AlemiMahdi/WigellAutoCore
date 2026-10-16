@@ -36,8 +36,8 @@ public class ShowVehicleView {
         ObservableList<Vehicle> data = FXCollections.observableArrayList(vehicleService.findAll());
         table.setItems(data);
 
-        VBox root = new VBox(20, UiKit.pageHeader(language.text("vehicles.title"), newVehicleButton), table);
-        return root;
+        return new VBox(20, UiKit.pageHeader(language.text("vehicles.title"), newVehicleButton), table);
+
     }
 
     /** Bygger tabellen med kolumnerna Reg. no, Brand & model, Year och Owner. */

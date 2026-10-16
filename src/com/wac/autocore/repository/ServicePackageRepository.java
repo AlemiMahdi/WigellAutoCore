@@ -9,15 +9,16 @@ import com.wac.autocore.model.ServicePackage;
 public class ServicePackageRepository implements IServicePackageRepository{
 
     @Override
-    public void save( ServicePackage servicePackage) {
+    public ServicePackage save( ServicePackage servicePackage) {
         try ( Session session =
                 HibernateUtil.getSessionFactory().openSession()) {
 
             Transaction transaction = session.beginTransaction();
 
             try {
-                session.saveOrUpdate(servicePackage);
+                ServicePackage save = (ServicePackage) session.merge(servicePackage);
                 transaction.commit();
+                return save;
             } catch (RuntimeException exception) {
                 if (transaction.isActive()) {
                     transaction.rollback();

@@ -6,9 +6,9 @@ import java.util.List;
 
 public interface IVehicleRepository {
 
-    public void save(Vehicle vehicle);
+     void save(Vehicle vehicle);
 
-    public List<Vehicle> findAll();
+     List<Vehicle> findAll();
 
-    public Vehicle findById(int id);
+     Vehicle findById(int id);
 }

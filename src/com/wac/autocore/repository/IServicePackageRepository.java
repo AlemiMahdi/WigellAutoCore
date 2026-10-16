@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface IServicePackageRepository {
 
-    void save(ServicePackage servicePackage);
+    ServicePackage save(ServicePackage servicePackage);
 
     List<ServicePackage> findAll();
 }

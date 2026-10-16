@@ -14,8 +14,6 @@ import javafx.scene.layout.VBox;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.wac.autocore.ui.UiKit.showSuccess;
-
 public class ManageServicePackageView {
 
 

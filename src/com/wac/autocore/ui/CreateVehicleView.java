@@ -128,7 +128,9 @@ public class CreateVehicleView {
 
             @Override
             public Customer fromString(String text) {
-                return null; // behövs inte, listan är inte redigerbar
+                // Måste finnas eftersom StringConverter kräver den,
+                // men anropas aldrig eftersom listan inte är redigerbar.
+                return null;
             }
         });
 
