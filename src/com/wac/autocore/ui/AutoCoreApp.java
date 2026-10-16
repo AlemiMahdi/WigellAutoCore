@@ -631,7 +631,7 @@ public class AutoCoreApp extends Application {
                 createNavItem("show-services", "menu.services", () -> showView(new ServiceView())),
                 createNavItem("create-service-package", "menu.createServicePackage",
                         () -> showView(new CreateServicePackageView(servicePackageService).getView())),
-                createNavItem("manage-service-package", "menu.manageServicePackage", () -> showView(new ManageServicePackageView().getView())),
+                createNavItem("manage-service-package", "menu.manageServicePackage", () -> showView(new ManageServicePackageView(servicePackageService).getView())),
                 createNavItem("show-mechanics", "menu.mechanics", () -> showView(new MechanicView())),
                 createNavItem("mechanic-schedule", "menu.schedule", () -> showView(new MechanicScheduleView().getView())));
 
