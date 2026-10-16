@@ -148,6 +148,13 @@ public class CreateWorkOrderView  extends VBox {
                 setGraphic(checkBox);
             }
         });
+        bookingComboBox.valueProperty().addListener((observable, oldValue, newBooking) -> {
+            selectedServices.clear();
+            if (newBooking != null && newBooking.getServices() != null) {
+
+                selectedServices.addAll(newBooking.getServices());
+            }
+        });
 
         //styr värdet när listan är stängd, så språket inte blir konstigt i listan
         typeComboBox.setButtonCell(new ListCell<WorkOrderTypeEnum>() {
@@ -200,8 +207,9 @@ public class CreateWorkOrderView  extends VBox {
                 if (workOrder == null) {
                     return "";
                 }
-                return "#" + workOrder.getId()
-                        + " - Booking ID: " + workOrder.getBookingId();
+                return language.text("createWorkOrder.WO").get() + workOrder.getId() + " - "
+                        + language.text("createWorkOrder.BookingId").get() + workOrder.getBookingId() + " - "
+                        + language.text("createWorkOrder.infoPrice").get() + workOrder.getEstimatedPrice();
             }
 
             @Override
