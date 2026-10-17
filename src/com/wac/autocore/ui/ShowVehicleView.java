@@ -3,6 +3,7 @@ package com.wac.autocore.ui;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Customer;
 import com.wac.autocore.model.Vehicle;
+import com.wac.autocore.service.VehicleService;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
@@ -20,7 +21,7 @@ public class ShowVehicleView {
      * Bygger upp sidan som visar alla fordon i systemet: rubrik, knapp och tabell.
      * Returnerar en VBox som kan visas i contentPane i AutoCoreApp.
      */
-    public static VBox build() {
+    public static VBox build(VehicleService vehicleService) {
         LanguageManager language = LanguageManager.getInstance();
 
         // Knappen tar användaren direkt till formuläret, precis som ett klick i menyn
@@ -30,13 +31,13 @@ public class ShowVehicleView {
 
         TableView<Vehicle> table = createVehicleTable();
 
-        // Hämtar alla fordon från "databasen" och gör om listan till en
+        // Hämtar alla fordon från vehicleService och gör om listan till en
         // ObservableList, som TableView kräver för att kunna visa datan.
-        ObservableList<Vehicle> data = FXCollections.observableArrayList(Database.getVehicles());
+        ObservableList<Vehicle> data = FXCollections.observableArrayList(vehicleService.findAll());
         table.setItems(data);
 
-        VBox root = new VBox(20, UiKit.pageHeader(language.text("vehicles.title"), newVehicleButton), table);
-        return root;
+        return new VBox(20, UiKit.pageHeader(language.text("vehicles.title"), newVehicleButton), table);
+
     }
 
     /** Bygger tabellen med kolumnerna Reg. no, Brand & model, Year och Owner. */

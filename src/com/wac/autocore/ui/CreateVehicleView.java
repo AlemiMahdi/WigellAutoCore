@@ -3,8 +3,7 @@ package com.wac.autocore.ui;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Customer;
 import com.wac.autocore.model.Vehicle;
-import com.wac.autocore.repository.VehicleRepository;
-import com.wac.autocore.service.GarageSystem;
+import com.wac.autocore.service.VehicleService;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.collections.FXCollections;
 import javafx.geometry.Pos;
@@ -22,11 +21,8 @@ public class CreateVehicleView {
      * Bygger upp formuläret för att skapa ett nytt fordon.
      * Returnerar en VBox som kan visas i contentPane i AutoCoreApp.
      */
-    public static VBox build() {
+    public static VBox build(VehicleService vehicleService) {
         LanguageManager language = LanguageManager.getInstance();
-        GarageSystem garageSystem = new GarageSystem();
-
-        VehicleRepository vehicleRepository = new VehicleRepository();
 
         TextField regField = new TextField();
         regField.promptTextProperty().bind(language.text("vehicle.create.regPrompt"));
@@ -75,25 +71,13 @@ public class CreateVehicleView {
             }
             int customerId = owner.getId();
 
-            // GarageSystem returnerar null om kund-id:t inte finns,
-            // istället för att kasta ett undantag - så vi måste kolla själva.
-            Vehicle vehicle = garageSystem.createVehicle(registrationNumber, brand, model, year, customerId);
-
-            if (vehicle == null) {
-                UiKit.showError(statusLabel, language.text("vehicle.create.invalidOwner").get());
-                return;
-            }
-
+            Vehicle vehicle;
             try {
-                // Sparar fordonet i MySQL innan bekräftelsen visas.
-                vehicleRepository.save(vehicle);
-                if (!Database.getVehicles().contains(vehicle)) {
-                    Database.getVehicles().add(vehicle);
-                }
+                vehicle = vehicleService.createVehicle(registrationNumber, brand, model, year, customerId);
+            } catch (IllegalArgumentException exception) {
+                UiKit.showError(statusLabel, language.text(exception.getMessage()).get());
+                return;
             } catch (RuntimeException exception) {
-                // Ångrar tillägget i minnet om databassparandet misslyckas.
-                Database.getVehicles().remove(vehicle);
-
                 UiKit.showError(statusLabel, language.text("vehicle.create.error").get());
                 exception.printStackTrace();
                 return;
@@ -144,7 +128,9 @@ public class CreateVehicleView {
 
             @Override
             public Customer fromString(String text) {
-                return null; // behövs inte, listan är inte redigerbar
+                // Måste finnas eftersom StringConverter kräver den,
+                // men anropas aldrig eftersom listan inte är redigerbar.
+                return null;
             }
         });
 
