@@ -1,16 +1,20 @@
 package com.wac.autocore.ui.views;
 
-import com.wac.autocore.model.ServiceItem;
-import javafx.collections.ListChangeListener;
-import javafx.collections.ObservableList;
+import com.wac.autocore.ui.language.LanguageManager;
 import javafx.scene.control.*;
-
-import java.util.List;
-import java.util.Locale;
 
 public class ViewHelpMethod {
 
-    //Hjälp metod för att lägga in i vyerna
+    /**
+     * Används i ProcessPaymentView och ShowPaymentsView så att betalsätt ser likadant ut.
+     */
+    public static String formatPaymentType(String type) {
+        if (type == null || type.trim().isEmpty()) {
+            return "—";
+        }
+        return LanguageManager.getInstance()
+                .text("payment.type." + type.trim().toUpperCase()).get();
+    }
 
 
 }

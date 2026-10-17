@@ -66,7 +66,7 @@ public class ShowPaymentsView {
 
         paymentTypeColumn.setCellValueFactory(cellData ->
                 new SimpleStringProperty(
-                        paymentService.formatPaymentType(cellData.getValue().getPaymentType())
+                        ViewHelpMethod.formatPaymentType(cellData.getValue().getPaymentType())
                 )
         );
         paymentTypeColumn.getStyleClass().add("cell-muted");
@@ -117,7 +117,7 @@ public class ShowPaymentsView {
         // Kopia av listan, vänd så att senaste betalningen hamnar överst
         ObservableList<Payment> payments =
                 FXCollections.observableArrayList(
-                        Database.getPayments()
+                        paymentService.findAll()
                 );
         Collections.reverse(payments);
 

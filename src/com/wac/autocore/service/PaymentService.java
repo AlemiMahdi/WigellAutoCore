@@ -4,112 +4,74 @@ import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Invoice;
 import com.wac.autocore.model.Payment;
 import com.wac.autocore.repository.IPaymentRepository;
-import com.wac.autocore.ui.UiKit;
-import com.wac.autocore.ui.language.LanguageManager;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
 
+import java.util.ArrayList;
+import java.util.List;
 
 public class PaymentService {
 
     private final IPaymentRepository paymentRepository;
+
     public PaymentService(IPaymentRepository paymentRepository) {
         this.paymentRepository = paymentRepository;
     }
 
-public void processPayment(ComboBox<Invoice> invoiceBox, ComboBox<String> paymentTypeBox, Label messageLabel, LanguageManager language) {
-    Invoice selectedInvoice = invoiceBox.getValue();
+    public void processPayment(Invoice selectedInvoice, String paymentType) {
 
-    if (selectedInvoice == null) {
-        UiKit.showError(messageLabel,
-                language.text("processPayment.selectInvoice").get()
+        if (selectedInvoice == null) {
+            throw new IllegalArgumentException("processPayment.selectInvoice");
+        }
+
+        //förhindra att faktura kan registreras igen
+        if (selectedInvoice.isPaid()) {
+            throw new IllegalArgumentException("processPayment.alreadyPaid");
+        }
+
+        if (paymentType == null) {
+            throw new IllegalArgumentException("processPayment.selectType");
+        }
+
+        boolean previousPaidStatus = selectedInvoice.isPaid();
+
+        Payment payment = new Payment(
+                selectedInvoice.getId(), selectedInvoice.getTotalAmount(), paymentType
         );
-        return;
+
+        boolean successful = "CARD".equalsIgnoreCase(paymentType) ||
+                "SWISH".equalsIgnoreCase(paymentType) ||
+                "CASH".equalsIgnoreCase(paymentType);
+        payment.setSuccessful(successful);
+
+        // Om betalningen inte är godkänd, avbryt innan vi rör databasen
+        if (!payment.isSuccessful()) {
+            throw new IllegalArgumentException("processPayment.failed");
+        }
+        try {
+            selectedInvoice.setPaid(true);
+            paymentRepository.savePaymentAndInvoice(
+                    payment, selectedInvoice
+            );
+            Database.getPayments().add(payment);
+        } catch (RuntimeException exception) {
+            selectedInvoice.setPaid(previousPaidStatus);
+
+            throw new RuntimeException("Kunde inte spara betalning för faktura " + selectedInvoice.getId(), exception);
+        }
     }
 
-    //förhindra att faktura kan registreras igen
-    if (selectedInvoice.isPaid()) {
-        UiKit.showError(messageLabel, language.text("processPayment.alreadyPaid").get());
-        return;
-    }
+    public List<Invoice> findUnpaidInvoices() {
+        List<Invoice> unpaid = new ArrayList<>();
 
-    String paymentType = paymentTypeBox.getValue();
-    if (paymentType == null) {
-        UiKit.showError(messageLabel,
-                language.text("processPayment.selectType").get()
-        );
-        return;
-    }
-
-    boolean previousPaidStatus = selectedInvoice.isPaid();
-
-    Payment payment = new Payment(
-            selectedInvoice.getId(), selectedInvoice.getTotalAmount(), paymentType
-    );
-
-    boolean successful = "CARD".equalsIgnoreCase(paymentType) ||
-            "SWISH".equalsIgnoreCase(paymentType) ||
-            "CASH".equalsIgnoreCase(paymentType);
-    payment.setSuccessful(successful);
-
-    // Om betalningen inte är godkänd, avbryt innan vi rör databasen
-    if (!payment.isSuccessful()) {
-        UiKit.showError(messageLabel, language.text("processPayment.failed").get());
-        return;
-    }
-try {
-    selectedInvoice.setPaid(true);
-    paymentRepository.savePaymentAndInvoice(
-                payment, selectedInvoice
-        );
-    Database.getPayments().add(payment);
-    } catch (RuntimeException exception) {
-        // Återställ ändringarna som Database gjorde i minnet.
-        Database.getPayments().remove(payment);
-        selectedInvoice.setPaid(previousPaidStatus);
-
-        refreshInvoiceTexts(invoiceBox);
-        UiKit.showError(messageLabel, language.text("processPayment.saveError").get());
-        exception.printStackTrace();
-        return;
-    }
-
-    if (payment.isSuccessful()) {
-        UiKit.showSuccess(messageLabel,
-                language.text("processPayment.success").get()
-        );
-        invoiceBox.getItems().remove(selectedInvoice);
-        invoiceBox.setValue(null);
-        paymentTypeBox.setValue(null);
-
-        // Rita om listan så att "paid" syns direkt på fakturan
-        refreshInvoiceTexts(invoiceBox);
-
-    } else {
-        UiKit.showError(messageLabel, language.text("processPayment.failed").get());
-    }
-}
-
-    // En ComboBox ritar inte om texterna av sig själv när ett objekt ändras
-    // (här: paid blev true). Genom att lägga in samma objekt igen uppdateras de.
-    public void refreshInvoiceTexts(ComboBox<Invoice> invoiceBox) {
-        invoiceBox.getItems().clear();
-        for(Invoice invoice : Database.getInvoices()) {
-            if(!invoice.isPaid()) {
-                invoiceBox.getItems().add(invoice);
+        for (Invoice invoice : Database.getInvoices()) {
+            if (!invoice.isPaid()) {
+                unpaid.add(invoice);
             }
         }
+        return unpaid;
     }
 
-    /**
-     * "CARD" -> "Kort"/"Card" via språkfilen. Används även i ShowPaymentsView så att betalsätt ser likadana ut.
-     */
-    public String formatPaymentType(String type) {
-        if (type == null || type.trim().isEmpty()) {
-            return "—";
-        }
-        return LanguageManager.getInstance()
-                .text("payment.type." + type.trim().toUpperCase()).get();
+    public List<Payment> findAll() {
+        return Database.getPayments();
     }
 
     //Gammal funktion för konsol appen

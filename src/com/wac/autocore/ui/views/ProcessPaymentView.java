@@ -20,6 +20,7 @@ public class ProcessPaymentView {
 
     private final LanguageManager language = LanguageManager.getInstance();
     private final PaymentService paymentService;
+
     public ProcessPaymentView(PaymentService paymentService) {
         this.paymentService = paymentService;
     }
@@ -40,7 +41,7 @@ public class ProcessPaymentView {
                 return null; // Används inte – listan går inte att skriva i
             }
         });
-        paymentService.refreshInvoiceTexts(invoiceBox);
+        refreshInvoices(invoiceBox);
 
         invoiceBox.promptTextProperty().bind(language.text(
                 invoiceBox.getItems().isEmpty() ? "processPayment.noInvoicesPrompt" : "processPayment.invoiceSelectPrompt"
@@ -82,7 +83,7 @@ public class ProcessPaymentView {
         paymentTypeBox.setConverter(new StringConverter<String>() {
             @Override
             public String toString(String type) {
-                return type == null ? "" : paymentService.formatPaymentType(type);
+                return type == null ? "" : ViewHelpMethod.formatPaymentType(type);
             }
 
             @Override
@@ -107,7 +108,20 @@ public class ProcessPaymentView {
 
 
         processButton.setOnAction(event -> {
-            paymentService.processPayment(invoiceBox,  paymentTypeBox,  messageLabel, language);
+            try {
+                paymentService.processPayment(invoiceBox.getValue(), paymentTypeBox.getValue());
+                UiKit.showSuccess(messageLabel, language.text("processPayment.success").get());
+                invoiceBox.setValue(null);
+                paymentTypeBox.setValue(null);
+                refreshInvoices(invoiceBox);
+            } catch (IllegalArgumentException exception) {
+                UiKit.showError(messageLabel, language.text(exception.getMessage()).get());
+            } catch (RuntimeException exception) {
+                refreshInvoices(invoiceBox);
+                UiKit.showError(messageLabel, language.text("processPayment.saveError").get());
+                exception.printStackTrace();
+            }
+
         });
 
 
@@ -134,5 +148,9 @@ public class ProcessPaymentView {
                 + language.text("payments.invoiceSuffix").get() + " · "
                 + ShowInvoiceView.formatSek(invoice.getTotalAmount()) + " · "
                 + language.text(invoice.isPaid() ? "badge.PAID" : "badge.UNPAID").get();
+    }
+
+    private void refreshInvoices(ComboBox<Invoice> invoiceBox) {
+        invoiceBox.getItems().setAll(paymentService.findUnpaidInvoices());
     }
 }
