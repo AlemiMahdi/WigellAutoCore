@@ -275,6 +275,33 @@ class InvoiceServiceTest {
         }
     }
 
+    @Test
+    void rejectsExtraCostWithMoreThanTwoDecimals() {
+        assertInvalidExtraCost(
+                100.123,
+                "Extra arbete",
+                "createInvoice.invalidExtraCost"
+        );
+    }
+
+    @Test
+    void rejectsNegativeExtraCost() {
+        assertInvalidExtraCost(
+                -100.0,
+                "Extra arbete",
+                "createInvoice.invalidExtraCost"
+        );
+    }
+
+    @Test
+    void rejectsExtraCostWithoutDescription() {
+        assertInvalidExtraCost(
+                100.0,
+                "   ",
+                "createInvoice.missingExtraDescription"
+        );
+    }
+
     private static class FakeInvoiceRepository
             implements IInvoiceRepository {
 
@@ -323,6 +350,35 @@ class InvoiceServiceTest {
 
             return preparedInvoice;
         }
+    }
+
+    private void assertInvalidExtraCost(
+            double extraCost,
+            String description,
+            String expectedMessage) {
+
+        FakeInvoiceRepository repository = new FakeInvoiceRepository();
+        Invoice prepared = new Invoice(1, 1, LocalDate.now(), 500.0);
+        InvoiceService service = new InvoiceService(
+                repository, new StubGarageSystem(prepared)
+        );
+
+        List<Invoice> before = new ArrayList<>(Database.getInvoices());
+
+        IllegalArgumentException previewError = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.previewInvoice(1, "", description, extraCost)
+        );
+
+        IllegalArgumentException creationError = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.createInvoice(1, "", description, extraCost)
+        );
+
+        assertEquals(expectedMessage, previewError.getMessage());
+        assertEquals(expectedMessage, creationError.getMessage());
+        assertEquals(0, repository.saveCalls);
+        assertEquals(before, Database.getInvoices());
     }
 
 }

@@ -22,7 +22,7 @@ import java.time.LocalDate;
 
 public class CreateInvoiceView {
 
-    public static VBox build(InvoiceService invoiceService){
+    public static VBox build(InvoiceService invoiceService) {
         LanguageManager language = LanguageManager.getInstance();
 
 
@@ -35,7 +35,6 @@ public class CreateInvoiceView {
             public String toString(WorkOrder workOrder) {
                 return workOrder == null ? "" : describeWorkOrder(workOrder);
             }
-
 
 
             @Override
@@ -64,22 +63,22 @@ public class CreateInvoiceView {
         // --- Nya kostnader för reklamationer ---
         TextField extraCostDescriptionField = new TextField();
         extraCostDescriptionField.promptTextProperty().bind(
-            language.text("createInvoice.extraCostDescriptionPrompt")
+                language.text("createInvoice.extraCostDescriptionPrompt")
         );
 
         TextField extraCostAmountField = new TextField();
         extraCostAmountField.promptTextProperty().bind(
-            language.text("createInvoice.extraCostAmountPrompt")
+                language.text("createInvoice.extraCostAmountPrompt")
         );
 
         VBox extraCostSection = UiKit.formField(
-            language.text("createInvoice.extraCostDescriptionPrompt"),
-            extraCostDescriptionField
+                language.text("createInvoice.extraCostDescriptionPrompt"),
+                extraCostDescriptionField
         );
 
         VBox extraCostAmountSection = UiKit.formField(
-            language.text("createInvoice.extraCostAmountPrompt"),
-            extraCostAmountField
+                language.text("createInvoice.extraCostAmountPrompt"),
+                extraCostAmountField
         );
 
         VBox complaintCosts = new VBox(10, extraCostSection, extraCostAmountSection);
@@ -139,7 +138,7 @@ public class CreateInvoiceView {
                         ShowInvoiceView.formatSek(preview.getTotalAmount())
                 );
 
-            } catch (NumberFormatException | ArithmeticException exception) {
+            } catch (IllegalArgumentException | ArithmeticException exception) {
                 amountField.clear();
                 totalValue.setText("—");
             }
@@ -161,7 +160,7 @@ public class CreateInvoiceView {
         });
 
         extraCostAmountField.textProperty().addListener(
-            (obs, oldValue, newValue) -> updateTotal.run()
+                (obs, oldValue, newValue) -> updateTotal.run()
         );
 
         discoutField.textProperty().addListener(
@@ -198,64 +197,54 @@ public class CreateInvoiceView {
 
                 if (!input.isEmpty()) {
                     try {
-                        extraCost = Double.parseDouble(input.replace(",", "."));
-
-                        if (!Double.isFinite(extraCost) || extraCost < 0) {
-                            UiKit.showError(statusLabel,
-                                language.text("createInvoice.invalidExtraCost").get());
-                            return;
-                        }
+                        extraCost = Double.parseDouble(input.replace(',', '.'));
                     } catch (NumberFormatException exception) {
-                        UiKit.showError(statusLabel,
-                            language.text("createInvoice.invalidExtraCost").get());
-                        return;
-                    }
-
-                    if (extraCost > 0 && extraDescription.trim().isEmpty()) {
-                        UiKit.showError(statusLabel,
-                            language.text("createInvoice.missingExtraDescription").get());
-                        return;
-                    }
-                } else if (!extraDescription.isEmpty()) {
-                    UiKit.showError(statusLabel,
-                        language.text("createInvoice.invalidExtraCost").get());
-                    return;
-                }
-            }
-
-                try {
-
-                    Invoice invoice = invoiceService.createInvoice(workOrderId, discountCode, extraDescription, extraCost);
-
-
-                    if (invoice == null) {
                         UiKit.showError(
                                 statusLabel,
-                                language.text("createInvoice.createError").get()
+                                language.text("createInvoice.invalidExtraCost").get()
                         );
                         return;
                     }
+                }
+            }
 
-                    UiKit.showSuccess(
+            try {
+
+                Invoice invoice = invoiceService.createInvoice(workOrderId, discountCode, extraDescription, extraCost);
+
+
+                if (invoice == null) {
+                    UiKit.showError(
                             statusLabel,
-                            language.text("createInvoice.successFor").get() + " "
-                                    + ShowInvoiceView.workOrderCode(workOrderId)
-                                    + ". " + language.text("createInvoice.totalLabel").get() + ": "
-                                    + ShowInvoiceView.formatSek(invoice.getTotalAmount())
+                            language.text("createInvoice.createError").get()
                     );
-
-                    workOrderBox.setValue(null);
-                    discoutField.clear();
-
-                } catch (RuntimeException exception) {
-
-                    UiKit.showError(statusLabel,
-                            language.text("createInvoice.saveError").get()
-                    );
-                    exception.printStackTrace();
+                    return;
                 }
 
+                UiKit.showSuccess(
+                        statusLabel,
+                        language.text("createInvoice.successFor").get() + " "
+                                + ShowInvoiceView.workOrderCode(workOrderId)
+                                + ". " + language.text("createInvoice.totalLabel").get() + ": "
+                                + ShowInvoiceView.formatSek(invoice.getTotalAmount())
+                );
 
+                workOrderBox.setValue(null);
+                discoutField.clear();
+
+            } catch (IllegalArgumentException exception) {
+                UiKit.showError(
+                        statusLabel,
+                        language.text(exception.getMessage()).get()
+                );
+
+            } catch (RuntimeException exception) {
+
+                UiKit.showError(statusLabel,
+                        language.text("createInvoice.saveError").get()
+                );
+                exception.printStackTrace();
+            }
 
 
         });
