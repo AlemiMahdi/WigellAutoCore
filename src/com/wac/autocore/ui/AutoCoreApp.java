@@ -256,7 +256,7 @@ public class AutoCoreApp extends Application {
                 new ServiceItemRepository();
 
         List<ServiceItem> savedServiceItems =
-                repository.findAllServiceItems();
+                repository.findAll();
 
         if (savedServiceItems.isEmpty()) {
 
@@ -353,7 +353,7 @@ public class AutoCoreApp extends Application {
                 new PaymentRepository();
 
         List<Payment> savedPayments =
-                repository.findAllPayments();
+                repository.findAll();
 
         if (savedPayments.isEmpty()) {
 

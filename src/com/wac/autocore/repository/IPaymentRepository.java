@@ -8,6 +8,5 @@ import java.util.List;
 public interface IPaymentRepository {
     void save(Payment payment);
     List<Payment> findAll();
-    List<Payment> findAllPayments();
     void savePaymentAndInvoice(Payment payment, Invoice invoice);
 }

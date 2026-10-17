@@ -56,8 +56,4 @@ public class ServiceItemRepository implements IServiceItemRepository {
             }
         }
     }
-
-    public List<ServiceItem> findAllServiceItems() {
-        return findAll();
-    }
 }

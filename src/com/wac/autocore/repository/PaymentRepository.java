@@ -65,10 +65,6 @@ public class PaymentRepository implements IPaymentRepository {
         }
     }
 
-    public List<Payment> findAllPayments() {
-        return findAll();
-    }
-
     public void savePaymentAndInvoice(
             Payment payment,
             Invoice invoice

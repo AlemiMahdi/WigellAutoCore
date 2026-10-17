@@ -10,7 +10,6 @@ public class Payment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column()
     private int id;
 
     @Column(name = "invoice_id")
