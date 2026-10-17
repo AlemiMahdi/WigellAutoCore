@@ -6,7 +6,6 @@ import com.wac.autocore.model.*;
 import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
 import com.wac.autocore.workOrderType.WorkOrderTypeManager;
 
-import java.awt.print.Book;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,19 +55,7 @@ public class GarageSystem {
         }
     }
 
-    public void showServiceItems() {
-        System.out.println();
-        System.out.println("=== SERVICES ===");
 
-        if (Database.getServiceItems().isEmpty()) {
-            System.out.println("No services found.");
-            return;
-        }
-
-        for (ServiceItem serviceItem : Database.getServiceItems()) {
-            System.out.println(serviceItem);
-        }
-    }
 
     public void showMechanics() {
         System.out.println();
@@ -109,20 +96,6 @@ public class GarageSystem {
 
         for (Invoice invoice : Database.getInvoices()) {
             System.out.println(invoice);
-        }
-    }
-
-    public void showPayments() {
-        System.out.println();
-        System.out.println("=== PAYMENTS ===");
-
-        if (Database.getPayments().isEmpty()) {
-            System.out.println("No payments found.");
-            return;
-        }
-
-        for (Payment payment : Database.getPayments()) {
-            System.out.println(payment);
         }
     }
 
@@ -574,68 +547,6 @@ public class GarageSystem {
         return invoice;
     }
 
-    public Payment processPayment(int invoiceId, String paymentType) {
-        Invoice invoice = findInvoice(invoiceId);
-
-        if (invoice == null) {
-            System.out.println("Invoice with ID " + invoiceId + " does not exist.");
-            return null;
-        }
-
-        if (invoice.isPaid()) {
-            System.out.println("Invoice has already been paid.");
-            return null;
-        }
-
-        int id = Database.getPayments().size() + 1;
-
-        Payment payment = new Payment(
-                id,
-                invoiceId,
-                invoice.getTotalAmount(),
-                paymentType
-        );
-
-        boolean successful = false;
-
-        if (paymentType.equalsIgnoreCase("CARD")) {
-
-            System.out.println("Connecting directly to SuperCardPayment...");
-            System.out.println("Card payment approved.");
-            successful = true;
-
-        } else if (paymentType.equalsIgnoreCase("SWISH")) {
-
-            System.out.println("Calling Swish payment service...");
-            System.out.println("Swish payment approved.");
-            successful = true;
-
-        } else if (paymentType.equalsIgnoreCase("CASH")) {
-
-            System.out.println("Registering cash payment...");
-            successful = true;
-
-        } else {
-
-            System.out.println("Unknown payment type.");
-        }
-
-        payment.setSuccessful(successful);
-        Database.getPayments().add(payment);
-
-        if (successful) {
-            invoice.setPaid(true);
-
-            System.out.println("Payment completed successfully.");
-            System.out.println("Sending payment confirmation to customer...");
-            System.out.println("Confirmation sent.");
-        } else {
-            System.out.println("Payment failed.");
-        }
-
-        return payment;
-    }
-
     private boolean sharesOriginalBooking(WorkOrder workOrder) {
         if (workOrder.getType() != WorkOrderTypeEnum.COMPLAINT
                 || workOrder.getOriginalWorkOrderId() == null) {
@@ -690,20 +601,20 @@ public class GarageSystem {
         return null;
     }
 
-    private WorkOrder findWorkOrder(int id) {
-        for (WorkOrder workOrder : Database.getWorkOrders()) {
-            if (workOrder.getId() == id) {
-                return workOrder;
+    static Invoice findInvoice(int id) {
+        for (Invoice invoice : Database.getInvoices()) {
+            if (invoice.getId() == id) {
+                return invoice;
             }
         }
 
         return null;
     }
 
-    private Invoice findInvoice(int id) {
-        for (Invoice invoice : Database.getInvoices()) {
-            if (invoice.getId() == id) {
-                return invoice;
+    private WorkOrder findWorkOrder(int id) {
+        for (WorkOrder workOrder : Database.getWorkOrders()) {
+            if (workOrder.getId() == id) {
+                return workOrder;
             }
         }
 

@@ -1,8 +1,8 @@
 package com.wac.autocore.ui;
 
+import com.wac.autocore.service.ServiceItemService;
 import com.wac.autocore.ui.views.ViewHelpMethod;
 import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
-import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -27,6 +27,11 @@ public class EditWorkOrderDraftView {
 
     private final LanguageManager language =
             LanguageManager.getInstance();
+    private final ServiceItemService serviceItemService;
+
+    public EditWorkOrderDraftView(ServiceItemService serviceItemService) {
+        this.serviceItemService = serviceItemService;
+    }
 
     private void showFeedback(Label label, String key, boolean success) {
         label.textProperty().unbind();

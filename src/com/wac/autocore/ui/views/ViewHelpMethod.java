@@ -1,16 +1,39 @@
 package com.wac.autocore.ui.views;
 
 import com.wac.autocore.model.ServiceItem;
+import com.wac.autocore.ui.language.LanguageManager;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.scene.control.*;
 
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.List;
 import java.util.Locale;
 
 public class ViewHelpMethod {
 
-    //Hjälp metod för att lägga in i vyerna
+    /**
+     * Används i ProcessPaymentView och ShowPaymentsView så att betalsätt ser likadant ut.
+     */
+    public static String formatPaymentType(String type) {
+        if (type == null || type.trim().isEmpty()) {
+            return "—";
+        }
+        return LanguageManager.getInstance()
+                .text("payment.type." + type.trim().toUpperCase()).get();
+    }
+
+    // 1450.0 -> "1 450 SEK" (mellanslag som tusentalsavgränsare, som i designen)
+    public static String formatPrice(double price) {
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+        symbols.setGroupingSeparator(' ');
+        DecimalFormat format = new DecimalFormat("#,##0", symbols);
+        format.setRoundingMode(RoundingMode.HALF_UP);
+        return format.format(price) + " SEK";
+    }
+
     //Metod för att Automatiskt hämta tjänsterna och priser, tid för dem
     //Minska koden i själva vyerna
     public static void setupServiceChecklist(
@@ -104,5 +127,7 @@ public class ViewHelpMethod {
         updateTotals.run();
         serviceList.refresh();
     }
+
+
 }
 

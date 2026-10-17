@@ -1,9 +1,6 @@
 package com.wac.autocore.model;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 import java.time.LocalDateTime;
 
@@ -12,6 +9,7 @@ import java.time.LocalDateTime;
 public class Payment {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
     @Column(name = "invoice_id")
@@ -34,12 +32,10 @@ public class Payment {
     }
 
     public Payment(
-            int id,
             int invoiceId,
             double amount,
             String paymentType
     ) {
-        this.id = id;
         this.invoiceId = invoiceId;
         this.amount = amount;
         this.paymentType = paymentType;
@@ -50,7 +46,7 @@ public class Payment {
     public int getId() {
         return id;
     }
-
+    //Använda inte setId
     public void setId(int id) {
         this.id = id;
     }
