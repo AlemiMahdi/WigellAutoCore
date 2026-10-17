@@ -1,14 +1,12 @@
 package com.wac.autocore.service;
 
 import com.wac.autocore.data.Database;
-import com.wac.autocore.model.Booking;
-import com.wac.autocore.model.WorkOrder;
-import com.wac.autocore.model.WorkOrderStatus;
+import com.wac.autocore.model.*;
 import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
-import com.wac.autocore.model.Mechanic;
+
 import java.util.List;
 
 // Testar att GarageSystem skapar utkast med automatisk bokning (WAC-63).
@@ -96,9 +94,14 @@ public class GarageSystemTest {
         );
         Booking booking = findBooking(draft.getBookingId());
 
+        // Egen tjänst för testet, så att testet inte beror på exempeldata
+        ServiceItem testService = new ServiceItem("Testtjänst", "Bara för test", 100.0, 30);
+        testService.setId(999);
+        Database.getServiceItems().add(testService);
+
         try {
             draft.setMechanicId(Database.getMechanics().get(0).getId());
-            draft.addServiceItem(Database.getServiceItems().get(0).getId());
+            draft.addServiceItem(testService.getId());
 
             List<String> errors =
                     garageSystem.validateWorkOrderForConfirmation(draft.getId());
@@ -108,6 +111,7 @@ public class GarageSystemTest {
             // Validering ska inte i sig bekräfta arbetsordern.
             assertEquals(WorkOrderStatus.DRAFT, draft.getStatus());
         } finally {
+            Database.getServiceItems().remove(testService);
             Database.getWorkOrders().remove(draft);
             Database.getBookings().remove(booking);
         }
