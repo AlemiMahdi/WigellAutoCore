@@ -57,10 +57,6 @@ public class ServiceItemRepository {
         }
     }
 
-    public List<ServiceItem> findAllServiceItems() {
-        return findAll();
-    }
-
     public ServiceItem findById(int id) {
         // Try-with-resources öppnar och stänger sessionen automatiskt
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {

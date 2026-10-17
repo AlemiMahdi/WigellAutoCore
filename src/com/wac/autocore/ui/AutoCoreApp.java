@@ -2,10 +2,7 @@ package com.wac.autocore.ui;
 
 import java.net.URL;
 
-import com.wac.autocore.service.GarageSystem;
-import com.wac.autocore.service.WorkOrderService;
-import com.wac.autocore.service.ServicePackageService;
-import com.wac.autocore.service.VehicleService;
+import com.wac.autocore.service.*;
 import com.wac.autocore.ui.language.LanguageManager;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.data.HibernateUtil;
@@ -62,7 +59,8 @@ public class AutoCoreApp extends Application {
     private final IWorkOrderRepository workOrderRepository;
     private final BookingRepository bookingRepository;
     private final VehicleRepository vehicleRepository;
-    private final IServiceItemRepository serviceItemRepository;
+    private final IPaymentRepository paymentRepository;
+    private final IServiceItemRepository serviceRepository;
     private final VehicleService vehicleService;
     private final ServicePackageService servicePackageService;
 
@@ -74,7 +72,8 @@ public class AutoCoreApp extends Application {
         this.vehicleRepository = new VehicleRepository();
         this.vehicleService = new VehicleService(vehicleRepository);
         this.servicePackageService = new ServicePackageService(new ServicePackageRepository());
-        this.serviceItemRepository = new IServiceItemRepository();
+        this.paymentRepository = new PaymentRepository();
+        this.serviceRepository = new ServiceItemRepository();
 
         // Sätt instansen i samma sekund som JavaFX startar appen
         synchronized (AutoCoreApp.class) {
@@ -258,7 +257,7 @@ public class AutoCoreApp extends Application {
                 new ServiceItemRepository();
 
         List<ServiceItem> savedServiceItems =
-                repository.findAllServiceItems();
+                repository.findAll();
 
         if (savedServiceItems.isEmpty()) {
 
@@ -355,7 +354,7 @@ public class AutoCoreApp extends Application {
                 new PaymentRepository();
 
         List<Payment> savedPayments =
-                repository.findAllPayments();
+                repository.findAll();
 
         if (savedPayments.isEmpty()) {
 
@@ -368,15 +367,7 @@ public class AutoCoreApp extends Application {
         }
 
         // Originalsystemet använder listans storlek + 1 för nästa ID.
-        for (int i = 0; i < savedPayments.size(); i++) {
-
-            Payment payment = savedPayments.get(i);
-
-            if (payment.getId() != i + 1) {
-                throw new IllegalStateException(
-                        "Payment IDs must be consecutive, starting at 1."
-                );
-            }
+        for ( Payment payment : savedPayments) {
 
             // En betalning måste höra till en befintlig faktura.
             boolean invoiceExists =
@@ -414,11 +405,11 @@ public class AutoCoreApp extends Application {
 
             // Originalet räknar ut nästa ID som listans storlek + 1,
             // så ID:na måste vara 1, 2, 3... utan luckor.
-            if (booking.getId() != i + 1) {
-                throw new IllegalStateException(
-                        "Booking IDs must be consecutive, starting at 1."
-                );
-            }
+//            if (booking.getId() != i + 1) {
+//                throw new IllegalStateException(
+//                        "Booking IDs must be consecutive, starting at 1."
+//                );
+//            }
 
             // Kontrollerar att bokningens fordon finns.
             boolean vehicleExists = Database.getVehicles().stream()
@@ -617,15 +608,15 @@ public class AutoCoreApp extends Application {
                 createNavItem("create-booking", "menu.createBooking", () -> showView(new CreateBookingView().getView())));
 
         addNavSection(menuBox, "menu.section.workOrders",
-                createNavItem("show-work-orders", "menu.workOrders", () -> showView(new ShowWorkOrdersView(new WorkOrderService(workOrderRepository, bookingRepository, serviceItemRepository)).getView())),
-                createNavItem("create-work-order", "menu.createWorkOrder", () -> showView(new CreateWorkOrderView(new WorkOrderService(workOrderRepository, bookingRepository, serviceItemRepository)))),
+                createNavItem("show-work-orders", "menu.workOrders", () -> showView(new ShowWorkOrdersView(new WorkOrderService(workOrderRepository, bookingRepository, serviceRepository)).getView())),
+                createNavItem("create-work-order", "menu.createWorkOrder", () -> showView(new CreateWorkOrderView(new WorkOrderService(workOrderRepository, bookingRepository, serviceRepository)))),
                 createNavItem("create-draft-work-order", "menu.createDraftWorkOrder",
                         () -> showView(new CreateDraftWorkOrderView().getView())),
                 createNavItem("start-work-order", "menu.startWorkOrder", () -> showView(new StartWorkOrderView())),
-                createNavItem("complete-work-order", "menu.completeWorkOrder", () -> showView(new CompleteWorkOrderView(new WorkOrderService(workOrderRepository, bookingRepository, serviceItemRepository)).getView())));
+                createNavItem("complete-work-order", "menu.completeWorkOrder", () -> showView(new CompleteWorkOrderView(new WorkOrderService(workOrderRepository, bookingRepository, serviceRepository)).getView())));
 
         addNavSection(menuBox, "menu.section.servicesMechanics",
-                createNavItem("show-services", "menu.services", () -> showView(new ServiceView())),
+                createNavItem("show-services", "menu.services", () -> showView(new ServiceView(new ServiceItemService(serviceRepository)))),
                 createNavItem("create-service-package", "menu.createServicePackage",
                         () -> showView(new CreateServicePackageView(servicePackageService).getView())),
                 createNavItem("manage-service-package", "menu.manageServicePackage", () -> showView(new ManageServicePackageView(servicePackageService).getView())),
@@ -635,8 +626,8 @@ public class AutoCoreApp extends Application {
         addNavSection(menuBox, "menu.section.invoicesPayments",
                 createNavItem("show-invoices", "menu.invoices", () -> showView(ShowInvoiceView.build())),
                 createNavItem("create-invoice", "menu.createInvoice", () -> showView(CreateInvoiceView.build())),
-                createNavItem("show-payments", "menu.payments", () -> showView(new ShowPaymentsView().getView())),
-                createNavItem("process-payment", "menu.processPayment", () -> showView(new ProcessPaymentView().getView())));
+                createNavItem("show-payments", "menu.payments", () -> showView(new ShowPaymentsView(new PaymentService(paymentRepository)).getView())),
+                createNavItem("process-payment", "menu.processPayment", () -> showView(new ProcessPaymentView(new PaymentService(paymentRepository)).getView())));
 
         // Tunn linje och sedan Exit längst ned, i rött
         Region divider = new Region();

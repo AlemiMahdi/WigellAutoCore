@@ -8,7 +8,7 @@ import com.wac.autocore.model.WorkOrderTypeEnum;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
-import com.wac.autocore.model.Mechanic;
+
 import java.util.List;
 
 // Testar att GarageSystem skapar utkast med automatisk bokning (WAC-63).

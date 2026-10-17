@@ -83,15 +83,13 @@ public class Database {
         ));
 
         serviceItems.add(new ServiceItem(
-                1,
-                "Oil change",
-                "Engine oil and oil filter replacement",
-                1295.0,
-                45
+        "Oil change",
+        "Engine oil and oil filter replacement",
+        1295.0,
+        45
         ));
 
         serviceItems.add(new ServiceItem(
-                2,
                 "Brake service",
                 "Inspection and replacement of front brake pads",
                 2495.0,
@@ -99,7 +97,6 @@ public class Database {
         ));
 
         serviceItems.add(new ServiceItem(
-                3,
                 "Diagnostics",
                 "Electronic fault code diagnostics",
                 995.0,
@@ -107,7 +104,6 @@ public class Database {
         ));
 
         serviceItems.add(new ServiceItem(
-                4,
                 "Annual service",
                 "Standard annual vehicle service",
                 3495.0,

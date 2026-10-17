@@ -1,9 +1,8 @@
 package com.wac.autocore.ui.views;
 
-import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Invoice;
-import com.wac.autocore.model.Payment;
-import com.wac.autocore.service.GarageSystem;
+import com.wac.autocore.repository.IPaymentRepository;
+import com.wac.autocore.service.PaymentService;
 import com.wac.autocore.ui.ShowInvoiceView;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
@@ -16,13 +15,15 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
-import com.wac.autocore.repository.PaymentRepository;
 
 public class ProcessPaymentView {
 
     private final LanguageManager language = LanguageManager.getInstance();
-    private final GarageSystem garageSystem = new GarageSystem();
-    private final PaymentRepository paymentRepository = new PaymentRepository();
+    private final PaymentService paymentService;
+
+    public ProcessPaymentView(PaymentService paymentService) {
+        this.paymentService = paymentService;
+    }
 
     public VBox getView() {
 
@@ -40,7 +41,7 @@ public class ProcessPaymentView {
                 return null; // Används inte – listan går inte att skriva i
             }
         });
-        refreshInvoiceTexts(invoiceBox);
+        refreshInvoices(invoiceBox);
 
         invoiceBox.promptTextProperty().bind(language.text(
                 invoiceBox.getItems().isEmpty() ? "processPayment.noInvoicesPrompt" : "processPayment.invoiceSelectPrompt"
@@ -49,7 +50,7 @@ public class ProcessPaymentView {
 
 
         // --- Belopp ---
-        // GarageSystem drar alltid fakturans totalbelopp,
+        // PaymentService drar alltid fakturans totalbelopp,
         // därför visar fältet bara det och går inte att ändra.
         TextField amountField = new TextField();
         amountField.setEditable(false);
@@ -82,7 +83,7 @@ public class ProcessPaymentView {
         paymentTypeBox.setConverter(new StringConverter<String>() {
             @Override
             public String toString(String type) {
-                return type == null ? "" : formatPaymentType(type);
+                return type == null ? "" : ViewHelpMethod.formatPaymentType(type);
             }
 
             @Override
@@ -107,102 +108,20 @@ public class ProcessPaymentView {
 
 
         processButton.setOnAction(event -> {
-
-            Invoice selectedInvoice = invoiceBox.getValue();
-
-            if (selectedInvoice == null) {
-
-                UiKit.showError(messageLabel,
-                        language.text("processPayment.selectInvoice").get()
-                );
-
-                return;
-            }
-
-            //förhindra att faktura kan registreras igen
-            if (selectedInvoice.isPaid()) {
-                UiKit.showError(messageLabel, language.text("processPayment.alreadyPaid").get());
-                return;
-            }
-            int invoiceId = selectedInvoice.getId();
-
-
-            String paymentType =
-                    paymentTypeBox.getValue();
-
-            if (paymentType == null) {
-
-                UiKit.showError(messageLabel,
-                        language.text("processPayment.selectType").get()
-                );
-
-                return;
-            }
-
-            Invoice invoice = Database.getInvoices().stream()
-                    .filter(existingInvoice ->
-                            existingInvoice.getId() == invoiceId)
-                    .findFirst()
-                    .orElse(null);
-
-            boolean previousPaidStatus = invoice != null && invoice.isPaid();
-
-            Payment payment = garageSystem.processPayment(invoiceId, paymentType);
-
-
-            if (payment == null) {
-
-                UiKit.showError(messageLabel,
-                        language.text("processPayment.processError").get()
-                );
-
-                return;
-            }
-
             try {
-
-                paymentRepository.savePaymentAndInvoice(
-                        payment,
-                        invoice
-                );
-
-            } catch (RuntimeException exception) {
-
-                // Återställ ändringarna som GarageSystem gjorde i minnet.
-                Database.getPayments().remove(payment);
-                invoice.setPaid(previousPaidStatus);
-
-                refreshInvoiceTexts(invoiceBox);
-
-                UiKit.showError(messageLabel,
-                        language.text("processPayment.saveError").get()
-                );
-
-                exception.printStackTrace();
-
-                return;
-            }
-
-            if (payment.isSuccessful()) {
-
-                UiKit.showSuccess(messageLabel,
-                        language.text("processPayment.success").get()
-                );
-
-                invoiceBox.getItems().remove(selectedInvoice);
+                paymentService.processPayment(invoiceBox.getValue(), paymentTypeBox.getValue());
+                UiKit.showSuccess(messageLabel, language.text("processPayment.success").get());
                 invoiceBox.setValue(null);
                 paymentTypeBox.setValue(null);
-
-
-                // Rita om listan så att "paid" syns direkt på fakturan
-                refreshInvoiceTexts(invoiceBox);
-
-            } else {
-
-                UiKit.showError(messageLabel, language.text("processPayment.failed").get());
-
-
+                refreshInvoices(invoiceBox);
+            } catch (IllegalArgumentException exception) {
+                UiKit.showError(messageLabel, language.text(exception.getMessage()).get());
+            } catch (RuntimeException exception) {
+                refreshInvoices(invoiceBox);
+                UiKit.showError(messageLabel, language.text("processPayment.saveError").get());
+                exception.printStackTrace();
             }
+
         });
 
 
@@ -222,17 +141,6 @@ public class ProcessPaymentView {
         return view;
     }
 
-    /**
-     * "CARD" -> "Kort"/"Card" via språkfilen. Används även i ShowPaymentsView så att betalsätt ser likadana ut.
-     */
-    public static String formatPaymentType(String type) {
-        if (type == null || type.trim().isEmpty()) {
-            return "—";
-        }
-        return LanguageManager.getInstance()
-                .text("payment.type." + type.trim().toUpperCase()).get();
-    }
-
     // "WO-1 faktura · 3 495 SEK · Obetald"
     private static String describeInvoice(Invoice invoice) {
         LanguageManager language = LanguageManager.getInstance();
@@ -242,15 +150,7 @@ public class ProcessPaymentView {
                 + language.text(invoice.isPaid() ? "badge.PAID" : "badge.UNPAID").get();
     }
 
-    // En ComboBox ritar inte om texterna av sig själv när ett objekt ändras
-    // (här: paid blev true). Genom att lägga in samma objekt igen uppdateras de.
-    private static void refreshInvoiceTexts(ComboBox<Invoice> invoiceBox) {
-        invoiceBox.getItems().clear();
-        for(Invoice invoice : Database.getInvoices()) {
-            if(!invoice.isPaid()) {
-                invoiceBox.getItems().add(invoice);
-            }
-        }
+    private void refreshInvoices(ComboBox<Invoice> invoiceBox) {
+        invoiceBox.getItems().setAll(paymentService.findUnpaidInvoices());
     }
-
 }
