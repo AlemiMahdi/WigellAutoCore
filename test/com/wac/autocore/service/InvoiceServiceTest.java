@@ -303,6 +303,62 @@ class InvoiceServiceTest {
         );
     }
 
+    @Test
+    void onlyCompletedOrdersWithoutInvoiceAreListed() {
+        List<WorkOrder> originalOrders =
+                new ArrayList<>(Database.getWorkOrders());
+
+        try {
+            Database.getWorkOrders().clear();
+
+            WorkOrder completed = new WorkOrder(
+                    1, 1, 1, WorkOrderTypeEnum.PLANNED
+            );
+            completed.changeStatus(WorkOrderStatus.IN_PROGRESS);
+            completed.changeStatus(WorkOrderStatus.COMPLETED);
+
+            WorkOrder alreadyInvoiced = new WorkOrder(
+                    2, 2, 1, WorkOrderTypeEnum.PLANNED
+            );
+            alreadyInvoiced.changeStatus(WorkOrderStatus.IN_PROGRESS);
+            alreadyInvoiced.changeStatus(WorkOrderStatus.COMPLETED);
+
+            WorkOrder confirmed = new WorkOrder(
+                    3, 3, 1, WorkOrderTypeEnum.PLANNED
+            );
+
+            WorkOrder draft = WorkOrder.createDraft(
+                    4, 4, WorkOrderTypeEnum.PLANNED
+            );
+
+            Database.getWorkOrders().add(completed);
+            Database.getWorkOrders().add(alreadyInvoiced);
+            Database.getWorkOrders().add(confirmed);
+            Database.getWorkOrders().add(draft);
+
+            Database.getInvoices().add(
+                    new Invoice(1, alreadyInvoiced.getId(),
+                            LocalDate.now(), 500.0)
+            );
+
+            InvoiceService service =
+                    new InvoiceService(new FakeInvoiceRepository());
+
+            List<WorkOrder> result = service.getInvoiceableWorkOrders();
+
+            assertEquals(1, result.size());
+            assertSame(completed, result.get(0));
+
+            // Att ändra resultatlistan ska inte ändra originalets lista.
+            result.clear();
+            assertEquals(4, Database.getWorkOrders().size());
+
+        } finally {
+            Database.getWorkOrders().clear();
+            Database.getWorkOrders().addAll(originalOrders);
+        }
+    }
+
     private static class FakeInvoiceRepository
             implements IInvoiceRepository {
 

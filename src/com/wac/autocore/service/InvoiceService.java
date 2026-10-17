@@ -4,11 +4,17 @@ import com.wac.autocore.model.Invoice;
 import com.wac.autocore.repository.IInvoiceRepository;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.service.exception.InvoiceValidationException;
+import com.wac.autocore.model.Booking;
+import com.wac.autocore.model.Vehicle;
+import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.model.WorkOrderStatus;
 
 import java.util.List;
 import java.util.Objects;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 public class InvoiceService {
 
@@ -112,4 +118,43 @@ public class InvoiceService {
             );
         }
     }
+
+    public List<Invoice> getLoadedInvoices() {
+        return new ArrayList<>(Database.getInvoices());
+    }
+
+    public List<WorkOrder> getInvoiceableWorkOrders() {
+        return Database.getWorkOrders().stream()
+                .filter(order -> order.getStatus() == WorkOrderStatus.COMPLETED)
+                .filter(order -> Database.getInvoices().stream()
+                        .noneMatch(invoice ->
+                                invoice.getWorkOrderId() == order.getId()))
+                .collect(Collectors.toList());
+    }
+
+    public Vehicle findVehicleForWorkOrder(int workOrderId) {
+        WorkOrder order = Database.getWorkOrders().stream()
+                .filter(item -> item.getId() == workOrderId)
+                .findFirst()
+                .orElse(null);
+
+        if (order == null) {
+            return null;
+        }
+
+        Booking booking = Database.getBookings().stream()
+                .filter(item -> item.getId() == order.getBookingId())
+                .findFirst()
+                .orElse(null);
+
+        if (booking == null) {
+            return null;
+        }
+
+        return Database.getVehicles().stream()
+                .filter(item -> item.getId() == booking.getVehicleId())
+                .findFirst()
+                .orElse(null);
+    }
+
 }

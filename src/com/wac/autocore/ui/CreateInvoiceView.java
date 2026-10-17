@@ -1,13 +1,11 @@
 package com.wac.autocore.ui;
 
 
-import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
 import com.wac.autocore.service.exception.InvoiceValidationException;
 import com.wac.autocore.ui.language.LanguageManager;
 import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
 import com.wac.autocore.service.InvoiceService;
-import com.wac.autocore.service.exception.InvoiceValidationException;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -34,7 +32,7 @@ public class CreateInvoiceView {
         workOrderBox.setConverter(new StringConverter<WorkOrder>() {
             @Override
             public String toString(WorkOrder workOrder) {
-                return workOrder == null ? "" : describeWorkOrder(workOrder);
+                return workOrder == null ? "" : describeWorkOrder(workOrder, invoiceService);
             }
 
 
@@ -43,7 +41,7 @@ public class CreateInvoiceView {
                 return null; // Används inte – listan går inte att skriva i
             }
         });
-        loadCompletedWorkOrders(workOrderBox);
+        loadCompletedWorkOrders(workOrderBox, invoiceService);
         UiKit.keepPromptWhenCleared(workOrderBox);
 
         // --- Datum ---
@@ -233,6 +231,8 @@ public class CreateInvoiceView {
                 workOrderBox.setValue(null);
                 discoutField.clear();
 
+                loadCompletedWorkOrders(workOrderBox, invoiceService);
+
             } catch (InvoiceValidationException exception) {
                 UiKit.showError(
                         statusLabel,
@@ -284,20 +284,12 @@ public class CreateInvoiceView {
         }
     }
 
-    private static void loadCompletedWorkOrders(ComboBox<WorkOrder> workOrderBox) {
-        for (WorkOrder workOrder : Database.getWorkOrders()) {
+    private static void loadCompletedWorkOrders(ComboBox<WorkOrder> workOrderBox, InvoiceService invoiceService) {
+        workOrderBox.getItems().setAll(
+                invoiceService.getInvoiceableWorkOrders()
+        );
 
-            boolean alreadyInvoiced = Database.getInvoices()
-                    .stream()
-                    .anyMatch(invoice ->
-                            invoice.getWorkOrderId() == workOrder.getId()
-                    );
-
-            if (workOrder.getStatus() == WorkOrderStatus.COMPLETED
-                    && !alreadyInvoiced) {
-                workOrderBox.getItems().add(workOrder);
-            }
-        }
+        workOrderBox.promptTextProperty().unbind();
 
         if (workOrderBox.getItems().isEmpty()) {
             workOrderBox.promptTextProperty().bind(
@@ -311,27 +303,18 @@ public class CreateInvoiceView {
     }
 
     // "WO-2 · Volkswagen Passat" – bilen gör det lättare att hitta rätt order
-    private static String describeWorkOrder(WorkOrder workOrder) {
+    private static String describeWorkOrder(WorkOrder workOrder, InvoiceService invoiceService) {
         String text = ShowInvoiceView.workOrderCode(workOrder.getId());
-        Vehicle vehicle = findVehicleFor(workOrder);
+        Vehicle vehicle = invoiceService.findVehicleForWorkOrder(
+                workOrder.getId()
+        );
+
         if (vehicle != null) {
             text += " · " + vehicle.getBrand() + " " + vehicle.getModel();
         }
         return text;
     }
 
-    // Arbetsorder -> bokning -> fordon (null om något saknas)
-    private static Vehicle findVehicleFor(WorkOrder workOrder) {
-        for (Booking booking : Database.getBookings()) {
-            if (booking.getId() == workOrder.getBookingId()) {
-                for (Vehicle vehicle : Database.getVehicles()) {
-                    if (vehicle.getId() == booking.getVehicleId()) {
-                        return vehicle;
-                    }
-                }
-            }
-        }
-        return null;
-    }
+
 
 }

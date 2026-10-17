@@ -65,8 +65,8 @@ public class AutoCoreApp extends Application {
     private final WorkOrderRepository workOrderRepository;
     private final BookingRepository bookingRepository;
     private final VehicleRepository vehicleRepository;
-    private final InvoiceService invoiceService = new InvoiceService(new InvoiceRepository());
-    private final MechanicService mechanicService = new MechanicService(new MechanicRepository());
+    private final InvoiceService invoiceService;
+    private final MechanicService mechanicService;
     private final VehicleService vehicleService;
     private final ServicePackageService servicePackageService;
 
@@ -75,9 +75,12 @@ public class AutoCoreApp extends Application {
         this.garageSystem = new GarageSystem();
         this.workOrderRepository = new WorkOrderRepository();
         this.bookingRepository = new BookingRepository();
+        this.invoiceService = new InvoiceService(new InvoiceRepository(), garageSystem);
+        this.mechanicService = new MechanicService(new MechanicRepository(), bookingRepository::findAll);
         this.vehicleRepository = new VehicleRepository();
         this.vehicleService = new VehicleService(vehicleRepository);
         this.servicePackageService = new ServicePackageService(new ServicePackageRepository());
+
 
         // Sätt instansen i samma sekund som JavaFX startar appen
         synchronized (AutoCoreApp.class) {
@@ -288,9 +291,6 @@ public class AutoCoreApp extends Application {
         Database.getServicePackages().addAll(savedPackages);
     }
     private void loadMechanics() {
-
-        MechanicService mechanicService =
-                new MechanicService(new MechanicRepository());
 
         List<Mechanic> savedMechanics =
                 mechanicService.findAll();
@@ -635,11 +635,11 @@ public class AutoCoreApp extends Application {
                 createNavItem("create-service-package", "menu.createServicePackage",
                         () -> showView(new CreateServicePackageView(servicePackageService).getView())),
                 createNavItem("manage-service-package", "menu.manageServicePackage", () -> showView(new ManageServicePackageView(servicePackageService).getView())),
-                createNavItem("show-mechanics", "menu.mechanics", () -> showView(new MechanicView())),
-                createNavItem("mechanic-schedule", "menu.schedule", () -> showView(new MechanicScheduleView().getView())));
+                createNavItem("show-mechanics", "menu.mechanics", () -> showView(new MechanicView(mechanicService))),
+                createNavItem("mechanic-schedule", "menu.schedule", () -> showView(new MechanicScheduleView(mechanicService).getView())));
 
         addNavSection(menuBox, "menu.section.invoicesPayments",
-                createNavItem("show-invoices", "menu.invoices", () -> showView(ShowInvoiceView.build())),
+                createNavItem("show-invoices", "menu.invoices", () -> showView(ShowInvoiceView.build(invoiceService))),
                 createNavItem("create-invoice", "menu.createInvoice", () -> showView(CreateInvoiceView.build(invoiceService))),
                 createNavItem("show-payments", "menu.payments", () -> showView(new ShowPaymentsView().getView())),
                 createNavItem("process-payment", "menu.processPayment", () -> showView(new ProcessPaymentView().getView())));
@@ -776,6 +776,8 @@ public class AutoCoreApp extends Application {
     public BookingRepository getBookingRepository() {
         return bookingRepository;
     }
+
+
 
     public static void main(String[] args) {launch(args);
     }
