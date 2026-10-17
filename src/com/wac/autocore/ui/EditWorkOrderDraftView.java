@@ -1,5 +1,6 @@
 package com.wac.autocore.ui;
 
+import com.wac.autocore.service.WorkOrderService;
 import com.wac.autocore.ui.views.ViewHelpMethod;
 import com.wac.autocore.model.WorkOrderTypeEnum;
 import com.wac.autocore.ui.language.LanguageManager;
@@ -19,6 +20,7 @@ import com.wac.autocore.repository.WorkOrderRepository;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,6 +28,11 @@ public class EditWorkOrderDraftView {
 
     private final LanguageManager language =
             LanguageManager.getInstance();
+    private final WorkOrderService workOrderService;
+
+    public EditWorkOrderDraftView(WorkOrderService workOrderService) {
+        this.workOrderService = workOrderService;
+    }
 
     private void showFeedback(Label label, String key, boolean success) {
         label.textProperty().unbind();
@@ -236,7 +243,7 @@ public class EditWorkOrderDraftView {
                 }
             }
 
-            java.time.LocalDate plannedDate = plannedDateField.getValue();
+            LocalDate plannedDate = plannedDateField.getValue();
 
             // Läs även datum som användaren har skrivit utan att lämna fältet.
             try {
@@ -257,20 +264,18 @@ public class EditWorkOrderDraftView {
                     .collect(Collectors.toList());
 
             try {
-                new WorkOrderRepository().updateDraft(
-                        draft,
+                workOrderService.updateDraftWorkOrder(draft,
                         booking,
                         serviceIds,
-                        mechanicId,
-                        plannedDate,
-                        minutes,
-                        price,
-                        instructionsField.getText(),
-                        commentsField.getText(),
+                mechanicId,
+                plannedDate,
+                minutes,
+                price,
+                instructionsField.getText(),
+                commentsField.getText(),
                         isComplaint && originalCombo.getValue() != null
                                 ? Integer.valueOf(originalCombo.getValue().getId())
-                                : null
-                );
+                                : null);
 
                 showFeedback(messageLabel, "editWorkOrderDraft.saved", true);
 

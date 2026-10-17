@@ -175,7 +175,7 @@ public class WorkOrderService {
     }
 
     // Skapar en arbetsorder som utkast med en automatisk bokning (WAC-63)
-    public void createDraftWorkOrder(WorkOrder draft,
+    public void updateDraftWorkOrder(WorkOrder draft,
                                           Booking booking,
                                           List<Integer> serviceIds,
                                           int mechanicId,
@@ -248,6 +248,25 @@ public class WorkOrderService {
             }
         }
         return normalizedPrice;
+    }
+
+    public WorkOrder createNewDraftWorkOrder(int vehicleId, String description, WorkOrderTypeEnum type, Integer originalWorkOrderId) {
+        // 1. Validera grunddata (fordon, beskrivning etc.)
+        if (description == null || description.trim().isEmpty()) {
+            throw new IllegalArgumentException("createDraft.descriptionMissing");
+        }
+
+        // 2. Bygg helt nya objekt (Sätt ID till 0 för AUTO_INCREMENT)
+        WorkOrder draft = WorkOrder.createDraft(0, 0, type);
+        if (type == WorkOrderTypeEnum.COMPLAINT && originalWorkOrderId != null) {
+            draft.setOriginalWorkOrderId(originalWorkOrderId);
+        }
+
+        Booking booking = new Booking(0, vehicleId, null, description.trim());
+        booking.setStatus("WORK_ORDER_CREATED");
+
+        // 3. Spara som helt nya rader via ditt repository (session.save)
+        return workOrderRepository.saveDraftWithBooking(draft, booking);
     }
 }
 

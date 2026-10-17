@@ -140,7 +140,7 @@ public class ShowWorkOrdersView {
                 );
 
                 VBox editView =
-                        new EditWorkOrderDraftView().getView(workOrder);
+                        new EditWorkOrderDraftView(workOrderService).getView(workOrder);
 
                 root.getChildren().setAll(backButton, editView);
             });
