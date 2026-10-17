@@ -149,26 +149,14 @@ public class ServiceItemService {
         }
     }
 
-    public void savePrice(TableView<ServiceItem> table, Label priceFeedbackLabel,
-                          LanguageManager language, TextField priceField, ServiceItem selected) {
+    public void savePrice(ServiceItem selected, double price) {
 
         if (selected == null) {
-            UiKit.showError(priceFeedbackLabel, language.text("services.select").get());
-            return;
-        }
-
-        double price;
-
-        try {
-            price = Double.parseDouble(priceField.getText().trim().replace(",", "."));
-        } catch (NumberFormatException exception) {
-            UiKit.showError(priceFeedbackLabel, language.text("services.invalidPrice").get());
-            return;
+            throw new IllegalArgumentException("services.select");
         }
 
         if (price <= 0) {
-            UiKit.showError(priceFeedbackLabel, language.text("services.invalidPrice").get());
-            return;
+            throw new IllegalArgumentException("services.invalidPrice");
         }
 
         // Behåller det gamla värdet om sparandet misslyckas.
@@ -179,15 +167,8 @@ public class ServiceItemService {
             repository.save(selected);
         } catch (RuntimeException exception) {
             selected.setPrice(previousPrice);
-            table.refresh();
-
-            UiKit.showError(priceFeedbackLabel, language.text("services.priceError").get());
-            exception.printStackTrace();
-            return;
+            throw new RuntimeException("Kunde inte spara pris för tjänst " + selected.getId(), exception);
         }
-
-        table.refresh();
-        UiKit.showSuccess(priceFeedbackLabel, language.text("services.priceSaved").get());
     }
 
     //Från GarageSystem för LoadSampleData, används inte just nu, men ska finnas kvar

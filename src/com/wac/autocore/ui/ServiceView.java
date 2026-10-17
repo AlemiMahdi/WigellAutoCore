@@ -160,10 +160,27 @@ public class ServiceView extends VBox {
         priceField.promptTextProperty().bind(language.text("services.pricePlaceholder"));
         priceField.setPrefColumnCount(10);
 
-        ServiceItem selected = table.getSelectionModel().getSelectedItem();
         Button saveButton = UiKit.primaryButton("Save price");
         saveButton.textProperty().bind(language.text("services.savePrice"));
-        saveButton.setOnAction(event -> serviceItemService.savePrice(table, priceFeedbackLabel, language, priceField, selected));
+        saveButton.setOnAction(event -> {
+            ServiceItem selected = table.getSelectionModel().getSelectedItem();
+
+            try {
+                double price = Double.parseDouble(priceField.getText().trim().replace(",", "."));
+                serviceItemService.savePrice(selected, price);
+                table.refresh();
+                UiKit.showSuccess(priceFeedbackLabel, language.text("services.priceSaved").get());
+            } catch (NumberFormatException exception) {
+                UiKit.showError(priceFeedbackLabel, language.text("services.invalidPrice").get());
+            } catch (IllegalArgumentException exception) {
+                UiKit.showError(priceFeedbackLabel, language.text(exception.getMessage()).get());
+            } catch (RuntimeException exception) {
+                table.refresh();
+                UiKit.showError(priceFeedbackLabel, language.text("services.priceError").get());
+                exception.printStackTrace();
+            }
+
+        });
 
         return inputRow(heading, hint, priceField, priceFeedbackLabel, saveButton);
     }
