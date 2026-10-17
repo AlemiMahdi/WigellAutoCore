@@ -151,10 +151,7 @@ public class GarageSystem {
             return null;
         }
 
-        int id = Database.getVehicles().size() + 1;
-
         Vehicle vehicle = new Vehicle(
-                id,
                 registrationNumber,
                 brand,
                 model,
