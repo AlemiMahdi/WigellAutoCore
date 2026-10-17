@@ -4,6 +4,8 @@ import java.net.URL;
 
 import com.wac.autocore.service.GarageSystem;
 import com.wac.autocore.service.WorkOrderService;
+import com.wac.autocore.service.ServicePackageService;
+import com.wac.autocore.service.VehicleService;
 import com.wac.autocore.ui.language.LanguageManager;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.data.HibernateUtil;
@@ -61,6 +63,8 @@ public class AutoCoreApp extends Application {
     private final BookingRepository bookingRepository;
     private final VehicleRepository vehicleRepository;
     private final IServiceItemRepository serviceItemRepository;
+    private final VehicleService vehicleService;
+    private final ServicePackageService servicePackageService;
 
     // FIX 1: Konstruktorn MÅSTE vara publik i en JavaFX-applikation!
     public AutoCoreApp() {
@@ -68,6 +72,8 @@ public class AutoCoreApp extends Application {
         this.workOrderRepository = new WorkOrderRepository();
         this.bookingRepository = new BookingRepository();
         this.vehicleRepository = new VehicleRepository();
+        this.vehicleService = new VehicleService(vehicleRepository);
+        this.servicePackageService = new ServicePackageService(new ServicePackageRepository());
         this.serviceItemRepository = new IServiceItemRepository();
 
         // Sätt instansen i samma sekund som JavaFX startar appen
@@ -212,7 +218,7 @@ public class AutoCoreApp extends Application {
 
     private void loadVehicles() {
         VehicleRepository repository = new VehicleRepository();
-        List<Vehicle> savedVehicles = repository.findAllVehicles();
+        List<Vehicle> savedVehicles = repository.findAll();
 
         boolean firstRun = savedVehicles.isEmpty();
 
@@ -220,16 +226,7 @@ public class AutoCoreApp extends Application {
                 ? Database.getVehicles()
                 : savedVehicles;
 
-        for (int i = 0; i < vehicles.size(); i++) {
-            Vehicle vehicle = vehicles.get(i);
-
-            // Originalet använder listans storlek + 1 för nästa ID.
-            if (vehicle.getId() != i + 1) {
-                throw new IllegalStateException(
-                        "Vehicle IDs must be consecutive, starting at 1."
-                );
-            }
-
+        for (Vehicle vehicle : vehicles) {
             // Kontrollerar att fordonets kund finns.
             boolean customerExists = Database.getCustomers().stream()
                     .anyMatch(customer ->
@@ -245,6 +242,7 @@ public class AutoCoreApp extends Application {
         if (firstRun) {
             // Sparar originalets exempelfordon när tabellen är tom.
             for (Vehicle vehicle : vehicles) {
+                vehicle.setId(0); // id 0 betyder "nytt" så MySQL ger fordonet ett id.
                 repository.save(vehicle);
             }
         } else {
@@ -271,17 +269,6 @@ public class AutoCoreApp extends Application {
             }
 
             return;
-
-        }
-
-        // Kontrollerar att ID:n följer originalets struktur.
-        for (int i = 0; i < savedServiceItems.size(); i++) {
-
-            if (savedServiceItems.get(i).getId() != i + 1) {
-                throw new IllegalStateException(
-                        "Service item IDs must be consecutive, starting at 1."
-                );
-            }
 
         }
 
@@ -425,6 +412,13 @@ public class AutoCoreApp extends Application {
         for (int i = 0; i < bookings.size(); i++) {
             Booking booking = bookings.get(i);
 
+            // Originalet räknar ut nästa ID som listans storlek + 1,
+            // så ID:na måste vara 1, 2, 3... utan luckor.
+            if (booking.getId() != i + 1) {
+                throw new IllegalStateException(
+                        "Booking IDs must be consecutive, starting at 1."
+                );
+            }
 
             // Kontrollerar att bokningens fordon finns.
             boolean vehicleExists = Database.getVehicles().stream()
@@ -615,8 +609,8 @@ public class AutoCoreApp extends Application {
         addNavSection(menuBox, "menu.section.customersVehicles",
                 createNavItem("show-customers", "menu.customers", () -> showView(new CustomerView())),
                 createNavItem("create-customer", "menu.createCustomer", () -> showView(new CreateCustomerView())),
-                createNavItem("show-vehicles", "menu.vehicles", () -> showView(ShowVehicleView.build())),
-                createNavItem("create-vehicle", "menu.createVehicle", () -> showView(CreateVehicleView.build())));
+                createNavItem("show-vehicles", "menu.vehicles", () -> showView(ShowVehicleView.build(vehicleService))),
+                createNavItem("create-vehicle", "menu.createVehicle", () -> showView(CreateVehicleView.build(vehicleService))));
 
         addNavSection(menuBox, "menu.section.bookings",
                 createNavItem("show-bookings", "menu.bookings", () -> showView(new ShowBookingsView().getView())),
@@ -633,8 +627,8 @@ public class AutoCoreApp extends Application {
         addNavSection(menuBox, "menu.section.servicesMechanics",
                 createNavItem("show-services", "menu.services", () -> showView(new ServiceView())),
                 createNavItem("create-service-package", "menu.createServicePackage",
-                        () -> showView(new CreateServicePackageView().getView())),
-                createNavItem("manage-service-package", "menu.manageServicePackage", () -> showView(new ManageServicePackageView().getView())),
+                        () -> showView(new CreateServicePackageView(servicePackageService).getView())),
+                createNavItem("manage-service-package", "menu.manageServicePackage", () -> showView(new ManageServicePackageView(servicePackageService).getView())),
                 createNavItem("show-mechanics", "menu.mechanics", () -> showView(new MechanicView())),
                 createNavItem("mechanic-schedule", "menu.schedule", () -> showView(new MechanicScheduleView().getView())));
 
@@ -769,12 +763,12 @@ public class AutoCoreApp extends Application {
         return garageSystem;
     }
 
-    public BookingRepository getBookingRepository() {
-        return bookingRepository;
+    public WorkOrderRepository getWorkOrderRepository() {
+        return workOrderRepository;
     }
 
-    public VehicleRepository getVehicleRepository() {
-        return vehicleRepository;
+    public BookingRepository getBookingRepository() {
+        return bookingRepository;
     }
 
     public static void main(String[] args) {launch(args);

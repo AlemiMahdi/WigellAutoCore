@@ -6,24 +6,30 @@ import org.hibernate.*;
 import com.wac.autocore.data.HibernateUtil;
 import com.wac.autocore.model.ServicePackage;
 
-public class ServicePackageRepository {
-    
-    public void save( ServicePackage servicePackage) {
-        Transaction transaction = null;
+public class ServicePackageRepository implements IServicePackageRepository{
 
-        try( Session session = HibernateUtil.getSessionFactory().openSession()) {
-            transaction = session.beginTransaction();
-            session.saveOrUpdate(servicePackage);
-            transaction.commit();
+    @Override
+    public ServicePackage save( ServicePackage servicePackage) {
+        try ( Session session =
+                HibernateUtil.getSessionFactory().openSession()) {
 
-        } catch (RuntimeException exception) {
-            if (transaction != null) {
-                transaction.rollback();
+            Transaction transaction = session.beginTransaction();
+
+            try {
+                ServicePackage save = (ServicePackage) session.merge(servicePackage);
+                transaction.commit();
+                return save;
+            } catch (RuntimeException exception) {
+                if (transaction.isActive()) {
+                    transaction.rollback();
+                }
+                throw exception;
             }
-            throw exception;
+
         }
     }
 
+    @Override
     public List<ServicePackage> findAll() {
         try( Session session = HibernateUtil.getSessionFactory().openSession()) {
             return session

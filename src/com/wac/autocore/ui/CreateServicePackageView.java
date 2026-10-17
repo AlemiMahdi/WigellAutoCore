@@ -1,8 +1,6 @@
 package com.wac.autocore.ui;
 
-import com.wac.autocore.data.Database;
-import com.wac.autocore.model.ServicePackage;
-import com.wac.autocore.repository.ServicePackageRepository;
+import com.wac.autocore.service.ServicePackageService;
 import com.wac.autocore.ui.language.LanguageManager;
 
 import javafx.geometry.Pos;
@@ -13,58 +11,59 @@ import javafx.scene.layout.VBox;
 
 public class CreateServicePackageView {
 
-     private final LanguageManager language = LanguageManager.getInstance();
-    
+    private final LanguageManager language = LanguageManager.getInstance();
+    private final ServicePackageService servicePackageService;
+
+    public CreateServicePackageView(ServicePackageService servicePackageService) {
+        this.servicePackageService = servicePackageService;
+    }
+
     public VBox getView() {
 
         TextField nameField = new TextField();
         nameField.promptTextProperty().bind(
-            language.text("createServicePackage.namePrompt")
+                language.text("createServicePackage.namePrompt")
         );
 
         Label messageLabel = UiKit.feedbackLabel();
         Button createButton = UiKit.primaryButton("Create package");
         createButton.textProperty().bind(
-            language.text("createServicePackage.createButton")
+                language.text("createServicePackage.createButton")
         );
 
-        ServicePackageRepository repository = new ServicePackageRepository();
 
-        createButton.setOnAction( event -> {
-            
-            String name = nameField.getText().trim();
-            if (name.isEmpty()) {
-                UiKit.showError(messageLabel, language.text("createServicePackage.nameRequired").get());
-                return;
-            }
+        createButton.setOnAction(event -> {
 
-            ServicePackage servicePackage = new ServicePackage();
-            servicePackage.setName(name);
+            String name = nameField.getText();
 
             try {
-                repository.save(servicePackage);
-                Database.getServicePackages().add(servicePackage);
+                servicePackageService.createServicePackage(name);
+
                 UiKit.showSuccess(messageLabel, language.text("createServicePackage.success").get());
 
+            } catch (IllegalArgumentException exception) {
+                UiKit.showError(messageLabel, language.text(exception.getMessage()).get());
+                return;
             } catch (RuntimeException exception) {
                 UiKit.showError(messageLabel, language.text("createServicePackage.saveError").get());
                 exception.printStackTrace();
                 return;
             }
+
             nameField.clear();
         });
 
         VBox form = UiKit.formContainer(
-            UiKit.pageHeader(language.text("createServicePackage.title"), null),
-            UiKit.formField(language.text("createServicePackage.nameLabel"), nameField),
-            createButton,
-            messageLabel
+                UiKit.pageHeader(language.text("createServicePackage.title"), null),
+                UiKit.formField(language.text("createServicePackage.nameLabel"), nameField),
+                createButton,
+                messageLabel
         );
 
         VBox view = new VBox(form);
         view.setAlignment(Pos.TOP_CENTER);
         return view;
-        
-        
+
+
     }
 }
