@@ -50,10 +50,17 @@ public class BookingRepository implements IBookingRepository{
                                 );
                         }
 
-                        boolean isNew = existingBooking == null;
-                        if (isNew) {
-                                existingBooking = new Booking();
+                        // En bokning med ett befintligt ID måste finnas i databasen.
+                        if (booking.getId() > 0 && existingBooking == null) {
+                        throw new IllegalArgumentException(
+                                "Booking not found: " + booking.getId()
+                        );
+                        }
 
+                        boolean isNew = existingBooking == null;
+
+                        if (isNew) {
+                        existingBooking = new Booking();
                         }
 
                         existingBooking.setVehicleId(booking.getVehicleId());
@@ -108,8 +115,13 @@ public class BookingRepository implements IBookingRepository{
                         }
 
                         // Ändrar mekanikern bara när ett nytt val skickas in.
+                        // Uppdatera mekanikern när ett nytt val skickas in.
                         if (updateMechanic) {
                         existingBooking.setMechanicId(mechanicId);
+                        }
+                        // Om bokningen är ny, kopiera dess befintliga mechanicId.
+                        else if (isNew) {
+                        existingBooking.setMechanicId(booking.getMechanicId());
                         }
 
                         if (isNew) {
