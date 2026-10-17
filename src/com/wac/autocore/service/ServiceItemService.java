@@ -2,15 +2,10 @@ package com.wac.autocore.service;
 
 import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.repository.IServiceItemRepository;
-import com.wac.autocore.ui.UiKit;
-import com.wac.autocore.ui.language.LanguageManager;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.scene.control.*;
 
-import java.math.RoundingMode;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 import java.util.List;
 import java.util.Locale;
 
@@ -20,15 +15,6 @@ public class ServiceItemService {
 
     public ServiceItemService(IServiceItemRepository repository) {
         this.repository = repository;
-    }
-
-    // 1450.0 -> "1 450 SEK" (mellanslag som tusentalsavgränsare, som i designen)
-    public String formatPrice(double price) {
-        DecimalFormatSymbols symbols = new DecimalFormatSymbols();
-        symbols.setGroupingSeparator(' ');
-        DecimalFormat format = new DecimalFormat("#,##0", symbols);
-        format.setRoundingMode(RoundingMode.HALF_UP);
-        return format.format(price) + " SEK";
     }
 
     //Metod för att Automatiskt hämta tjänsterna och priser, tid för dem

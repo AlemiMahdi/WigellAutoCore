@@ -4,6 +4,7 @@ import com.wac.autocore.data.Database;
 import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.service.ServiceItemService;
 import com.wac.autocore.ui.language.LanguageManager;
+import com.wac.autocore.ui.views.ViewHelpMethod;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.geometry.Pos;
@@ -56,7 +57,7 @@ public class ServiceView extends VBox {
 
         TableColumn<ServiceItem, String> priceColumn = new TableColumn<>("Price");
         priceColumn.setCellValueFactory(cell ->
-                new ReadOnlyStringWrapper(serviceItemService.formatPrice(cell.getValue().getPrice())));
+                new ReadOnlyStringWrapper(ViewHelpMethod.formatPrice(cell.getValue().getPrice())));
         priceColumn.getStyleClass().add("cell-right");
 
         TableColumn<ServiceItem, String> timeColumn = new TableColumn<>("Est. time");
