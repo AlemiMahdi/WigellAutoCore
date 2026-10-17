@@ -366,15 +366,7 @@ public class AutoCoreApp extends Application {
         }
 
         // Originalsystemet använder listans storlek + 1 för nästa ID.
-        for (int i = 0; i < savedPayments.size(); i++) {
-
-            Payment payment = savedPayments.get(i);
-
-            if (payment.getId() != i + 1) {
-                throw new IllegalStateException(
-                        "Payment IDs must be consecutive, starting at 1."
-                );
-            }
+        for ( Payment payment : savedPayments) {
 
             // En betalning måste höra till en befintlig faktura.
             boolean invoiceExists =
