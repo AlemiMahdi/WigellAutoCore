@@ -189,21 +189,36 @@ public class AutoCoreApp extends Application {
         List<Customer> savedCustomers = repository.findAllCustomers();
 
         if (savedCustomers.isEmpty()) {
-            // Sparar originalets exempelkunder vid första starten.
-            for (Customer customer : Database.getCustomers()) {
-                repository.save(customer);
-            }
-            return;
-        }
 
-        //borde kolla att idt är större än föregående istället för att kolla att det är lika med föregående + 1
-        // Kontrollerar ID-ordningen eftersom originalet använder kundlistans storlek + 1 för att skapa nästa ID.
-        for (int i = 0; i < savedCustomers.size(); i++) {
-            if (savedCustomers.get(i).getId() != i + 1) {
-                throw new IllegalStateException(
-                        "Customer IDs must be consecutive, starting at 1."
-                );
+            Map<Integer, Integer> customerIdMapping = new HashMap<>();
+
+            // Spara exempelkunder och registrera deras nya ID:n
+            for (Customer customer : Database.getCustomers()) {
+
+                //Spara ursprungligt ID för att kunna uppdatera fordonen
+                int oldId = customer.getId();
+                
+                //Låt MySQL generera ett nytt ID
+                customer.setId(0);
+                repository.save(customer);
+
+                //Hämta det ID som MySQL genererade
+                int newId = customer.getId();
+                customerIdMapping.put(oldId, newId);
             }
+
+            // Uppdatera exempelfordonens kopplingar till kunderna
+            for (Vehicle vehicle : Database.getVehicles()) {
+
+                Integer newCustomerId =
+                        customerIdMapping.get(vehicle.getCustomerId());
+
+                if (newCustomerId != null) {
+                    vehicle.setCustomerId(newCustomerId);
+                }
+            }
+
+            return;
         }
 
         // Ersätter kunderna i minnet med de sparade kunderna.
@@ -236,17 +251,38 @@ public class AutoCoreApp extends Application {
         }
 
         if (firstRun) {
-            // Sparar originalets exempelfordon när tabellen är tom.
+
+            Map<Integer, Integer> vehicleIdMapping = new HashMap<>();
+
+            // Spara exempelfordon och registrera deras nya ID:n.
             for (Vehicle vehicle : vehicles) {
-                vehicle.setId(0); // id 0 betyder "nytt" så MySQL ger fordonet ett id.
+
+                int oldId = vehicle.getId();
+
+                // Låt MySQL generera ett nytt ID.
+                vehicle.setId(0);
                 repository.save(vehicle);
+
+                int newId = vehicle.getId();
+                vehicleIdMapping.put(oldId, newId);
+            }
+
+            // Uppdatera exempelbokningarnas fordonskopplingar.
+            for (Booking booking : Database.getBookings()) {
+
+                Integer newVehicleId =
+                        vehicleIdMapping.get(booking.getVehicleId());
+
+                if (newVehicleId != null) {
+                    booking.setVehicleId(newVehicleId);
+                }
             }
         } else {
-            // Återställer sparade fordon i programmets minne.
-            Database.getVehicles().clear();
-            Database.getVehicles().addAll(savedVehicles);
-        }
-    }
+                    // Återställer sparade fordon i programmets minne.
+                    Database.getVehicles().clear();
+                    Database.getVehicles().addAll(savedVehicles);
+                }
+            }
 
     private void loadServiceItems() {
 
@@ -408,14 +444,6 @@ public class AutoCoreApp extends Application {
         for (int i = 0; i < bookings.size(); i++) {
             Booking booking = bookings.get(i);
 
-            // Originalet räknar ut nästa ID som listans storlek + 1,
-            // så ID:na måste vara 1, 2, 3... utan luckor.
-            if (booking.getId() != i + 1) {
-                throw new IllegalStateException(
-                        "Booking IDs must be consecutive, starting at 1."
-                );
-            }
-
             // Kontrollerar att bokningens fordon finns.
             boolean vehicleExists = Database.getVehicles().stream()
                     .anyMatch(vehicle ->
@@ -431,6 +459,7 @@ public class AutoCoreApp extends Application {
         if (firstRun) {
             // Sparar originalets exempelbokningar när tabellen är tom.
             for (Booking booking : bookings) {
+                booking.setId(0);
                 repository.save(booking);
             }
         } else {
