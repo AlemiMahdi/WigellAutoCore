@@ -9,7 +9,7 @@ import org.hibernate.Transaction;
 
 import java.util.List;
 
-public class PaymentRepository {
+public class PaymentRepository implements IPaymentRepository {
 
     public void save(Payment payment) {
 
@@ -65,10 +65,6 @@ public class PaymentRepository {
         }
     }
 
-    public List<Payment> findAllPayments() {
-        return findAll();
-    }
-
     public void savePaymentAndInvoice(
             Payment payment,
             Invoice invoice
@@ -82,7 +78,8 @@ public class PaymentRepository {
             try {
 
                 session.saveOrUpdate(payment);
-                session.saveOrUpdate(invoice);
+                //gör en update på ändrade invoice fält
+                session.merge(invoice);
 
                 transaction.commit();
 

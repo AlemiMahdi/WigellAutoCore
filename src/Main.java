@@ -1,5 +1,6 @@
 
 import com.wac.autocore.service.GarageSystem;
+import com.wac.autocore.service.ServiceItemService;
 import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
 
 import java.time.LocalDate;
@@ -50,7 +51,7 @@ public class Main {
                     break;
 
                 case 7:
-                    garageSystem.showServiceItems();
+                  //  ServiceItemService.showServiceItems();
                     break;
 
                 case 8:
@@ -82,11 +83,11 @@ public class Main {
                     break;
 
                 case 15:
-                    garageSystem.showPayments();
-                    break;
+//                    garageSystem.showPayments();
+//                    break;
 
                 case 16:
-                    processPayment();
+//                    processPayment();
                     break;
 
                 case 0:
@@ -262,30 +263,6 @@ public class Main {
                 discountCode,
                 "",
                 0.0
-        );
-    }
-
-    private static void processPayment() {
-
-        System.out.println();
-        System.out.println("=== PROCESS PAYMENT ===");
-
-        garageSystem.showInvoices();
-
-        int invoiceId = readInt("Invoice ID: ");
-
-        System.out.println();
-        System.out.println("Available payment types:");
-        System.out.println("CARD");
-        System.out.println("SWISH");
-        System.out.println("CASH");
-
-        System.out.print("Payment type: ");
-        String paymentType = scanner.nextLine();
-
-        garageSystem.processPayment(
-                invoiceId,
-                paymentType
         );
     }
 
