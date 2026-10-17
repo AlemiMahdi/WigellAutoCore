@@ -122,13 +122,29 @@ public class ServiceView extends VBox {
         durationField.promptTextProperty().bind(language.text("services.minutesPrompt"));
         durationField.setPrefColumnCount(10);
 
-        ServiceItem selected = table.getSelectionModel().getSelectedItem();
-
         Button saveButton = UiKit.primaryButton("Save duration");
         saveButton.textProperty().bind(language.text("services.save"));
-        saveButton.setOnAction(event -> serviceItemService.saveDuration(selected, feedbackLabel, language, durationField, table));
+        saveButton.setOnAction(event -> {
+            ServiceItem selected = table.getSelectionModel().getSelectedItem();
 
-        return inputRow(heading, hint, saveButton);
+            try {
+                int minutes = Integer.parseInt(durationField.getText().trim());
+                serviceItemService.saveDuration(selected, minutes);
+                table.refresh();
+                UiKit.showSuccess(feedbackLabel, language.text("services.saved").get());
+            } catch (NumberFormatException exception) {
+                UiKit.showError(feedbackLabel, language.text("services.invalidNumber").get());
+            } catch (IllegalArgumentException exception) {
+                UiKit.showError(feedbackLabel, language.text(exception.getMessage()).get());
+            } catch (RuntimeException exception) {
+                table.refresh();
+                UiKit.showError(feedbackLabel, language.text("services.error").get());
+                exception.printStackTrace();
+            }
+
+        });
+
+        return inputRow(heading, hint, durationField, feedbackLabel, saveButton);
     }
 
     private VBox buildPriceCard() {
@@ -149,23 +165,23 @@ public class ServiceView extends VBox {
         saveButton.textProperty().bind(language.text("services.savePrice"));
         saveButton.setOnAction(event -> serviceItemService.savePrice(table, priceFeedbackLabel, language, priceField, selected));
 
-        return inputRow(heading, hint, saveButton);
+        return inputRow(heading, hint, priceField, priceFeedbackLabel, saveButton);
     }
 
     private void setColumnWeight(TableColumn<ServiceItem, String> column, int percent) {
         column.setMaxWidth(percent * 100000.0);
     }
 
-    private VBox inputRow(Label heading, Label hint, Button saveButton){
-        HBox inputRow = new HBox(12, durationField, saveButton);
+    private VBox inputRow(Label heading, Label hint, TextField field, Label feedback, Button saveButton){
+        HBox inputRow = new HBox(12, field, saveButton);
         inputRow.setAlignment(Pos.CENTER_LEFT);
-        HBox.setHgrow(durationField, Priority.NEVER);
+        HBox.setHgrow(field, Priority.NEVER);
 
         // Tomt meddelande ska inte lämna ett hål längst ner i kortet
-        feedbackLabel.managedProperty().bind(feedbackLabel.textProperty().isNotEmpty());
-        feedbackLabel.visibleProperty().bind(feedbackLabel.textProperty().isNotEmpty());
+        feedback.managedProperty().bind(feedback.textProperty().isNotEmpty());
+        feedback.visibleProperty().bind(feedback.textProperty().isNotEmpty());
 
-        VBox card = UiKit.card(heading, hint, inputRow, feedbackLabel);
+        VBox card = UiKit.card(heading, hint, inputRow, feedback);
         card.getStyleClass().add("detail-card");
         return card;
     }

@@ -17,6 +17,7 @@ import java.util.Locale;
 public class ServiceItemService {
 
     private final IServiceItemRepository repository;
+
     public ServiceItemService(IServiceItemRepository repository) {
         this.repository = repository;
     }
@@ -125,27 +126,14 @@ public class ServiceItemService {
     }
 
     // Samma validering och sparande som tidigare, via ServiceItemRepository.
-    public void saveDuration(ServiceItem selected, Label feedbackLabel,
-                                    LanguageManager language, TextField durationField, TableView<ServiceItem> table) {
-
+    public void saveDuration(ServiceItem selected, int minutes) {
 
         if (selected == null) {
-            UiKit.showError(feedbackLabel, language.text("services.select").get());
-            return;
-        }
-
-        int minutes;
-
-        try {
-            minutes = Integer.parseInt(durationField.getText().trim());
-        } catch (NumberFormatException exception) {
-            UiKit.showError(feedbackLabel, language.text("services.invalidNumber").get());
-            return;
+            throw new IllegalArgumentException("services.select");
         }
 
         if (minutes <= 0) {
-            UiKit.showError(feedbackLabel, language.text("services.invalidDuration").get());
-            return;
+            throw new IllegalArgumentException("services.invalidDuration");
         }
 
         // Behåller det gamla värdet om sparandet misslyckas.
@@ -156,19 +144,13 @@ public class ServiceItemService {
             repository.save(selected);
         } catch (RuntimeException exception) {
             selected.setEstimatedMinutes(previousMinutes);
-            table.refresh();
 
-            UiKit.showError(feedbackLabel, language.text("services.error").get());
-            exception.printStackTrace();
-            return;
+            throw new RuntimeException("Kunde inte spara tid för tjänst " + selected.getId(), exception);
         }
-
-        table.refresh();
-        UiKit.showSuccess(feedbackLabel, language.text("services.saved").get());
     }
 
     public void savePrice(TableView<ServiceItem> table, Label priceFeedbackLabel,
-                                 LanguageManager language, TextField priceField, ServiceItem selected) {
+                          LanguageManager language, TextField priceField, ServiceItem selected) {
 
         if (selected == null) {
             UiKit.showError(priceFeedbackLabel, language.text("services.select").get());
