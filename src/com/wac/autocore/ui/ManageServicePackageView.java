@@ -4,7 +4,7 @@ package com.wac.autocore.ui;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.model.ServicePackage;
-import com.wac.autocore.repository.ServicePackageRepository;
+import com.wac.autocore.service.ServicePackageService;
 import com.wac.autocore.ui.language.LanguageManager;
 
 import javafx.geometry.Pos;
@@ -16,14 +16,18 @@ import java.util.List;
 
 public class ManageServicePackageView {
 
-    private final ServicePackageRepository repository =
-            new ServicePackageRepository();
+
+    private final ServicePackageService servicePackageService;
     private final LanguageManager language = LanguageManager.getInstance();
+
+    public ManageServicePackageView(ServicePackageService servicePackageService) {
+        this.servicePackageService = servicePackageService;
+    }
 
     public VBox getView() {
 
         ComboBox<ServicePackage> packageBox = new ComboBox<>();
-        packageBox.getItems().addAll(Database.getServicePackages());
+        packageBox.getItems().addAll(servicePackageService.findAll());
         packageBox.promptTextProperty().bind(
             language.text("manageServicePackage.packagePrompt")
         );
@@ -77,22 +81,18 @@ public class ManageServicePackageView {
                             (ServiceItem) checkBox.getUserData());
                 }
             }
-
-            List<ServiceItem> previousServices =
-                    new ArrayList<>(selectedPackage.getServices());
-
-            selectedPackage.setServices(selectedServices);
-
             try {
-                repository.save(selectedPackage);
-                UiKit.showSuccess(messageLabel,
-                        language.text("manageServicePackage.success").get());
+                servicePackageService.updateServices(selectedPackage, selectedServices);
+            } catch (IllegalArgumentException exception) {
+                UiKit.showError(messageLabel, language.text(exception.getMessage()).get());
+                return;
             } catch (RuntimeException exception) {
-                selectedPackage.setServices(previousServices);
-                UiKit.showError(messageLabel,
-                        language.text("manageServicePackage.saveError").get());
+                UiKit.showError(messageLabel, language.text("manageServicePackage.saveError").get());
                 exception.printStackTrace();
+                return;
             }
+            UiKit.showSuccess(messageLabel, language.text("manageServicePackage.success").get());
+
         });
 
         VBox form = UiKit.formContainer(
