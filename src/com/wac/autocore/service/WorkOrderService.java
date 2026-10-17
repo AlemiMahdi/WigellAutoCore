@@ -4,12 +4,14 @@ import com.wac.autocore.DTO.WorkOrderDto;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
 import com.wac.autocore.repository.BookingRepository;
+import com.wac.autocore.repository.IServiceItemRepository;
 import com.wac.autocore.repository.IWorkOrderRepository;
 import com.wac.autocore.repository.WorkOrderRepository;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.beans.binding.StringExpression;
 
+import javax.xml.crypto.Data;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -252,21 +254,45 @@ public class WorkOrderService {
 
     public WorkOrder createNewDraftWorkOrder(int vehicleId, String description, WorkOrderTypeEnum type, Integer originalWorkOrderId) {
         // 1. Validera grunddata (fordon, beskrivning etc.)
+        Vehicle vehicle = Database.getVehicles().stream()
+                .filter(v -> v.getId() == vehicleId)
+                .findFirst()
+                .orElse(null);
+
+        if (vehicle == null) {
+            throw new IllegalArgumentException("createDraft.vehicleMissing");
+        }
+
+        boolean customerExists = Database.getCustomers().stream()
+                .anyMatch(customer -> customer.getId() == vehicle.getCustomerId());
+
+        if (!customerExists) {
+            throw new IllegalArgumentException("createDraft.customerMissing");
+        }
+
         if (description == null || description.trim().isEmpty()) {
             throw new IllegalArgumentException("createDraft.descriptionMissing");
         }
 
         // 2. Bygg helt nya objekt (Sätt ID till 0 för AUTO_INCREMENT)
-        WorkOrder draft = WorkOrder.createDraft(0, 0, type);
+        int bookingId = Database.getBookings().size() + 1;
+        WorkOrder draft = WorkOrder.createDraft(0, bookingId, type);
         if (type == WorkOrderTypeEnum.COMPLAINT && originalWorkOrderId != null) {
             draft.setOriginalWorkOrderId(originalWorkOrderId);
         }
 
-        Booking booking = new Booking(0, vehicleId, null, description.trim());
+        Booking booking = new Booking(bookingId, vehicleId, null, description.trim());
         booking.setStatus("WORK_ORDER_CREATED");
 
-        // 3. Spara som helt nya rader via ditt repository (session.save)
-        return workOrderRepository.saveDraftWithBooking(draft, booking);
+        // 3. Spara bokning och utkast i samma transaktion
+        workOrderRepository.saveWithBooking(draft, booking);
+
+        // 4. Lägg till i minnet, först när det är sparat
+        Database.getBookings().add(booking);
+        Database.getWorkOrders().add(draft);
+
+        // 5. Returnera utkastet
+        return draft;
     }
 }
 
