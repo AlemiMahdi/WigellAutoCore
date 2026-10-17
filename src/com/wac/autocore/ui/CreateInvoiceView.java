@@ -4,10 +4,8 @@ package com.wac.autocore.ui;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
 import com.wac.autocore.repository.BookingRepository;
-import com.wac.autocore.service.GarageSystem;
 import com.wac.autocore.ui.language.LanguageManager;
 import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
-
 import com.wac.autocore.service.InvoiceService;
 
 import javafx.geometry.Pos;
@@ -27,7 +25,6 @@ public class CreateInvoiceView {
 
     public static VBox build(InvoiceService invoiceService){
         LanguageManager language = LanguageManager.getInstance();
-        GarageSystem garageSystem = new GarageSystem();
         BookingRepository bookingRepository = new BookingRepository();
 
 
@@ -213,29 +210,26 @@ public class CreateInvoiceView {
                     return;
                 }
             }
-            Invoice invoice = garageSystem.createInvoice(
-                workOrderId, 
-                discountCode,
-                extraDescription,
-                extraCost
-            );
-
-            if (invoice == null) {
-
-                UiKit.showError(statusLabel,
-                        language.text("createInvoice.createError").get()
-                );
-
-            } else {
 
                 try {
 
-                    invoiceService.save(invoice);
+                    Invoice invoice = invoiceService.createInvoice(workOrderId, discountCode, extraDescription, extraCost);
 
-                    UiKit.showSuccess(statusLabel, language.text("createInvoice.successFor").get() + " "
-                            + ShowInvoiceView.workOrderCode(workOrderId)
-                            + ". " + language.text("createInvoice.totalLabel").get() + ": "
-                            + ShowInvoiceView.formatSek(invoice.getTotalAmount())
+
+                    if (invoice == null) {
+                        UiKit.showError(
+                                statusLabel,
+                                language.text("createInvoice.createError").get()
+                        );
+                        return;
+                    }
+
+                    UiKit.showSuccess(
+                            statusLabel,
+                            language.text("createInvoice.successFor").get() + " "
+                                    + ShowInvoiceView.workOrderCode(workOrderId)
+                                    + ". " + language.text("createInvoice.totalLabel").get() + ": "
+                                    + ShowInvoiceView.formatSek(invoice.getTotalAmount())
                     );
 
                     workOrderBox.setValue(null);
@@ -243,14 +237,13 @@ public class CreateInvoiceView {
 
                 } catch (RuntimeException exception) {
 
-                    Database.getInvoices().remove(invoice);
                     UiKit.showError(statusLabel,
                             language.text("createInvoice.saveError").get()
                     );
                     exception.printStackTrace();
                 }
 
-            }
+
 
 
         });
