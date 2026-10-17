@@ -9,6 +9,7 @@ import com.wac.autocore.model.InvoiceLine;
 import com.wac.autocore.model.Vehicle;
 import com.wac.autocore.model.WorkOrder;
 import com.wac.autocore.model.WorkOrderStatus;
+import com.wac.autocore.service.exception.InvoiceValidationException;
 import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
 
 import org.junit.jupiter.api.Test;
@@ -365,13 +366,13 @@ class InvoiceServiceTest {
 
         List<Invoice> before = new ArrayList<>(Database.getInvoices());
 
-        IllegalArgumentException previewError = assertThrows(
-                IllegalArgumentException.class,
+        InvoiceValidationException previewError = assertThrows(
+                InvoiceValidationException.class,
                 () -> service.previewInvoice(1, "", description, extraCost)
         );
 
-        IllegalArgumentException creationError = assertThrows(
-                IllegalArgumentException.class,
+        InvoiceValidationException creationError = assertThrows(
+                InvoiceValidationException.class,
                 () -> service.createInvoice(1, "", description, extraCost)
         );
 

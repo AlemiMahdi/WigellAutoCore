@@ -3,10 +3,11 @@ package com.wac.autocore.ui;
 
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
+import com.wac.autocore.service.exception.InvoiceValidationException;
 import com.wac.autocore.ui.language.LanguageManager;
 import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
 import com.wac.autocore.service.InvoiceService;
-
+import com.wac.autocore.service.exception.InvoiceValidationException;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -232,7 +233,7 @@ public class CreateInvoiceView {
                 workOrderBox.setValue(null);
                 discoutField.clear();
 
-            } catch (IllegalArgumentException exception) {
+            } catch (InvoiceValidationException exception) {
                 UiKit.showError(
                         statusLabel,
                         language.text(exception.getMessage()).get()

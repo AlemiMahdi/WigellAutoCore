@@ -3,6 +3,7 @@ package com.wac.autocore.service;
 import com.wac.autocore.model.Invoice;
 import com.wac.autocore.repository.IInvoiceRepository;
 import com.wac.autocore.data.Database;
+import com.wac.autocore.service.exception.InvoiceValidationException;
 
 import java.util.List;
 import java.util.Objects;
@@ -89,7 +90,7 @@ public class InvoiceService {
             double extraCost) {
 
         if (!Double.isFinite(extraCost) || extraCost < 0) {
-            throw new IllegalArgumentException(
+            throw new InvoiceValidationException(
                     "createInvoice.invalidExtraCost"
             );
         }
@@ -98,7 +99,7 @@ public class InvoiceService {
             BigDecimal.valueOf(extraCost)
                     .setScale(2, RoundingMode.UNNECESSARY);
         } catch (ArithmeticException exception) {
-            throw new IllegalArgumentException(
+            throw new InvoiceValidationException(
                     "createInvoice.invalidExtraCost", exception
             );
         }
@@ -106,7 +107,7 @@ public class InvoiceService {
         if (extraCost > 0
                 && (extraDescription == null
                 || extraDescription.trim().isEmpty())) {
-            throw new IllegalArgumentException(
+            throw new InvoiceValidationException(
                     "createInvoice.missingExtraDescription"
             );
         }
