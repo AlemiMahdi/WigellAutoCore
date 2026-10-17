@@ -3,7 +3,6 @@ package com.wac.autocore.ui;
 
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
-import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.ui.language.LanguageManager;
 import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
 import com.wac.autocore.service.InvoiceService;
@@ -25,7 +24,6 @@ public class CreateInvoiceView {
 
     public static VBox build(InvoiceService invoiceService){
         LanguageManager language = LanguageManager.getInstance();
-        BookingRepository bookingRepository = new BookingRepository();
 
 
         // --- Arbetsorder ---
@@ -110,35 +108,41 @@ public class CreateInvoiceView {
                 totalValue.setText(ShowInvoiceView.formatSek(0));
                 return;
             }
-            double amount = 0.0;
+            try {
+                double extraCost = 0.0;
 
-            if (selected.getType() == WorkOrderTypeEnum.COMPLAINT) {
-                String input = extraCostAmountField.getText().trim();
+                if (selected.getType() == WorkOrderTypeEnum.COMPLAINT) {
+                    String input = extraCostAmountField.getText().trim();
 
-                if (!input.isEmpty()) {
-                    try {
-                        double extraCost = Double.parseDouble(input.replace(",", "."));
-
-                        if (!Double.isFinite(extraCost) || extraCost < 0) {
-                            amountField.clear();
-                            totalValue.setText("—");
-                            return;
-                        }
-
-                        amount += extraCost;
-
-                    } catch (NumberFormatException exception) {
-                        amountField.clear();
-                        totalValue.setText("—");
-                        return;
+                    if (!input.isEmpty()) {
+                        extraCost = Double.parseDouble(input.replace(',', '.'));
                     }
                 }
-            } else {
-                Booking booking = bookingRepository.findById(selected.getBookingId());
-                amount = sumServicePrices(selected, booking);
+
+                Invoice preview = invoiceService.previewInvoice(
+                        selected.getId(),
+                        discoutField.getText(),
+                        extraCostDescriptionField.getText().trim(),
+                        extraCost
+                );
+
+                if (preview == null) {
+                    amountField.clear();
+                    totalValue.setText("—");
+                    return;
+                }
+
+                amountField.setText(
+                        ShowInvoiceView.formatSek(preview.getAmount())
+                );
+                totalValue.setText(
+                        ShowInvoiceView.formatSek(preview.getTotalAmount())
+                );
+
+            } catch (NumberFormatException | ArithmeticException exception) {
+                amountField.clear();
+                totalValue.setText("—");
             }
-            amountField.setText(ShowInvoiceView.formatSek(amount));
-            totalValue.setText(ShowInvoiceView.formatSek(amount));
         };
 
         workOrderBox.valueProperty().addListener((obs, oldValue, selected) -> {
@@ -158,6 +162,14 @@ public class CreateInvoiceView {
 
         extraCostAmountField.textProperty().addListener(
             (obs, oldValue, newValue) -> updateTotal.run()
+        );
+
+        discoutField.textProperty().addListener(
+                (observable, oldValue, newValue) -> updateTotal.run()
+        );
+
+        extraCostDescriptionField.textProperty().addListener(
+                (observable, oldValue, newValue) -> updateTotal.run()
         );
 
         // Tala om varför listan är tom, annars ser det ut som ett fel
@@ -332,32 +344,4 @@ public class CreateInvoiceView {
         return null;
     }
 
-    // Samma summa som GarageSystem.createInvoice räknar fram (före rabatt)
-    //Lägga till att kolla efter specifika bokningens tjänst
-    private static double sumServicePrices(WorkOrder workOrder, Booking booking) {
-        
-        if (workOrder.getType() == WorkOrderTypeEnum.COMPLAINT) {
-            return 0.0;
-        }
-        double sum = 0.0;
-
-        
-            if(booking != null) {
-                for (InvoiceLine frozenLine : booking.getFrozenPrice()){
-                    sum+= frozenLine.getPrice();
-                }
-                return sum;
-
-                }
-            else {
-                for (Integer serviceItemId : workOrder.getServiceItemIds()) {
-                for (ServiceItem serviceItem : Database.getServiceItems()) {
-                    if (serviceItem.getId() == serviceItemId) {
-                        sum += serviceItem.getPrice();
-                    }
-                }
-            }
-        }
-        return sum;
-    }
 }

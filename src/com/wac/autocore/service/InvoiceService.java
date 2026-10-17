@@ -52,6 +52,20 @@ public class InvoiceService {
         return invoice;
     }
 
+    public Invoice previewInvoice(
+            int workOrderId,
+            String discountCode,
+            String extraDescription,
+            double extraCost) {
+
+        return garageSystem.prepareInvoice(
+                workOrderId,
+                discountCode,
+                extraDescription,
+                extraCost
+        );
+    }
+
     public List<Invoice> findAll() {
         return invoiceRepository.findAll();
     }
