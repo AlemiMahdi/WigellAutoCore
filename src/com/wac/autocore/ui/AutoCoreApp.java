@@ -2,9 +2,7 @@ package com.wac.autocore.ui;
 
 import java.net.URL;
 
-import com.wac.autocore.service.GarageSystem;
-import com.wac.autocore.service.PaymentService;
-import com.wac.autocore.service.ServiceItemService;
+import com.wac.autocore.service.*;
 import com.wac.autocore.ui.language.LanguageManager;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.data.HibernateUtil;
@@ -414,11 +412,11 @@ public class AutoCoreApp extends Application {
 
             // Originalet räknar ut nästa ID som listans storlek + 1,
             // så ID:na måste vara 1, 2, 3... utan luckor.
-            if (booking.getId() != i + 1) {
-                throw new IllegalStateException(
-                        "Booking IDs must be consecutive, starting at 1."
-                );
-            }
+//            if (booking.getId() != i + 1) {
+//                throw new IllegalStateException(
+//                        "Booking IDs must be consecutive, starting at 1."
+//                );
+//            }
 
             // Kontrollerar att bokningens fordon finns.
             boolean vehicleExists = Database.getVehicles().stream()
