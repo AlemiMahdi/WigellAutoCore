@@ -206,17 +206,42 @@
     -fx-padding: 0;
 }
 
-/* Scrollbars: diskreta, utan pilar */
+/* ================= Scrollbars ================= */
+
+/* Grundutseende */
 .scroll-bar {
     -fx-background-color: transparent;
 }
 
+/* Tydligare bredd på vertikala scrollbars */
+.scroll-bar:vertical {
+    -fx-pref-width: 14;
+}
+
+/* Tydligare höjd på horisontella scrollbars */
+.scroll-bar:horizontal {
+    -fx-pref-height: 14;
+}
+
+/* Scrollbarens bana */
+.scroll-bar .track {
+    -fx-background-color: #E4E9DC;
+    -fx-background-radius: 7;
+}
+
+/* Det rörliga handtaget */
 .scroll-bar .thumb {
-    -fx-background-color: -fx-border;
-    -fx-background-radius: 4;
+    -fx-background-color: #819774;
+    -fx-background-radius: 7;
     -fx-background-insets: 2;
 }
 
+/* Mörkare färg när musen hålls över */
+.scroll-bar .thumb:hover {
+    -fx-background-color: -fx-accent;
+}
+
+/* Ta bort onödiga pilknappar */
 .scroll-bar .increment-button,
 .scroll-bar .decrement-button {
     -fx-background-color: transparent;
