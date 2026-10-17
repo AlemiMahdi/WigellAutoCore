@@ -1,17 +1,14 @@
 package com.wac.autocore.repository;
 
 import com.wac.autocore.data.HibernateUtil;
-import com.wac.autocore.model.Booking;
-import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.model.*;
 import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 
 import java.util.List;
-import com.wac.autocore.model.Mechanic;
-import com.wac.autocore.model.ServiceItem;
-import com.wac.autocore.model.WorkOrderStatus;
+
 import org.hibernate.LockMode;
 
 import java.math.BigDecimal;
@@ -19,8 +16,6 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
-import com.wac.autocore.model.Vehicle;
-import com.wac.autocore.model.Customer;
 
 public class WorkOrderRepository {
 
@@ -344,6 +339,7 @@ public class WorkOrderRepository {
                 savedBooking.getServices().clear();
                 savedBooking.getServices().addAll(savedServices);
                 savedDraft.setOriginalWorkOrderId(originalWorkOrderId);
+                savedBooking.setFrozenPrice(createFrozenPrices(savedServices));
 
                 // Status, problembeskrivning och historiska priser ändras inte.
                 transaction.commit();
@@ -368,6 +364,7 @@ public class WorkOrderRepository {
         booking.setDurationMinutes(minutes);
         booking.setMechanicId(mechanicId == 0 ? null : mechanicId);
         booking.setServices(new ArrayList<>(savedServices));
+        booking.setFrozenPrice(createFrozenPrices(savedServices));
     }
     public void saveDropInOrder(WorkOrder workOrder, Booking booking) {
         org.hibernate.Session session = HibernateUtil.getSessionFactory().openSession();
@@ -389,5 +386,18 @@ public class WorkOrderRepository {
         } finally {
             session.close();
         }
+    }
+
+    private List<InvoiceLine> createFrozenPrices(List<ServiceItem> serviceItems) {
+        List<InvoiceLine> frozenPrices = new ArrayList<>();
+        for (ServiceItem service : serviceItems) {
+            InvoiceLine frozenLine = new InvoiceLine(
+                    service.getId(),
+                    service.getName(),
+                    service.getPrice() // Sparar priset inför faktureringen
+            );
+            frozenPrices.add(frozenLine);
+        }
+        return frozenPrices;
     }
 }

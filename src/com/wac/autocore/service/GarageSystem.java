@@ -151,10 +151,7 @@ public class GarageSystem {
             return null;
         }
 
-        int id = Database.getVehicles().size() + 1;
-
         Vehicle vehicle = new Vehicle(
-                id,
                 registrationNumber,
                 brand,
                 model,
@@ -233,8 +230,8 @@ public class GarageSystem {
         return workOrder;
     }
 
-    // Skapar en arbetsorder som utkast med en automatiskt bokning (WAC-63)
-    public WorkOrder createDraftWorkOrder(int vehicleId, String description, WorkOrderTypeEnum type) {
+    // Skapar en arbetsorder som utkast med en automatisk bokning (WAC-63)
+    public WorkOrder createDraftWorkOrder(int vehicleId, String description, WorkOrderTypeEnum type, Integer originalWorkOrderId) {
          //1. Kontroller allt först
         Vehicle vehicle = findVehicle(vehicleId);
         if (vehicle == null) {
@@ -249,6 +246,10 @@ public class GarageSystem {
 
         int workOrderId = Database.getWorkOrders().size() + 1;
         WorkOrder draft = WorkOrder.createDraft(workOrderId, 0, type);
+
+        if (type == WorkOrderTypeEnum.COMPLAINT && originalWorkOrderId != null) {
+            draft.setOriginalWorkOrderId(originalWorkOrderId);
+        }
 
         //3. Skapa den automatiska bokingen
         Booking booking = new Booking(0, vehicleId, null, description.trim());
