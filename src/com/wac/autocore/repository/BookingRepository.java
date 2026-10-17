@@ -9,10 +9,7 @@ import com.wac.autocore.model.WorkOrderStatus;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;
-
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,14 +40,20 @@ public class BookingRepository implements IBookingRepository{
                 try {
 
                         // Hämtar befintlig bokning så extra uppgifter bevaras.
-                        Booking existingBooking =
-                                session.get(Booking.class, booking.getId());
+                        Booking existingBooking = null;
+
+                        //Hämta bara en befintlig booking om den har ett ID
+                        if (booking.getId() > 0) {
+                                existingBooking = session.get(
+                                        Booking.class, 
+                                        booking.getId()
+                                );
+                        }
 
                         boolean isNew = existingBooking == null;
-
                         if (isNew) {
-                        existingBooking = new Booking();
-                        existingBooking.setId(booking.getId());
+                                existingBooking = new Booking();
+
                         }
 
                         existingBooking.setVehicleId(booking.getVehicleId());
@@ -87,21 +90,21 @@ public class BookingRepository implements IBookingRepository{
                         * ServiceItem senare ändras.
                         */
                         if (isNew) {
-
-                        List<InvoiceLine> frozenPrices = new ArrayList<>();
-
-                        for (ServiceItem service : serviceItems) {
-
-                                InvoiceLine frozenLine = new InvoiceLine(
-                                        service.getId(),
-                                        service.getName(),
-                                        service.getPrice()
-                                );
-
-                                frozenPrices.add(frozenLine);
-                        }
-
-                        existingBooking.setFrozenPrice(frozenPrices);
+                        
+                        List<InvoiceLine> frozenPrices = booking.getFrozenPrice();
+                                if (frozenPrices == null || frozenPrices.isEmpty()) {
+                                        frozenPrices = new ArrayList<>();
+                                        for(ServiceItem service : serviceItems) {
+                                                frozenPrices.add( new InvoiceLine(
+                                                        service.getId(),
+                                                        service.getName(),
+                                                        service.getPrice()
+                                                        )
+                                                );
+                                        }
+                                }
+                                existingBooking.setFrozenPrice(new ArrayList<>(frozenPrices));
+                        
                         }
 
                         // Ändrar mekanikern bara när ett nytt val skickas in.
@@ -115,6 +118,9 @@ public class BookingRepository implements IBookingRepository{
 
                         // Befintliga objekt uppdateras automatiskt av Hibernate.
                         transaction.commit();
+
+                        //Synkronisera ID från det sparade objektet
+                        booking.setId(existingBooking.getId());
 
                 } catch (RuntimeException exception) {
 
@@ -200,83 +206,6 @@ public class BookingRepository implements IBookingRepository{
                         throw exception;
                 }
                 }
-        }
-
-        @Override 
-        public boolean hasOverlappingBooking(
-                int mechanicId,
-                LocalDate date,
-                LocalTime startTime,
-                int durationMinutes
-        ) {
-
-                return hasOverlappingBooking(
-                        mechanicId,
-                        date,
-                        startTime,
-                        durationMinutes,
-                        null
-                );
-        }
-
-        // Används vid redigering för att undanta den egna bokningen.
-        public boolean hasOverlappingBooking(
-                int mechanicId,
-                LocalDate date,
-                LocalTime startTime,
-                int durationMinutes,
-                Integer excludedBookingId
-        ) {
-
-                LocalDateTime newStart =
-                        LocalDateTime.of(date, startTime);
-
-                LocalDateTime newEnd =
-                        newStart.plusMinutes(durationMinutes);
-
-                for (Booking booking : findAll()) {
-
-                // Jämför inte bokningen med sig själv.
-                if (excludedBookingId != null
-                        && booking.getId() == excludedBookingId.intValue()) {
-                        continue;
-                }
-
-                // Bokningen måste tillhöra samma mekaniker.
-                if (booking.getMechanicId() == null
-                        || booking.getMechanicId() != mechanicId) {
-                        continue;
-                }
-
-                // Äldre bokningar kan sakna tid.
-                if (booking.getDate() == null
-                        || booking.getStartTime() == null
-                        || booking.getDurationMinutes() <= 0) {
-                        continue;
-                }
-
-                LocalDateTime existingStart =
-                        LocalDateTime.of(
-                                booking.getDate(),
-                                booking.getStartTime()
-                        );
-
-                LocalDateTime existingEnd =
-                        existingStart.plusMinutes(
-                                booking.getDurationMinutes()
-                        );
-
-                boolean overlaps =
-                        newStart.isBefore(existingEnd)
-                                &&
-                        newEnd.isAfter(existingStart);
-
-                if (overlaps) {
-                        return true;
-                }
-                }
-
-                return false;
         }
 
         public int updateBookingServices(

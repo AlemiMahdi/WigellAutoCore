@@ -5,6 +5,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import java.time.LocalDateTime;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.InvoiceLine;
@@ -70,28 +71,15 @@ public class BookingService {
         }
 
         // 3. Kontrollera överlappande bokningar
-        if (bookingRepository.hasOverlappingBooking(
+        if (hasOverlappingBooking(
                 mechanicId, date, startTime, durationMinutes)) {
 
             throw new IllegalArgumentException("createBooking.overlapping");
         }
 
-        // 4. Beräkna nästa ID enligt projektets nuvarande ID-strategi
-        int maxMemoryId = Database.getBookings().stream()
-                .mapToInt(Booking::getId)
-                .max()
-                .orElse(0);
-
-        int maxDatabaseId = bookingRepository.findAll().stream()
-                .mapToInt(Booking::getId)
-                .max()
-                .orElse(0);
-
-        int nextId = Math.max(maxMemoryId, maxDatabaseId) + 1;
-
         // 5. Skapa bokningen
         Booking booking = new Booking(
-                nextId,
+                0,
                 vehicleId,
                 date,
                 startTime,
@@ -118,6 +106,43 @@ public class BookingService {
         Database.getBookings().add(booking);
 
         return booking;
+    }
+
+    public boolean hasOverlappingBooking(
+        int mechanicId, 
+        LocalDate date, 
+        LocalTime startTime, 
+        int durationMinutes
+    ) {
+        LocalDateTime newStart = LocalDateTime.of(date, startTime);
+        LocalDateTime newEnd = newStart.plusMinutes(durationMinutes);
+
+        List<Booking> bookings = bookingRepository.findAll();
+        for( Booking booking : bookings) {
+
+            //kontroll endast samma mekaniker
+            if (booking.getMechanicId() == null || booking.getMechanicId() != mechanicId) {
+                continue;
+            }
+
+            //Hoppa över bokningar som saknar tidsinformation
+            if (booking.getDate() == null
+                    || booking.getStartTime() == null
+                    || booking.getDurationMinutes() <= 0) {
+                continue;
+            }
+
+            LocalDateTime existingStart = LocalDateTime.of(
+                booking.getDate(), 
+                booking.getStartTime()
+            );
+
+            LocalDateTime existingEnd = existingStart.plusMinutes(booking.getDurationMinutes());
+            if (newStart.isBefore(existingEnd) && newEnd.isAfter(existingStart)) {
+                return true;
+            }
+        }
+        return false;
     }
     
 }

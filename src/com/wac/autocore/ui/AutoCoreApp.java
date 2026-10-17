@@ -189,8 +189,14 @@ public class AutoCoreApp extends Application {
             // Spara exempelkunder och registrera deras nya ID:n
             for (Customer customer : Database.getCustomers()) {
 
+                //Spara ursprungligt ID för att kunna uppdatera fordonen
                 int oldId = customer.getId();
+                
+                //Låt MySQL generera ett nytt ID
+                customer.setId(0);
                 repository.save(customer);
+
+                //Hämta det ID som MySQL genererade
                 int newId = customer.getId();
                 customerIdMapping.put(oldId, newId);
             }
@@ -225,15 +231,7 @@ public class AutoCoreApp extends Application {
                 ? Database.getVehicles()
                 : savedVehicles;
 
-        for (int i = 0; i < vehicles.size(); i++) {
-            Vehicle vehicle = vehicles.get(i);
-
-            // Originalet använder listans storlek + 1 för nästa ID.
-            if (vehicle.getId() != i + 1) {
-                throw new IllegalStateException(
-                        "Vehicle IDs must be consecutive, starting at 1."
-                );
-            }
+        for (Vehicle vehicle : vehicles) {
 
             // Kontrollerar att fordonets kund finns.
             boolean customerExists = Database.getCustomers().stream()
@@ -430,14 +428,6 @@ public class AutoCoreApp extends Application {
         for (int i = 0; i < bookings.size(); i++) {
             Booking booking = bookings.get(i);
 
-            // Originalet räknar ut nästa ID som listans storlek + 1,
-            // så ID:na måste vara 1, 2, 3... utan luckor.
-            if (booking.getId() != i + 1) {
-                throw new IllegalStateException(
-                        "Booking IDs must be consecutive, starting at 1."
-                );
-            }
-
             // Kontrollerar att bokningens fordon finns.
             boolean vehicleExists = Database.getVehicles().stream()
                     .anyMatch(vehicle ->
@@ -453,6 +443,7 @@ public class AutoCoreApp extends Application {
         if (firstRun) {
             // Sparar originalets exempelbokningar när tabellen är tom.
             for (Booking booking : bookings) {
+                booking.setId(0);
                 repository.save(booking);
             }
         } else {
