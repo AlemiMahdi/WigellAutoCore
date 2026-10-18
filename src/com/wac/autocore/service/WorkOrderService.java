@@ -42,7 +42,7 @@ public class WorkOrderService {
             switch (selectedType) {
                 case COMPLAINT:
                     if (originalBooking != null) {
-                        // Skapa en ny skuggbokning för reklamationen (Måste ändras om MySQL sätter ID via AUTO_INCREMENT)
+                        // Skapa en ny skuggbokning för reklamationen (id = 0 MySQL ger id via AUTO_INCREMENT)
 
                         Booking complaintBooking = new Booking(0,
                                 originalBooking.getVehicleId(),
@@ -118,8 +118,9 @@ public class WorkOrderService {
 
                 if (!Database.getBookings().contains(autoBooking)) {
                     Database.getBookings().add(autoBooking);
-                } else {
-                    throw new RuntimeException("createWorkOrder.bookingNotFound");
+//  WAC-93: bokningen finns redan i listan (DropInWorkOrder lade till den). Det är inget fel.
+//                } else {
+//                    throw new RuntimeException("createWorkOrder.bookingNotFound");
                 }
             }
         }
@@ -268,7 +269,7 @@ public class WorkOrderService {
             throw new IllegalArgumentException("createDraft.descriptionMissing");
         }
 
-        // 2. Skapa utkastset och bokningen (id 0 = MySQL ger id till båda,
+        // 2. Skapa utkastet och bokningen (id 0 = MySQL ger id till båda,
         //    saveWithBooking kopplar ihop dem när bokningen fått sitt id)
 //        int bookingId = Database.getBookings().size() + 1;
         WorkOrder draft = WorkOrder.createDraft(0, 0, type);

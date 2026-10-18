@@ -451,8 +451,8 @@ public class CreateWorkOrderView  extends VBox {
             try {
                 workOrderService.createAndSaveWorkOrder(selectedType, dto, originalBooking);
 
-                UiKit.showSuccess(feedbackLabel, "");
-                feedbackLabel.textProperty().bind(language.text("createWorkOrder.success"));
+//                UiKit.showSuccess(feedbackLabel, "");
+//                feedbackLabel.textProperty().bind(language.text("createWorkOrder.success"));
 
             } catch (RuntimeException exception) {
                 String errorKey = "createWorkOrder.saveError".equals(exception.getMessage()) ? "createWorkOrder.saveError" : "createWorkOrder.createError";
@@ -475,8 +475,8 @@ public class CreateWorkOrderView  extends VBox {
             startTimeField.clear();
             selectedServices.clear();
 
-//            UiKit.showSuccess(feedbackLabel, "");
-//            feedbackLabel.textProperty().bind(language.text("createWorkOrder.success"));
+            UiKit.showSuccess(feedbackLabel, "");
+            feedbackLabel.textProperty().bind(language.text("createWorkOrder.success"));
         });
 
         getChildren().add(UiKit.formContainer(
