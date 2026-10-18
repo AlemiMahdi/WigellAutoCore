@@ -4,7 +4,7 @@ import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.Mechanic;
 import com.wac.autocore.model.Vehicle;
-import com.wac.autocore.repository.BookingRepository;
+import com.wac.autocore.service.BookingService;
 import com.wac.autocore.ui.Navigator;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
@@ -35,6 +35,10 @@ import javafx.scene.Node;
 public class ShowBookingsView {
 
     private final LanguageManager language = LanguageManager.getInstance();
+    private final BookingService bookingService;
+    public ShowBookingsView( BookingService bookingService) {
+        this.bookingService = bookingService;
+    }
 
     public VBox getView() {
 
@@ -49,10 +53,8 @@ public class ShowBookingsView {
         }
 
         try {
-            BookingRepository bookingRepository =
-                    new BookingRepository();
 
-            for (Booking booking : bookingRepository.findAll()) {
+            for (Booking booking : bookingService.getAllBookings()) {
                 mechanicByBooking.put(
                         booking.getId(),
                         booking.getMechanicId()
@@ -414,7 +416,7 @@ public class ShowBookingsView {
             if (selectedBooking != null) {
                 showBookingForm(
                         root,
-                        new CreateBookingView(selectedBooking).getView()
+                        new CreateBookingView(bookingService ,selectedBooking).getView()
                 );
             }
         });

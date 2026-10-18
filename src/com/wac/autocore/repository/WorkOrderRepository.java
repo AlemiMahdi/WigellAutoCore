@@ -52,6 +52,7 @@ public class WorkOrderRepository implements IWorkOrderRepository {
 
             try {
                 session.save(booking);
+                workOrder.setBookingId(booking.getId());
                 session.save(workOrder);
 
                 transaction.commit();

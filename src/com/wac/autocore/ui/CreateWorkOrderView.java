@@ -3,10 +3,9 @@ package com.wac.autocore.ui;
 import com.wac.autocore.DTO.WorkOrderDto;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
-import com.wac.autocore.repository.BookingRepository;
+import com.wac.autocore.service.BookingService;
 import com.wac.autocore.service.WorkOrderService;
 import com.wac.autocore.ui.language.LanguageManager;
-import com.wac.autocore.model.WorkOrderTypeEnum;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -29,9 +28,10 @@ public class CreateWorkOrderView  extends VBox {
     private final LanguageManager language = LanguageManager.getInstance();
     private final ObservableList<ServiceItem> selectedServices = FXCollections.observableArrayList();
     private final WorkOrderService workOrderService;
+    private final BookingService bookingService;
 
-
-    public CreateWorkOrderView(WorkOrderService workOrderService) {
+    public CreateWorkOrderView( WorkOrderService workOrderService, BookingService bookingService) {
+        this.bookingService = bookingService;
         this.workOrderService = workOrderService;
         // Centrerar formulärkolumnen i innehållsytan
         setAlignment(Pos.TOP_CENTER);
@@ -350,9 +350,6 @@ public class CreateWorkOrderView  extends VBox {
         saveButton.textProperty().bind(language.text("createWorkOrder.title"));
 
         saveButton.setOnAction(event -> {
-            //!! Lägga till BookingRepo injection enligt nytt när det är fixat med refaktoriseringen
-            AutoCoreApp app = AutoCoreApp.getInstance();
-            BookingRepository bookingRepository = app.getBookingRepository();
 
             Mechanic mechanic = mechanicComboBox.getValue();
             WorkOrderTypeEnum selectedType = typeComboBox.getValue();
@@ -415,9 +412,8 @@ public class CreateWorkOrderView  extends VBox {
                     feedbackLabel.textProperty().bind(language.text("createBooking.selectService"));
                     return;
                 }
-                //Hämta den från service sen, inte BookingRepo!
- //Validering för krockande/överlappande bokningar
-                boolean overlapping = bookingRepository.hasOverlappingBooking(mechanic.getId(), date, startTime, durationMinutes);
+// Validering för krockande/överlappande bokningar
+                boolean overlapping = bookingService.hasOverlappingBooking(mechanic.getId(), date, startTime, durationMinutes);
                 if (overlapping) {
                     UiKit.showError(feedbackLabel, "");
                     feedbackLabel.textProperty().bind(language.text("createBooking.overlapping"));
