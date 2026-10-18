@@ -32,7 +32,7 @@
 
     /* JavaFX standardtema (modena) räknar ut sina färger från dessa,
        så kontroller vi inte stylat själva (scrollbars, popups m.m.) blir ljusa. */
-    -fx-base: #E4E9DC;
+    -fx-base: -fx-sidebar-bg;
     -fx-background: #F3F0E8;
     -fx-control-inner-background: #FBF9F4;
     -fx-control-inner-background-alt: #F6F3EC;
