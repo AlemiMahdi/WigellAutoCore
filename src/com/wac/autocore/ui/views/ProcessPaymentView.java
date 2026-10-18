@@ -1,7 +1,6 @@
 package com.wac.autocore.ui.views;
 
 import com.wac.autocore.model.Invoice;
-import com.wac.autocore.repository.IPaymentRepository;
 import com.wac.autocore.service.PaymentService;
 import com.wac.autocore.ui.ShowInvoiceView;
 import com.wac.autocore.ui.UiKit;
@@ -151,6 +150,11 @@ public class ProcessPaymentView {
     }
 
     private void refreshInvoices(ComboBox<Invoice> invoiceBox) {
-        invoiceBox.getItems().setAll(paymentService.findUnpaidInvoices());
+        invoiceBox.getItems().setAll(
+            UiKit.newestFirst(
+                paymentService.findUnpaidInvoices(), 
+                    Invoice::getId
+            )
+        );
     }
 }

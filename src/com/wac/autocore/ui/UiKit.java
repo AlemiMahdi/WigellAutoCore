@@ -19,6 +19,9 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Callback;
+import javafx.collections.FXCollections;
+import java.util.List;
+import java.util.function.ToIntFunction;
 
 /**
  * Små byggklossar som alla innehållsvyer delar.
@@ -43,6 +46,29 @@ public final class UiKit {
     private static final double FORM_MAX_WIDTH = 560;
 
     private UiKit() {
+    }
+
+    /**
+     * Sorterar poster efter ID i fallande ordning.
+     * Högsta ID visas först.
+     *
+     * Skapar en kopia så att originallistan inte ändras.
+     */
+    public static <T> ObservableList<T> newestFirst(
+            List<T> items,
+            ToIntFunction<T> idExtractor
+    ) {
+        ObservableList<T> sorted =
+                FXCollections.observableArrayList(items);
+
+        sorted.sort((first, second) ->
+                Integer.compare(
+                        idExtractor.applyAsInt(second),
+                        idExtractor.applyAsInt(first)
+                )
+        );
+
+        return sorted;
     }
 
     // ------------------------------------------------------------
