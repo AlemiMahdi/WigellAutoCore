@@ -1,7 +1,5 @@
 
 import com.wac.autocore.service.GarageSystem;
-import com.wac.autocore.service.ServiceItemService;
-import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
@@ -59,15 +57,15 @@ public class Main {
                     break;
 
                 case 10:
-                    createWorkOrder();
+//                    createWorkOrder();
                     break;
 
                 case 11:
-                    startWorkOrder();
+//                    startWorkOrder();
                     break;
 
                 case 12:
-                    completeWorkOrder();
+//                    completeWorkOrder();
                     break;
 
                 case 13:
@@ -186,46 +184,46 @@ public class Main {
         );
     }
 
-    private static void createWorkOrder() {
+//    private static void createWorkOrder() {
+//
+//        System.out.println();
+//        System.out.println("=== CREATE WORK ORDER ===");
+//
+//        garageSystem.showBookings();
+//        int bookingId = readInt("Booking ID: ");
+//
+//        garageSystem.showMechanics();
+//        int mechanicId = readInt("Mechanic ID: ");
+//
+////        garageSystem.createWorkOrder(
+////                bookingId,
+////                mechanicId, WorkOrderTypeEnum.PLANNED
+////        );
+//    }
 
-        System.out.println();
-        System.out.println("=== CREATE WORK ORDER ===");
-
-        garageSystem.showBookings();
-        int bookingId = readInt("Booking ID: ");
-
-        garageSystem.showMechanics();
-        int mechanicId = readInt("Mechanic ID: ");
-
-//        garageSystem.createWorkOrder(
-//                bookingId,
-//                mechanicId, WorkOrderTypeEnum.PLANNED
-//        );
-    }
-
-    private static void startWorkOrder() {
-
-        System.out.println();
-        System.out.println("=== START WORK ORDER ===");
-
-        garageSystem.showWorkOrders();
-
-        int workOrderId = readInt("Work order ID: ");
-
-        garageSystem.startWorkOrder(workOrderId);
-    }
-
-    private static void completeWorkOrder() {
-
-        System.out.println();
-        System.out.println("=== COMPLETE WORK ORDER ===");
-
-        garageSystem.showWorkOrders();
-
-        int workOrderId = readInt("Work order ID: ");
-
-        garageSystem.completeWorkOrder(workOrderId);
-    }
+//    private static void startWorkOrder() {
+//
+//        System.out.println();
+//        System.out.println("=== START WORK ORDER ===");
+//
+//        garageSystem.showWorkOrders();
+//
+//        int workOrderId = readInt("Work order ID: ");
+//
+//        garageSystem.startWorkOrder(workOrderId);
+//    }
+//
+//    private static void completeWorkOrder() {
+//
+//        System.out.println();
+//        System.out.println("=== COMPLETE WORK ORDER ===");
+//
+//        garageSystem.showWorkOrders();
+//
+//        int workOrderId = readInt("Work order ID: ");
+//
+//        garageSystem.completeWorkOrder(workOrderId);
+//    }
 
     private static void createInvoice() {
 

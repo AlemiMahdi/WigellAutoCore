@@ -1,13 +1,14 @@
-package com.wac.autocore.workOrderType;
+package com.wac.autocore.service;
 
 import com.wac.autocore.DTO.WorkOrderDto;
-import com.wac.autocore.model.Booking;
-import com.wac.autocore.model.WorkOrderStatus;
-import com.wac.autocore.model.WorkOrder;
 import com.wac.autocore.data.Database;
+import com.wac.autocore.model.Booking;
+import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.model.WorkOrderStatus;
+import com.wac.autocore.model.WorkOrderTypeEnum;
 
 
-public class ComplaintWorkOrder implements WorkOrderTypeInterface{
+public class ComplaintWorkOrder implements WorkOrderTypeInterface {
 
 
     @Override
@@ -34,15 +35,9 @@ public class ComplaintWorkOrder implements WorkOrderTypeInterface{
         Booking booking = Database.getBookings().stream()
                 .filter(b -> b.getId() == original.getBookingId())
                 .findFirst()
-                .orElse(null);
-
-        if (booking == null) {
-            System.out.println("Booking not found: " + original.getBookingId());
-            return null;
-        }
+                .orElseThrow(() -> new IllegalArgumentException("createWorkOrder.bookingNotFound"));
 
         WorkOrder order = new WorkOrder(
-                0,
                 booking.getId(),
                 dto.getMechanicId(),
                 WorkOrderTypeEnum.COMPLAINT
@@ -51,17 +46,6 @@ public class ComplaintWorkOrder implements WorkOrderTypeInterface{
         for (Integer serviceId : original.getServiceItemIds()) {
             order.addServiceItem(serviceId);
         }
-
         return order;
-    }
-
-    @Override
-    public void startWorkOrder(int workOrderId) {
-
-    }
-
-    @Override
-    public void completeWorkOrder(int workOrderId) {
-
     }
 }

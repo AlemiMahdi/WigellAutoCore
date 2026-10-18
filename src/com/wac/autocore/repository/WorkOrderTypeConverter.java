@@ -1,4 +1,6 @@
-package com.wac.autocore.workOrderType;
+package com.wac.autocore.repository;
+
+import com.wac.autocore.model.WorkOrderTypeEnum;
 
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;

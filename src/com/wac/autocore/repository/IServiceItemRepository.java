@@ -7,4 +7,5 @@ import java.util.List;
 public interface IServiceItemRepository {
     void save(ServiceItem serviceItem);
     List<ServiceItem> findAll();
+    ServiceItem findById(int id);
 }
