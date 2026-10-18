@@ -2,12 +2,11 @@ package com.wac.autocore.ui.views;
 
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
-import com.wac.autocore.repository.BookingRepository;
-import com.wac.autocore.repository.WorkOrderRepository;
 import com.wac.autocore.service.GarageSystem;
 import com.wac.autocore.ui.AutoCoreApp;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
+import com.wac.autocore.service.BookingService;
 
 import javafx.collections.FXCollections;
 import javafx.geometry.Pos;
@@ -39,16 +38,21 @@ import java.util.List;
 public class CreateBookingView {
 
     private final LanguageManager language = LanguageManager.getInstance();
-    private final GarageSystem garageSystem = new GarageSystem();
+    private  final BookingService bookingService;
 
     private final Booking sourceBooking;
 
     // tomt formulär
-    public CreateBookingView() {
-        this(null);
-    }
-    // tidigare bokning som underlag
-    public CreateBookingView(Booking sourceBooking) {
+    public CreateBookingView(BookingService bookingService) {
+    this(bookingService, null);
+}
+
+    // Tidigare bokning som underlag
+    public CreateBookingView(
+            BookingService bookingService,
+            Booking sourceBooking
+    ) {
+        this.bookingService = bookingService;
         this.sourceBooking = sourceBooking;
     }
 
@@ -200,10 +204,6 @@ public class CreateBookingView {
         createButton.textProperty().bind(language.text("createBooking.button"));
 
         createButton.setOnAction(event -> {
-            AutoCoreApp app = AutoCoreApp.getInstance();
-            GarageSystem garageSystem = app.getGarageSystem();
-            WorkOrderRepository workOrderRepository = app.getWorkOrderRepository();
-            BookingRepository bookingRepository = app.getBookingRepository();
 
             Vehicle vehicle = vehicleCombo.getValue();
             if (vehicle == null) {
@@ -254,53 +254,40 @@ public class CreateBookingView {
                 return;
             }
 
-            boolean overlapping = bookingRepository.hasOverlappingBooking(
-                    mechanic.getId(), date, startTime, durationMinutes
-            );
-            if (overlapping) {
-                UiKit.showError(messageLabel, language.text("createBooking.overlapping").get());
-                return;
-            }
-
-            String description = descriptionField.getText();
-
-            // GarageSystem skapar bokningen och lägger den i Database-listan
-            Booking booking = garageSystem.createBooking(vehicleId, date, description);
-
-            if (booking == null) {
-                UiKit.showError(messageLabel, language.text("createBooking.createError").get());
-                return;
-            }
-
-            booking.setServices(new ArrayList<>(selectedServices));
-            booking.setStartTime(startTime);
-            booking.setDurationMinutes(durationMinutes);
-
-            booking.setFrozenPrice(new ArrayList<>());
-
-            for (ServiceItem service : selectedServices) {
-                booking.addFrozenPrice(
-                    new InvoiceLine(
-                        service.getId(),
-                        service.getName(),
-                        service.getPrice()
-                    )
-                );
-            }
-
             try {
-                // Sparar bokningen i MySQL innan vi visar en bekräftelse.
-                bookingRepository.save(booking, mechanic.getId());
-            } catch (RuntimeException exception) {
-                // Tar bort bokningen ur minnet om databassparandet misslyckades.
-                Database.getBookings().remove(booking);
+                bookingService.createBooking(
+                    vehicleId, 
+                    date, 
+                    startTime, 
+                    durationMinutes, 
+                    descriptionField.getText(), 
+                    new ArrayList<>(selectedServices), 
+                    mechanic.getId()
+                );
 
-                UiKit.showError(messageLabel, language.text("createBooking.saveError").get());
-                exception.printStackTrace();
-                return;
-            }
+                UiKit.showSuccess(messageLabel, language.text("createBooking.success").get()
+            );
 
-            UiKit.showSuccess(messageLabel, language.text("createBooking.success").get());
+            } catch (IllegalArgumentException exception) {
+
+            // Visa det specifika valideringsfelet från BookingService.
+            UiKit.showError(
+                messageLabel,
+                language.text(exception.getMessage()).get()
+            );
+            return;
+
+        } catch (RuntimeException exception) {
+
+            // Visa ett generellt felmeddelande om databaslagringen misslyckas.
+            UiKit.showError(
+                messageLabel,
+                language.text("createBooking.saveError").get()
+            );
+
+            exception.printStackTrace();
+            return;
+        }
 
             // Tömmer formuläret så att nästa bokning kan skrivas in direkt
             vehicleCombo.getSelectionModel().clearSelection();

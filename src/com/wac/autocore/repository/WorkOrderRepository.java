@@ -52,6 +52,7 @@ public class WorkOrderRepository {
 
             try {
                 session.save(booking);
+                workOrder.setBookingId(booking.getId());
                 session.save(workOrder);
 
                 transaction.commit();
@@ -373,6 +374,7 @@ public class WorkOrderRepository {
 
             // 1. Spara bokningen först så att MySQL genererar dess data och fordonet länkas
             session.save(booking);
+            workOrder.setBookingId(booking.getId());
             session.save(workOrder);
 
             tx.commit();
