@@ -668,13 +668,11 @@ public class AutoCoreApp extends Application {
         addNavSection(menuBox, "menu.section.invoicesPayments",
                 createNavItem("show-invoices", "menu.invoices", () -> showView(ShowInvoiceView.build(invoiceService))),
                 createNavItem("create-invoice", "menu.createInvoice", () -> showView(CreateInvoiceView.build(invoiceService))),
-                createNavItem("show-payments", "menu.payments", () -> showView(new ShowPaymentsView().getView())),
-                createNavItem("process-payment", "menu.processPayment", () -> showView(new ProcessPaymentView().getView())));
-                createNavItem("show-invoices", "menu.invoices", () -> showView(ShowInvoiceView.build())),
-                createNavItem("create-invoice", "menu.createInvoice", () -> showView(CreateInvoiceView.build())),
-                createNavItem("show-payments", "menu.payments", () -> showView(new ShowPaymentsView(new PaymentService(paymentRepository)).getView())),
-                createNavItem("process-payment", "menu.processPayment", () -> showView(new ProcessPaymentView(new PaymentService(paymentRepository)).getView())));
-
+                createNavItem("show-payments", "menu.payments", () -> showView(new ShowPaymentsView(
+                                        new PaymentService(paymentRepository)).getView())),
+                createNavItem("process-payment", "menu.processPayment", () -> showView(new ProcessPaymentView(
+                                        new PaymentService(paymentRepository)).getView()))
+        );
         // Tunn linje och sedan Exit längst ned, i rött
         Region divider = new Region();
         divider.getStyleClass().add("nav-divider");
