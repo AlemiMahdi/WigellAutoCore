@@ -7,6 +7,7 @@ import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.model.Vehicle;
 import com.wac.autocore.model.WorkOrder;
 import com.wac.autocore.model.WorkOrderStatus;
+import com.wac.autocore.service.ServiceItemService;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 import com.wac.autocore.service.GarageSystem;
@@ -27,6 +28,11 @@ import javafx.scene.control.Button;
 public class ShowWorkOrdersView {
 
     private final LanguageManager language = LanguageManager.getInstance();
+    private final ServiceItemService serviceItemService;
+
+    public ShowWorkOrdersView(ServiceItemService serviceItemService) {
+        this.serviceItemService = serviceItemService;
+    }
 
     public VBox getView() {
 
@@ -142,7 +148,7 @@ public class ShowWorkOrdersView {
                 );
 
                 VBox editView =
-                        new EditWorkOrderDraftView().getView(workOrder);
+                        new EditWorkOrderDraftView(this.serviceItemService).getView(workOrder);
 
                 root.getChildren().setAll(backButton, editView);
             });

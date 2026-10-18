@@ -6,6 +6,7 @@ import com.wac.autocore.model.Customer;
 import com.wac.autocore.DTO.WorkOrderDto;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
+import com.wac.autocore.service.BookingService;
 import com.wac.autocore.model.Mechanic;
 import com.wac.autocore.model.Vehicle;
 import com.wac.autocore.model.WorkOrder;
@@ -36,9 +37,11 @@ public class CreateWorkOrderView  extends VBox {
 
     private final LanguageManager language = LanguageManager.getInstance();
     private final ObservableList<ServiceItem> selectedServices = FXCollections.observableArrayList();
+    private final BookingService bookingService;
 
+    public CreateWorkOrderView( BookingService bookingService) {
+        this.bookingService = bookingService;
 
-    public CreateWorkOrderView() {
         // Centrerar formulärkolumnen i innehållsytan
         setAlignment(Pos.TOP_CENTER);
 
@@ -389,7 +392,7 @@ public class CreateWorkOrderView  extends VBox {
                     return;
                 }
 // Validering för krockande/överlappande bokningar
-                boolean overlapping = bookingRepository.hasOverlappingBooking(mechanic.getId(), date, startTime, durationMinutes);
+                boolean overlapping = bookingService.hasOverlappingBooking(mechanic.getId(), date, startTime, durationMinutes);
                 if (overlapping) {
                     UiKit.showError(feedbackLabel, language.text("createBooking.overlapping").get());
                     return;
@@ -445,19 +448,12 @@ public class CreateWorkOrderView  extends VBox {
             }
 
             try {
-// Reklamationen får en egen bokning.
+                // Reklamationen får en egen bokning.
                 if (selectedType == WorkOrderTypeEnum.COMPLAINT) {
-                    int newBookingId = Database.getBookings().stream()
-                            .mapToInt(Booking::getId)
-                            .max()
-                            .orElse(0) + 1;
+                    Booking complaintBooking = new Booking();
 
-                    Booking complaintBooking = new Booking(
-                            newBookingId,
-                            booking.getVehicleId(),
-                            null,
-                            booking.getDescription()
-                    );
+                    complaintBooking.setVehicleId(booking.getVehicleId());
+                    complaintBooking.setDescription(booking.getDescription());
 
                     complaintBooking.setStatus("WORK_ORDER_CREATED");
                     complaintBooking.setMechanicId(mechanic.getId());
@@ -485,8 +481,6 @@ public class CreateWorkOrderView  extends VBox {
 
                     complaintBooking.setServices(complaintServices);
                     complaintBooking.setDurationMinutes(totalMinutes);
-
-                    workOrder.setBookingId(newBookingId);
 
                     workOrderRepository.saveWithBooking(workOrder, complaintBooking);
 

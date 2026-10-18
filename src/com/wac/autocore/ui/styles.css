@@ -27,8 +27,10 @@
     -fx-text-secondary: #5E6A58;
     -fx-success: #4E7A3E;
     -fx-warning: #7A6120;                     /* mörk ockra, går att läsa på ljust */
-    -fx-danger: #A34E36;
     -fx-scrollbar-thumb: #819774;                      /* terrakotta */
+    -fx-danger: #A34E36;                      /* terrakotta */
+    -fx-zebra-stripes: #e3e0d8;                 /*Liten mörkare ton än Linne */
+
 
     /* JavaFX standardtema (modena) räknar ut sina färger från dessa,
        så kontroller vi inte stylat själva (scrollbars, popups m.m.) blir ljusa. */
@@ -482,6 +484,16 @@
 .list-cell:filled:selected {
     -fx-background-color: -fx-accent-soft;
     -fx-text-fill: -fx-accent-text;
+}
+
+.table-row-cell:even .table-cell {
+    -fx-background-color: -fx-border, derive(-fx-zebra-stripes, -3%);
+}
+
+.table-row-cell:hover .table-cell,
+.table-row-cell:selected .table-cell,
+.table-row-cell:empty .table-cell {
+    -fx-background-color: transparent !important;
 }
 
 /* ================= Kort (Dashboard) ================= */
@@ -1375,4 +1387,49 @@
 
 .primary-button.icon-button .edit-pencil {
     -fx-fill: -fx-text-fill;
+}
+
+/* Diskreta åtgärder i bokningstabellen */
+.button.booking-description-button,
+.button.booking-edit-button {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-text-fill: #4F7044;
+    -fx-font-size: 12px;
+    -fx-padding: 4 8;
+    -fx-min-height: 26;
+    -fx-pref-height: 26;
+    -fx-max-height: 26;
+    -fx-cursor: hand;
+}
+
+.button.booking-description-button {
+    -fx-border-color: transparent;
+}
+
+.button.booking-description-button:hover {
+    -fx-underline: true;
+}
+
+.button.booking-edit-button {
+    -fx-background-color: #4F7044;
+    -fx-text-fill: white;
+    -fx-border-color: #4F7044;
+    -fx-border-width: 1;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+}
+
+.button.booking-edit-button:hover {
+    -fx-background-color: #405C37;
+}
+
+.button.booking-edit-button .edit-pencil {
+    -fx-fill: white;
+}
+
+.button.booking-description-button:focused,
+.button.booking-edit-button:focused {
+    -fx-border-color: #4F7044;
+    -fx-border-radius: 5;
 }

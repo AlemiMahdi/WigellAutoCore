@@ -3,6 +3,7 @@ package com.wac.autocore.ui.views;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Invoice;
 import com.wac.autocore.model.Payment;
+import com.wac.autocore.service.PaymentService;
 import com.wac.autocore.ui.ShowInvoiceView;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
@@ -19,6 +20,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 
 public class ShowPaymentsView {
+    private final PaymentService paymentService;
+    public ShowPaymentsView(PaymentService paymentService) {
+        this.paymentService = paymentService;
+    }
 
     // Datum och klockslag utan sekunder, t.ex. "2026-09-18 14:02"
     private static final DateTimeFormatter DATE_TIME_FORMAT =
@@ -32,8 +37,6 @@ public class ShowPaymentsView {
         Label emptyLabel = UiKit.emptyText("");
         emptyLabel.textProperty().bind(language.text("payments.empty"));
         table.setPlaceholder(emptyLabel);
-
-
 
         // Invoice – visas som "WO-1 invoice" så man ser vilken arbetsorder det gäller
         TableColumn<Payment, String> invoiceColumn =
@@ -63,7 +66,7 @@ public class ShowPaymentsView {
 
         paymentTypeColumn.setCellValueFactory(cellData ->
                 new SimpleStringProperty(
-                        ProcessPaymentView.formatPaymentType(cellData.getValue().getPaymentType())
+                        ViewHelpMethod.formatPaymentType(cellData.getValue().getPaymentType())
                 )
         );
         paymentTypeColumn.getStyleClass().add("cell-muted");
@@ -114,7 +117,7 @@ public class ShowPaymentsView {
         // Kopia av listan, vänd så att senaste betalningen hamnar överst
         ObservableList<Payment> payments =
                 FXCollections.observableArrayList(
-                        Database.getPayments()
+                        paymentService.findAll()
                 );
         Collections.reverse(payments);
 

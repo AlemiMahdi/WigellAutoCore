@@ -1,15 +1,13 @@
 package com.wac.autocore.model;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 @Entity
 @Table(name = "service_items")
 public class ServiceItem {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
     @Column(name = "name")
@@ -28,9 +26,8 @@ public class ServiceItem {
     public ServiceItem() {
     }
 
-    public ServiceItem(int id, String name, String description,
+    public ServiceItem(String name, String description,
                        double price, int estimatedMinutes) {
-        this.id = id;
         this.name = name;
         this.description = description;
         this.price = price;
@@ -40,7 +37,7 @@ public class ServiceItem {
     public int getId() {
         return id;
     }
-
+    //Använd inte setId
     public void setId(int id) {
         this.id = id;
     }

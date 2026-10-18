@@ -8,16 +8,17 @@ import org.hibernate.Transaction;
 import java.util.List;
 
 // Hanterar lagring och hämtning av kunder i databasen.
-public class CustomerRepository {
+public class CustomerRepository implements ICustomerRepository{
 
+    @Override
     public void save(Customer customer) {
         try (Session session =
-                     HibernateUtil.getSessionFactory().openSession()) {
+                    HibernateUtil.getSessionFactory().openSession()) {
 
             Transaction transaction = session.beginTransaction();
 
             try {
-                session.saveOrUpdate(customer);
+                session.save(customer);
                 transaction.commit();
 
             } catch (RuntimeException exception) {
@@ -31,9 +32,10 @@ public class CustomerRepository {
         }
     }
 
+    @Override
     public List<Customer> findAll() {
         try (Session session =
-                     HibernateUtil.getSessionFactory().openSession()) {
+                    HibernateUtil.getSessionFactory().openSession()) {
 
             Transaction transaction = session.beginTransaction();
 
@@ -56,9 +58,5 @@ public class CustomerRepository {
                 throw exception;
             }
         }
-    }
-
-    public List<Customer> findAllCustomers() {
-        return findAll();
     }
 }
