@@ -405,6 +405,26 @@ public class GarageSystem {
     }
 
     public Invoice createInvoice(
+            int workOrderId,
+            String discountCode,
+            String extraDescription,
+            double extraCost) {
+
+        Invoice invoice = prepareInvoice(
+                workOrderId,
+                discountCode,
+                extraDescription,
+                extraCost
+        );
+
+        if (invoice != null) {
+            Database.getInvoices().add(invoice);
+        }
+
+        return invoice;
+    }
+
+    public Invoice prepareInvoice(
             int workOrderId, 
             String discountCode,
             String extraDescription,
@@ -533,14 +553,6 @@ public class GarageSystem {
 
         invoice.setDiscount(discount);
         invoice.distributeDiscountToLines();
-
-        Database.getInvoices().add(invoice);
-
-        System.out.println("Invoice created successfully.");
-        System.out.println(invoice);
-
-        System.out.println("Sending invoice notification to customer...");
-        System.out.println("Notification sent.");
 
         return invoice;
     }

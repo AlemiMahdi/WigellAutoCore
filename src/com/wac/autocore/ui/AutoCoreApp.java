@@ -14,6 +14,10 @@ import com.wac.autocore.ui.views.ProcessPaymentView;
 import com.wac.autocore.ui.views.ShowBookingsView;
 import com.wac.autocore.ui.views.ShowPaymentsView;
 import com.wac.autocore.ui.views.ShowWorkOrdersView;
+import com.wac.autocore.repository.IMechanicRepository;
+import com.wac.autocore.repository.IInvoiceRepository;
+import com.wac.autocore.service.InvoiceService;
+import com.wac.autocore.service.MechanicService;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -37,6 +41,7 @@ import javafx.stage.Stage;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
+
 import java.util.HashMap;
 
 import com.wac.autocore.ui.views.MechanicScheduleView;
@@ -58,6 +63,8 @@ public class AutoCoreApp extends Application {
     private final WorkOrderRepository workOrderRepository;
     private final BookingRepository bookingRepository;
     private final VehicleRepository vehicleRepository;
+    private final InvoiceService invoiceService;
+    private final MechanicService mechanicService;
     private final IPaymentRepository paymentRepository;
     private final IServiceItemRepository serviceRepository;
     private final VehicleService vehicleService;
@@ -70,6 +77,8 @@ public class AutoCoreApp extends Application {
         this.garageSystem = new GarageSystem();
         this.workOrderRepository = new WorkOrderRepository();
         this.bookingRepository = new BookingRepository();
+        this.invoiceService = new InvoiceService(new InvoiceRepository(), garageSystem);
+        this.mechanicService = new MechanicService(new MechanicRepository(), bookingRepository::findAll);
         this.vehicleRepository = new VehicleRepository();
         this.vehicleService = new VehicleService(vehicleRepository);
         this.servicePackageService = new ServicePackageService(new ServicePackageRepository());
@@ -77,6 +86,7 @@ public class AutoCoreApp extends Application {
         this.serviceRepository = new ServiceItemRepository();
         this.customerService = new CustomerService(new CustomerRepository());
         this.bookingService = new BookingService(bookingRepository);
+
 
         // Sätt instansen i samma sekund som JavaFX startar appen
         synchronized (AutoCoreApp.class) {
@@ -324,17 +334,13 @@ public class AutoCoreApp extends Application {
     }
     private void loadMechanics() {
 
-        MechanicRepository repository =
-                new MechanicRepository();
-
         List<Mechanic> savedMechanics =
-                repository.findAllMechanics();
-
+                mechanicService.findAll();
         if (savedMechanics.isEmpty()) {
 
             // Första starten: sparar originalets exempeldata.
             for (Mechanic mechanic : Database.getMechanics()) {
-                repository.save(mechanic);
+                mechanicService.save(mechanic);
             }
 
             return;
@@ -358,17 +364,14 @@ public class AutoCoreApp extends Application {
 
     private void loadInvoices() {
 
-        InvoiceRepository repository =
-                new InvoiceRepository();
-
         List<Invoice> savedInvoices =
-                repository.findAllInvoices();
+                invoiceService.findAll();
 
         if (savedInvoices.isEmpty()) {
 
             // Sparar eventuell befintlig data första gången.
             for (Invoice invoice : Database.getInvoices()) {
-                repository.save(invoice);
+                invoiceService.save(invoice);
             }
 
             return;
@@ -651,18 +654,22 @@ public class AutoCoreApp extends Application {
                 createNavItem("create-work-order", "menu.createWorkOrder", () -> showView(new CreateWorkOrderView(bookingService))),
                 createNavItem("create-draft-work-order", "menu.createDraftWorkOrder",
                         () -> showView(new CreateDraftWorkOrderView().getView())),
-                createNavItem("start-work-order", "menu.startWorkOrder", () -> showView(new StartWorkOrderView())),
-                createNavItem("complete-work-order", "menu.completeWorkOrder", () -> showView(CompleteWorkOrderView.build())));
+                createNavItem("start-work-order", "menu.startWorkOrder", () -> showView(new StartWorkOrderView(mechanicService))),
+                createNavItem("complete-work-order", "menu.completeWorkOrder", () -> showView(CompleteWorkOrderView.build(mechanicService))));
 
         addNavSection(menuBox, "menu.section.servicesMechanics",
                 createNavItem("show-services", "menu.services", () -> showView(new ServiceView(new ServiceItemService(serviceRepository)))),
                 createNavItem("create-service-package", "menu.createServicePackage",
                         () -> showView(new CreateServicePackageView(servicePackageService).getView())),
                 createNavItem("manage-service-package", "menu.manageServicePackage", () -> showView(new ManageServicePackageView(servicePackageService).getView())),
-                createNavItem("show-mechanics", "menu.mechanics", () -> showView(new MechanicView())),
-                createNavItem("mechanic-schedule", "menu.schedule", () -> showView(new MechanicScheduleView().getView())));
+                createNavItem("show-mechanics", "menu.mechanics", () -> showView(new MechanicView(mechanicService))),
+                createNavItem("mechanic-schedule", "menu.schedule", () -> showView(new MechanicScheduleView(mechanicService).getView())));
 
         addNavSection(menuBox, "menu.section.invoicesPayments",
+                createNavItem("show-invoices", "menu.invoices", () -> showView(ShowInvoiceView.build(invoiceService))),
+                createNavItem("create-invoice", "menu.createInvoice", () -> showView(CreateInvoiceView.build(invoiceService))),
+                createNavItem("show-payments", "menu.payments", () -> showView(new ShowPaymentsView().getView())),
+                createNavItem("process-payment", "menu.processPayment", () -> showView(new ProcessPaymentView().getView())));
                 createNavItem("show-invoices", "menu.invoices", () -> showView(ShowInvoiceView.build())),
                 createNavItem("create-invoice", "menu.createInvoice", () -> showView(CreateInvoiceView.build())),
                 createNavItem("show-payments", "menu.payments", () -> showView(new ShowPaymentsView(new PaymentService(paymentRepository)).getView())),
@@ -800,6 +807,8 @@ public class AutoCoreApp extends Application {
     public BookingRepository getBookingRepository() {
         return bookingRepository;
     }
+
+
 
     public static void main(String[] args) {launch(args);
     }
