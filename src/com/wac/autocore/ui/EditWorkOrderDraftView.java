@@ -80,7 +80,10 @@ public class EditWorkOrderDraftView {
                 language.text("createWorkOrder.selectOriginalWorkOrder")
         );
 
-        for (WorkOrder order : Database.getWorkOrders()) {
+        for (WorkOrder order : UiKit.newestFirst(
+            Database.getWorkOrders(), 
+            WorkOrder::getId
+        )) {
             if (order.getId() != draft.getId()
                     && order.getStatus() == WorkOrderStatus.COMPLETED) {
                 originalCombo.getItems().add(order);

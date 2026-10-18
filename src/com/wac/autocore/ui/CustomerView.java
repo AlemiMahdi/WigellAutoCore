@@ -27,7 +27,12 @@ public class CustomerView extends VBox {
         TableView<Customer> table = createCustomerTable();
 
         // Hämtar kundlistan när vyn skapas
-        table.setItems(FXCollections.observableArrayList(Database.getCustomers()));
+        table.setItems(
+                UiKit.newestFirst(
+                        Database.getCustomers(), 
+                        Customer::getId
+                )
+        );
 
         getChildren().addAll(UiKit.pageHeader(language.text("customers.title"), newCustomerButton), table);
     }

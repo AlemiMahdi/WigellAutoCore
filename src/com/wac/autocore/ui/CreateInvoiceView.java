@@ -291,7 +291,10 @@ public class CreateInvoiceView {
     }
 
     private static void loadCompletedWorkOrders(ComboBox<WorkOrder> workOrderBox) {
-        for (WorkOrder workOrder : Database.getWorkOrders()) {
+        for (WorkOrder workOrder : UiKit.newestFirst(
+            Database.getWorkOrders(),
+            WorkOrder::getId
+        )) {
 
             boolean alreadyInvoiced = Database.getInvoices()
                     .stream()

@@ -64,7 +64,9 @@ public class CompleteWorkOrderView {
     private void reloadCards() {
         cardList.getChildren().clear();
 
-        for (WorkOrder order : Database.getWorkOrders()) {
+        for (WorkOrder order : UiKit.newestFirst(
+            Database.getWorkOrders(), 
+            WorkOrder::getId)) {
             if (order.getStatus().canChangeTo(WorkOrderStatus.COMPLETED)) {
                 Button completeButton = UiKit.successButton("Complete work order");
                 completeButton.textProperty().bind(language.text("completeWorkOrder.button"));

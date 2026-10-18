@@ -254,8 +254,9 @@ public class ShowBookingsView {
         );
 
         ObservableList<Booking> bookings =
-                FXCollections.observableArrayList(
-                        Database.getBookings()
+                UiKit.newestFirst(
+                        Database.getBookings(),
+                        Booking::getId
                 );
 
         table.setItems(bookings);
