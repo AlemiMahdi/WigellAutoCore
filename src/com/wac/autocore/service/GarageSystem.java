@@ -217,17 +217,15 @@ public class GarageSystem {
             throw new IllegalArgumentException("createDraft.descriptionMissing");
         }
 
-        //2. Skapa utkastet (kastar fel om typ saknas)
-        int bookingId = Database.getBookings().size() + 1;
         int workOrderId = Database.getWorkOrders().size() + 1;
-        WorkOrder draft = WorkOrder.createDraft(workOrderId, bookingId, type);
+        WorkOrder draft = WorkOrder.createDraft(workOrderId, 0, type);
 
         if (type == WorkOrderTypeEnum.COMPLAINT && originalWorkOrderId != null) {
             draft.setOriginalWorkOrderId(originalWorkOrderId);
         }
 
         //3. Skapa den automatiska bokingen
-        Booking booking = new Booking(bookingId, vehicleId, null, description.trim());
+        Booking booking = new Booking(0, vehicleId, null, description.trim());
         booking.setStatus("WORK_ORDER_CREATED");
 
         //4. Lägg till båda i listorna

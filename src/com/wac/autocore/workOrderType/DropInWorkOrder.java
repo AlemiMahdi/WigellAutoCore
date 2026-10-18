@@ -23,12 +23,9 @@ public class DropInWorkOrder implements WorkOrderTypeInterface{
             throw new IllegalArgumentException("Vehicle with ID " + workOrderDto.getVehicleId() + " does not exist.");
         }
 
-        int nextBookingId =Database.getBookings().stream()
-                .mapToInt(Booking::getId).max()
-                .orElse(0) +1;
-
+        //MySQL genererar bokningens ID när den sparas
         Booking automaticBooking = new Booking();
-        automaticBooking.setId(nextBookingId);
+
         automaticBooking.setVehicleId(workOrderDto.getVehicleId());
         automaticBooking.setDescription(workOrderDto.getDescription() != null ? workOrderDto.getDescription() : "Drop-in order");
         automaticBooking.setStatus("WORK_ORDER_CREATED");

@@ -129,6 +129,7 @@ public class CreateDraftWorkOrderView {
             }
 
             //GarageSystem kontrollerar reglerna och skapar utkast + boking i minnet
+            int bookingsBefore = Database.getBookings().size();
             WorkOrder draft;
             try {
                 draft = garageSystem.createDraftWorkOrder(
@@ -139,8 +140,9 @@ public class CreateDraftWorkOrderView {
                 return;
             }
 
-            //Spara bokning och utkast i MySQL i samma transaktion
-            Booking booking = findBooking(draft.getBookingId());
+            //GarageSystem lägger till exakt en ny bokning i listan
+            //Hämta den utan att beyöva känna till dess databas-ID
+            Booking booking = Database.getBookings().get(bookingsBefore);
             try {
                 workOrderRepository.saveWithBooking(draft, booking);
               if(!Database.getWorkOrders().contains(draft)) {
