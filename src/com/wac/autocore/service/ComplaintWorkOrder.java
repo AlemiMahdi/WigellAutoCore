@@ -1,16 +1,18 @@
 package com.wac.autocore.service;
 
 import com.wac.autocore.DTO.WorkOrderDto;
-import com.wac.autocore.model.*;
 import com.wac.autocore.data.Database;
-import com.wac.autocore.ui.language.LanguageManager;
+import com.wac.autocore.model.Booking;
+import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.model.WorkOrderStatus;
+import com.wac.autocore.model.WorkOrderTypeEnum;
 
 
 public class ComplaintWorkOrder implements WorkOrderTypeInterface {
 
 
     @Override
-    public WorkOrder createWorkOrder(WorkOrderDto dto, LanguageManager language) {
+    public WorkOrder createWorkOrder(WorkOrderDto dto) {
 
         Integer originalId = dto.getOriginalWorkOrderId();
 

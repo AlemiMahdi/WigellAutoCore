@@ -6,7 +6,6 @@ import com.wac.autocore.model.*;
 import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.repository.IServiceItemRepository;
 import com.wac.autocore.repository.IWorkOrderRepository;
-import com.wac.autocore.ui.language.LanguageManager;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -28,9 +27,8 @@ public class WorkOrderService {
         this.serviceItemRepository = serviceItemRepository;
     }
 
-    public WorkOrder createAndSaveWorkOrder(WorkOrderTypeEnum selectedType, WorkOrderDto dto, Booking originalBooking,
-                                            Mechanic mechanic, LanguageManager language) {
-        WorkOrder workOrder = typeManager.createWorkOrderType(selectedType, dto, language);
+    public WorkOrder createAndSaveWorkOrder(WorkOrderTypeEnum selectedType, WorkOrderDto dto, Booking originalBooking) {
+        WorkOrder workOrder = typeManager.createWorkOrderType(selectedType, dto);
 
         if (workOrder == null) {
             throw new IllegalStateException("createWorkOrder.createError");
@@ -270,7 +268,8 @@ public class WorkOrderService {
             throw new IllegalArgumentException("createDraft.descriptionMissing");
         }
 
-        // 2. Bygg helt nya objekt (Sätt ID till 0 för AUTO_INCREMENT)
+        // 2. Skapa utkastet (id 0 = MySQL ger id) och bokningen (id räknas fram)
+        // TODO WAC-89: när Booking får AUTO_INCREMENT → new Booking(0, ...) och sätt bookingId i saveWithBooking
         int bookingId = Database.getBookings().size() + 1;
         WorkOrder draft = WorkOrder.createDraft(0, bookingId, type);
         if (type == WorkOrderTypeEnum.COMPLAINT && originalWorkOrderId != null) {

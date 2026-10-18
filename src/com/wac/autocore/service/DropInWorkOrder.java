@@ -3,7 +3,6 @@ package com.wac.autocore.service;
 import com.wac.autocore.DTO.WorkOrderDto;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
-import com.wac.autocore.ui.language.LanguageManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +10,7 @@ import java.util.List;
 public class DropInWorkOrder implements WorkOrderTypeInterface {
 
     @Override
-    public WorkOrder createWorkOrder(WorkOrderDto workOrderDto, LanguageManager language) {
+    public WorkOrder createWorkOrder(WorkOrderDto workOrderDto) {
         if (workOrderDto == null || workOrderDto.getVehicleId() == null) {
             throw new IllegalArgumentException("createWorkOrder.vehicleNotFound");
         }

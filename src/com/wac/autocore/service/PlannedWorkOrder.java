@@ -6,12 +6,11 @@ import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.model.WorkOrder;
 import com.wac.autocore.model.WorkOrderTypeEnum;
-import com.wac.autocore.ui.language.LanguageManager;
 
 public class PlannedWorkOrder implements WorkOrderTypeInterface {
 
     @Override
-    public WorkOrder createWorkOrder(WorkOrderDto dto, LanguageManager language) {
+    public WorkOrder createWorkOrder(WorkOrderDto dto) {
 
         Booking booking = Database.getBookings().stream()
                 .filter(b -> b.getId() == dto.getBookingId())

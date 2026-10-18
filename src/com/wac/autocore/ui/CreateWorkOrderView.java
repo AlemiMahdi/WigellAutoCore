@@ -310,6 +310,7 @@ public class CreateWorkOrderView  extends VBox {
             boolean isPLANNED = (newValue == WorkOrderTypeEnum.PLANNED);
             boolean isCOMPLAINT =  (newValue == WorkOrderTypeEnum.COMPLAINT);
             // Rensa felmeddelande vid byte av typ
+            feedbackLabel.textProperty().unbind();
             feedbackLabel.setText("");
 
             vehicleField.setVisible(isDropIn);
@@ -452,7 +453,7 @@ public class CreateWorkOrderView  extends VBox {
 
         // Skicka DTO till den generella metoden i servicen
             try {
-                workOrderService.createAndSaveWorkOrder(selectedType, dto, originalBooking, mechanic, language);
+                workOrderService.createAndSaveWorkOrder(selectedType, dto, originalBooking);
 
                 UiKit.showSuccess(feedbackLabel, "");
                 feedbackLabel.textProperty().bind(language.text("createWorkOrder.success"));
@@ -461,6 +462,7 @@ public class CreateWorkOrderView  extends VBox {
                 String errorKey = "createWorkOrder.saveError".equals(exception.getMessage()) ? "createWorkOrder.saveError" : "createWorkOrder.createError";
                 UiKit.showError(feedbackLabel, language.text(errorKey).get());
                 exception.printStackTrace();
+                return;
             }
 
             //tömmer valen efter registreringen har lyckats.
@@ -477,8 +479,8 @@ public class CreateWorkOrderView  extends VBox {
             startTimeField.clear();
             selectedServices.clear();
 
-            UiKit.showSuccess(feedbackLabel, "");
-            feedbackLabel.textProperty().bind(language.text("createWorkOrder.success"));
+//            UiKit.showSuccess(feedbackLabel, "");
+//            feedbackLabel.textProperty().bind(language.text("createWorkOrder.success"));
         });
 
         getChildren().add(UiKit.formContainer(
