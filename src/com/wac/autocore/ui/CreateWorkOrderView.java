@@ -451,9 +451,6 @@ public class CreateWorkOrderView  extends VBox {
             try {
                 workOrderService.createAndSaveWorkOrder(selectedType, dto, originalBooking);
 
-//                UiKit.showSuccess(feedbackLabel, "");
-//                feedbackLabel.textProperty().bind(language.text("createWorkOrder.success"));
-
             } catch (RuntimeException exception) {
                 String errorKey = "createWorkOrder.saveError".equals(exception.getMessage()) ? "createWorkOrder.saveError" : "createWorkOrder.createError";
                 UiKit.showError(feedbackLabel, language.text(errorKey).get());

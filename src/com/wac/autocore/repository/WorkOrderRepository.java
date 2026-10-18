@@ -2,20 +2,14 @@ package com.wac.autocore.repository;
 
 import com.wac.autocore.data.HibernateUtil;
 import com.wac.autocore.model.*;
-import com.wac.autocore.model.WorkOrderTypeEnum;
-
+import org.hibernate.LockMode;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 
-import java.util.List;
-
-import org.hibernate.LockMode;
-
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
+import java.util.List;
 
 public class WorkOrderRepository implements IWorkOrderRepository {
 
@@ -102,10 +96,6 @@ public class WorkOrderRepository implements IWorkOrderRepository {
             }
         }
     }
-//      Dubblett av findAll().
-//    public List<WorkOrder> findAllWorkOrders() {
-//        return findAll();
-//    }
 
     public List<String> confirmDraft(int workOrderId) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
