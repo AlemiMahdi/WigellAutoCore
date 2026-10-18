@@ -130,7 +130,7 @@ public class CreateDraftWorkOrderView {
                 }
                 originalId = originalOrder.getId();
             }
-            // WorkOrderSErvice kontrollerar reglerna, sparar i MySQL och lägger i minnet.
+            // WorkOrderService kontrollerar reglerna, sparar i MySQL och lägger i minnet.
             try {
                 workOrderService.createNewDraftWorkOrder(
                         vehicle.getId(), descriptionField.getText(), type, originalId);

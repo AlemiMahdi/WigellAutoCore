@@ -15,7 +15,7 @@ public interface IWorkOrderRepository {
     void saveWithBooking(WorkOrder workOrder, Booking booking);
     WorkOrder findWorkOrder(int id);
     List<WorkOrder> findAll();
-//    List<WorkOrder> findAllWorkOrders(); // dubblet av findAll()
+//    List<WorkOrder> findAllWorkOrders(); // dubblett av findAll()
     List<String> confirmDraft(int workOrderId);
     void updateDraft(
             int draft,

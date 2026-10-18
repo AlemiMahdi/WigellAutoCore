@@ -793,9 +793,9 @@ public class AutoCoreApp extends Application {
 //        return workOrderRepository;
 //    }
 
-    public BookingRepository getBookingRepository() {
-        return bookingRepository;
-    }
+//    public BookingRepository getBookingRepository() {
+//        return bookingRepository;
+//    }
 
     public static void main(String[] args) {launch(args);
     }

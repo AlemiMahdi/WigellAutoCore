@@ -28,7 +28,7 @@ public class WorkOrderServiceTest {
     }
 
     @Test
-    void createDraftWithUnknowVehicleThrow() {
+    void createDraftWithUnknownVehicleThrow() {
         int bookingsBefore = Database.getBookings().size();
         int workOrdersBefore = Database.getWorkOrders().size();
 

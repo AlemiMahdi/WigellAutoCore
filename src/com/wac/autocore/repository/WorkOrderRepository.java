@@ -102,7 +102,7 @@ public class WorkOrderRepository implements IWorkOrderRepository {
             }
         }
     }
-//      Dubblet av findAll().
+//      Dubblett av findAll().
 //    public List<WorkOrder> findAllWorkOrders() {
 //        return findAll();
 //    }
