@@ -28,6 +28,7 @@
     -fx-success: #4E7A3E;
     -fx-warning: #7A6120;                     /* mörk ockra, går att läsa på ljust */
     -fx-danger: #A34E36;                      /* terrakotta */
+    -fx-zebra-stripes: #e3e0d8;                 /*Liten mörkare ton än Linne */
 
     /* JavaFX standardtema (modena) räknar ut sina färger från dessa,
        så kontroller vi inte stylat själva (scrollbars, popups m.m.) blir ljusa. */
@@ -456,6 +457,16 @@
 .list-cell:filled:selected {
     -fx-background-color: -fx-accent-soft;
     -fx-text-fill: -fx-accent-text;
+}
+
+.table-row-cell:even .table-cell {
+    -fx-background-color: -fx-border, derive(-fx-zebra-stripes, -3%);
+}
+
+.table-row-cell:hover .table-cell,
+.table-row-cell:selected .table-cell,
+.table-row-cell:empty .table-cell {
+    -fx-background-color: transparent !important;
 }
 
 /* ================= Kort (Dashboard) ================= */
