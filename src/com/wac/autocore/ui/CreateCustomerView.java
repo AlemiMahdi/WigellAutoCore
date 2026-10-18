@@ -55,7 +55,7 @@ public class CreateCustomerView extends VBox {
         ));
     }
 
-    /** Skapar kunden via GarageSystem och sparar den i databasen. */
+    /** Skapar kunden via customerService och sparar den i databasen. */
     private void saveCustomer() {
 
         // Ta bort tidigare bindning innan meddelandet ändras
@@ -73,7 +73,7 @@ public class CreateCustomerView extends VBox {
                     language.text("customer.create.success").get() + "\n" + customer
             );
 
-            // Lyckatmeddelandet uppdateras vid språkbyte
+            // Lyckat meddelande uppdateras vid språkbyte
             feedback.textProperty().bind(
                     Bindings.concat(
                             language.text("customer.create.success"),

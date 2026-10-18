@@ -38,7 +38,6 @@ import java.util.List;
 public class CreateBookingView {
 
     private final LanguageManager language = LanguageManager.getInstance();
-    private final GarageSystem garageSystem = new GarageSystem();
     private  final BookingService bookingService;
 
     private final Booking sourceBooking;
@@ -205,8 +204,6 @@ public class CreateBookingView {
         createButton.textProperty().bind(language.text("createBooking.button"));
 
         createButton.setOnAction(event -> {
-            AutoCoreApp app = AutoCoreApp.getInstance();
-
 
             Vehicle vehicle = vehicleCombo.getValue();
             if (vehicle == null) {
