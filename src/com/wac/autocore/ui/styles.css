@@ -1385,6 +1385,8 @@
 }
 
 .button.booking-edit-button {
+    -fx-background-color: #4F7044;
+    -fx-text-fill: white;
     -fx-border-color: #4F7044;
     -fx-border-width: 1;
     -fx-border-radius: 5;
@@ -1392,11 +1394,11 @@
 }
 
 .button.booking-edit-button:hover {
-    -fx-background-color: #E3EADB;
+    -fx-background-color: #405C37;
 }
 
 .button.booking-edit-button .edit-pencil {
-    -fx-fill: #4F7044;
+    -fx-fill: white;
 }
 
 .button.booking-description-button:focused,
