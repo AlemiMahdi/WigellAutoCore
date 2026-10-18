@@ -27,7 +27,8 @@
     -fx-text-secondary: #5E6A58;
     -fx-success: #4E7A3E;
     -fx-warning: #7A6120;                     /* mörk ockra, går att läsa på ljust */
-    -fx-danger: #A34E36;                      /* terrakotta */
+    -fx-danger: #A34E36;
+    -fx-scrollbar-thumb: #819774;                      /* terrakotta */
 
     /* JavaFX standardtema (modena) räknar ut sina färger från dessa,
        så kontroller vi inte stylat själva (scrollbars, popups m.m.) blir ljusa. */
@@ -225,13 +226,13 @@
 
 /* Scrollbarens bana */
 .scroll-bar .track {
-    -fx-background-color: #E4E9DC;
+    -fx-background-color: -fx-sidebar-bg;
     -fx-background-radius: 7;
 }
 
 /* Det rörliga handtaget */
 .scroll-bar .thumb {
-    -fx-background-color: #819774;
+    -fx-background-color: -fx-scrollbar-thumb;
     -fx-background-radius: 7;
     -fx-background-insets: 2;
 }
