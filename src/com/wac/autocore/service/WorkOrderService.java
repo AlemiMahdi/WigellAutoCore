@@ -5,6 +5,7 @@ import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
 import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.repository.IServiceItemRepository;
+import com.wac.autocore.repository.IVehicleRepository;
 import com.wac.autocore.repository.IWorkOrderRepository;
 
 import java.math.BigDecimal;
@@ -19,12 +20,14 @@ public class WorkOrderService {
     private final BookingRepository bookingRepository;
     private final WorkOrderTypeManager typeManager = new WorkOrderTypeManager();
     private final IServiceItemRepository serviceItemRepository;
+    private final IVehicleRepository vehicleRepository;
 
     //Får ändra BookingRepo hämtning sen
-    public WorkOrderService(IWorkOrderRepository workOrderRepository,  BookingRepository bookingRepository, IServiceItemRepository serviceItemRepository) {
+    public WorkOrderService(IWorkOrderRepository workOrderRepository,  BookingRepository bookingRepository, IServiceItemRepository serviceItemRepository, IVehicleRepository vehicleRepository) {
         this.workOrderRepository = workOrderRepository;
         this.bookingRepository = bookingRepository;
         this.serviceItemRepository = serviceItemRepository;
+        this.vehicleRepository = vehicleRepository;
     }
 
     public WorkOrder createAndSaveWorkOrder(WorkOrderTypeEnum selectedType, WorkOrderDto dto, Booking originalBooking) {
@@ -115,13 +118,6 @@ public class WorkOrderService {
 
             if (autoBooking != null && autoBooking.getId() == workOrder.getBookingId()) {
                 workOrderRepository.saveDropInOrder(workOrder, autoBooking);
-
-                if (!Database.getBookings().contains(autoBooking)) {
-                    Database.getBookings().add(autoBooking);
-//  WAC-93: bokningen finns redan i listan (DropInWorkOrder lade till den). Det är inget fel.
-//                } else {
-//                    throw new RuntimeException("createWorkOrder.bookingNotFound");
-                }
             }
         }
     }
@@ -249,10 +245,7 @@ public class WorkOrderService {
 
     public WorkOrder createNewDraftWorkOrder(int vehicleId, String description, WorkOrderTypeEnum type, Integer originalWorkOrderId) {
         // 1. Validera grunddata (fordon, beskrivning etc.)
-        Vehicle vehicle = Database.getVehicles().stream()
-                .filter(v -> v.getId() == vehicleId)
-                .findFirst()
-                .orElse(null);
+        Vehicle vehicle = vehicleRepository.findById(vehicleId);
 
         if (vehicle == null) {
             throw new IllegalArgumentException("createDraft.vehicleMissing");
@@ -271,7 +264,6 @@ public class WorkOrderService {
 
         // 2. Skapa utkastet och bokningen (id 0 = MySQL ger id till båda,
         //    saveWithBooking kopplar ihop dem när bokningen fått sitt id)
-//        int bookingId = Database.getBookings().size() + 1;
         WorkOrder draft = WorkOrder.createDraft(0, 0, type);
         if (type == WorkOrderTypeEnum.COMPLAINT && originalWorkOrderId != null) {
             draft.setOriginalWorkOrderId(originalWorkOrderId);

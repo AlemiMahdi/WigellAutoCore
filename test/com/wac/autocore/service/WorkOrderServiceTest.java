@@ -9,8 +9,9 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class WorkOrderServiceTest {
-    private final   FakeWorkOrderRepository fakeRepository = new FakeWorkOrderRepository();
-    private final WorkOrderService workOrderService = new WorkOrderService(fakeRepository, null, null);
+    private final FakeWorkOrderRepository fakeRepository = new FakeWorkOrderRepository();
+    private final FakeVehicleRepository fakeVehicleRepository = new FakeVehicleRepository();
+    private final WorkOrderService workOrderService = new WorkOrderService(fakeRepository, null, null,fakeVehicleRepository);
 
     @Test
     void createDraftSavesDraftAndBooking() {

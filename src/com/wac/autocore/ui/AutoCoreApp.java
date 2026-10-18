@@ -77,7 +77,7 @@ public class AutoCoreApp extends Application {
         this.servicePackageService = new ServicePackageService(new ServicePackageRepository());
         this.paymentRepository = new PaymentRepository();
         this.serviceRepository = new ServiceItemRepository();
-        this.workOrderService = new WorkOrderService(workOrderRepository, bookingRepository, serviceRepository);
+        this.workOrderService = new WorkOrderService(workOrderRepository, bookingRepository, serviceRepository, vehicleRepository);
         this.customerService = new CustomerService(new CustomerRepository());
         this.bookingService = new BookingService(bookingRepository);
 
@@ -788,14 +788,6 @@ public class AutoCoreApp extends Application {
     public GarageSystem getGarageSystem() {
         return garageSystem;
     }
-    // Vyerna får WorkOrderService via konstruktorn i stället.
-//    public WorkOrderRepository getWorkOrderRepository() {
-//        return workOrderRepository;
-//    }
-
-//    public BookingRepository getBookingRepository() {
-//        return bookingRepository;
-//    }
 
     public static void main(String[] args) {launch(args);
     }
