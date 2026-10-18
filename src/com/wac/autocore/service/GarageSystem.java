@@ -406,6 +406,9 @@ public class GarageSystem {
         System.out.println("Work order " + workOrderId + " has been completed.");
     }
 
+    //refaktoriserad till InvoiceService
+
+    /*
     public Invoice createInvoice(
             int workOrderId,
             String discountCode,
@@ -426,6 +429,9 @@ public class GarageSystem {
         return invoice;
     }
 
+     */
+
+    /*
     public Invoice prepareInvoice(
             int workOrderId, 
             String discountCode,
@@ -470,10 +476,8 @@ public class GarageSystem {
             return null;
         }
 
-            int id = Database.getInvoices().size() + 1;
 
             Invoice invoice = new Invoice(
-                    id,
                     workOrderId,
                     LocalDate.now(),
                     0.0
@@ -558,6 +562,7 @@ public class GarageSystem {
 
         return invoice;
     }
+    */
 
     private boolean sharesOriginalBooking(WorkOrder workOrder) {
         if (workOrder.getType() != WorkOrderTypeEnum.COMPLAINT

@@ -221,8 +221,13 @@ public class ShowInvoiceView {
             }
         });
 
-        VBox view = new VBox(24, UiKit.pageHeader(language.text("invoices.title"), newInvoiceButton), table, selectHint, detailCard);
-        return view;
+        return new VBox(
+                24,
+                UiKit.pageHeader(language.text("invoices.title"), newInvoiceButton),
+                table,
+                selectHint,
+                detailCard
+        );
 
     }
 

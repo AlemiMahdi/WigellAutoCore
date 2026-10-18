@@ -1,4 +1,4 @@
-package com.wac.autocore.service.exception;
+package com.wac.autocore.exception;
 
 
 

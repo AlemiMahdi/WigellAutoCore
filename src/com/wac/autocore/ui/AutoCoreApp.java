@@ -75,8 +75,8 @@ public class AutoCoreApp extends Application {
         this.garageSystem = new GarageSystem();
         this.workOrderRepository = new WorkOrderRepository();
         this.bookingRepository = new BookingRepository();
-        this.invoiceService = new InvoiceService(new InvoiceRepository(), garageSystem);
-        this.mechanicService = new MechanicService(new MechanicRepository(), bookingRepository::findAll);
+        this.invoiceService = new InvoiceService(new InvoiceRepository());
+        this.mechanicService = new MechanicService(new MechanicRepository(), bookingRepository::findAll, workOrderRepository::findAll);
         this.vehicleRepository = new VehicleRepository();
         this.vehicleService = new VehicleService(vehicleRepository);
         this.servicePackageService = new ServicePackageService(new ServicePackageRepository());
@@ -304,15 +304,6 @@ public class AutoCoreApp extends Application {
             }
 
             return;
-        }
-
-        // Kontrollerar ID-ordningen.
-        for (int i = 0; i < savedMechanics.size(); i++) {
-            if (savedMechanics.get(i).getId() != i + 1) {
-                throw new IllegalStateException(
-                        "Mechanic IDs must be consecutive, starting at 1."
-                );
-            }
         }
 
         // Ersätter minnesdatan med datan från databasen.
@@ -633,15 +624,19 @@ public class AutoCoreApp extends Application {
                 createNavItem("mechanic-schedule", "menu.schedule", () -> showView(new MechanicScheduleView(mechanicService).getView())));
 
         addNavSection(menuBox, "menu.section.invoicesPayments",
-                createNavItem("show-invoices", "menu.invoices", () -> showView(ShowInvoiceView.build(invoiceService))),
-                createNavItem("create-invoice", "menu.createInvoice", () -> showView(CreateInvoiceView.build(invoiceService))),
-                createNavItem("show-payments", "menu.payments", () -> showView(new ShowPaymentsView().getView())),
-                createNavItem("process-payment", "menu.processPayment", () -> showView(new ProcessPaymentView().getView())));
-                createNavItem("show-invoices", "menu.invoices", () -> showView(ShowInvoiceView.build())),
-                createNavItem("create-invoice", "menu.createInvoice", () -> showView(CreateInvoiceView.build())),
-                createNavItem("show-payments", "menu.payments", () -> showView(new ShowPaymentsView(new PaymentService(paymentRepository)).getView())),
-                createNavItem("process-payment", "menu.processPayment", () -> showView(new ProcessPaymentView(new PaymentService(paymentRepository)).getView())));
+                createNavItem("show-invoices", "menu.invoices",
+                        () -> showView(ShowInvoiceView.build(invoiceService))),
 
+                createNavItem("create-invoice", "menu.createInvoice",
+                        () -> showView(CreateInvoiceView.build(invoiceService))),
+
+                createNavItem("show-payments", "menu.payments",
+                        () -> showView(new ShowPaymentsView(
+                                new PaymentService(paymentRepository)).getView())),
+
+                createNavItem("process-payment", "menu.processPayment",
+                        () -> showView(new ProcessPaymentView(
+                                new PaymentService(paymentRepository)).getView())));
         // Tunn linje och sedan Exit längst ned, i rött
         Region divider = new Region();
         divider.getStyleClass().add("nav-divider");

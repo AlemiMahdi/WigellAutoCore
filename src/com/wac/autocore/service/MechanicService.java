@@ -2,15 +2,15 @@ package com.wac.autocore.service;
 
 import com.wac.autocore.model.Mechanic;
 import com.wac.autocore.repository.IMechanicRepository;
-import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.repository.BookingRepository;
+import com.wac.autocore.repository.WorkOrderRepository;
 
 import java.util.List;
 import java.util.Objects;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,24 +21,34 @@ public class MechanicService {
 
     private final IMechanicRepository mechanicRepository;
     private final Supplier<List<Booking>> bookingSource;
+    private final Supplier<List<WorkOrder>> workOrderSource;
 
     public MechanicService(IMechanicRepository mechanicRepository) {
         this(
                 mechanicRepository,
-                () -> new ArrayList<>(Database.getBookings())
+                new BookingRepository()::findAll,
+                new WorkOrderRepository()::findAll
         );
     }
 
     public MechanicService(
             IMechanicRepository mechanicRepository,
             Supplier<List<Booking>> bookingSource) {
+        this(
+                mechanicRepository,
+                bookingSource,
+                new WorkOrderRepository()::findAll
+        );
+    }
 
-        this.mechanicRepository = Objects.requireNonNull(
-                mechanicRepository, "Mechanic repository is required"
-        );
-        this.bookingSource = Objects.requireNonNull(
-                bookingSource, "Booking source is required"
-        );
+    public MechanicService(
+            IMechanicRepository mechanicRepository,
+            Supplier<List<Booking>> bookingSource,
+            Supplier<List<WorkOrder>> workOrderSource) {
+
+        this.mechanicRepository = Objects.requireNonNull(mechanicRepository);
+        this.bookingSource = Objects.requireNonNull(bookingSource);
+        this.workOrderSource = Objects.requireNonNull(workOrderSource);
     }
 
     public void save(Mechanic mechanic) {
@@ -51,7 +61,7 @@ public class MechanicService {
     }
 
     public List<Mechanic> getLoadedMechanics() {
-        return new ArrayList<>(Database.getMechanics());
+        return mechanicRepository.findAll();
     }
 
     public List<Booking> getSchedule(int mechanicId) {
@@ -67,7 +77,7 @@ public class MechanicService {
             }
         }
 
-        for (WorkOrder order : Database.getWorkOrders()) {
+        for (WorkOrder order : workOrderSource.get()) {
             mechanicByBooking.put(
                     order.getBookingId(), order.getMechanicId()
             );

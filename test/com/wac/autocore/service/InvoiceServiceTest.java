@@ -9,8 +9,9 @@ import com.wac.autocore.model.InvoiceLine;
 import com.wac.autocore.model.Vehicle;
 import com.wac.autocore.model.WorkOrder;
 import com.wac.autocore.model.WorkOrderStatus;
-import com.wac.autocore.service.exception.InvoiceValidationException;
+import com.wac.autocore.exception.InvoiceValidationException;
 import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
+import com.wac.autocore.model.ServiceItem;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,9 +42,8 @@ class InvoiceServiceTest {
     @Test
     void savesInvoiceThroughRepository() {
         FakeInvoiceRepository repository = new FakeInvoiceRepository();
-        InvoiceService service = new InvoiceService(repository);
-        Invoice invoice = new Invoice(1, 1, LocalDate.now(), 500.0);
-
+        InvoiceService service = createService(repository);
+        Invoice invoice = new Invoice(1, LocalDate.now(), 500.0);
         service.save(invoice);
 
         assertSame(invoice, repository.savedInvoice);
@@ -58,8 +58,8 @@ class InvoiceServiceTest {
                 new IllegalStateException("Storage unavailable");
         repository.saveFailure = failure;
 
-        InvoiceService service = new InvoiceService(repository);
-        Invoice invoice = new Invoice(1, 1, LocalDate.now(), 500.0);
+        InvoiceService service = createService(repository);
+        Invoice invoice = new Invoice(1, LocalDate.now(), 500.0);
 
         RuntimeException thrown = assertThrows(
                 RuntimeException.class,
@@ -72,17 +72,17 @@ class InvoiceServiceTest {
 
     @Test
     void createInvoiceSavesBeforeAddingToMemory() {
-        Invoice invoice = new Invoice(1, 1, LocalDate.now(), 500.0);
+        Invoice invoice = new Invoice(1, LocalDate.now(), 500.0);
         FakeInvoiceRepository repository = new FakeInvoiceRepository() {
             @Override
-            public void save(Invoice invoiceToSave) {
+            public Invoice save(Invoice invoiceToSave) {
                 assertFalse(Database.getInvoices().contains(invoiceToSave));
-                super.save(invoiceToSave);
+                return super.save(invoiceToSave);
             }
         };
 
-        InvoiceService service = new InvoiceService(
-                repository, new StubGarageSystem(invoice)
+        InvoiceService service = new StubInvoiceService(
+                repository, invoice
         );
 
         Invoice result = service.createInvoice(1, "", "", 0.0);
@@ -96,18 +96,18 @@ class InvoiceServiceTest {
 
     @Test
     void createInvoiceStorageFailureLeavesMemoryUnchanged() {
-        Invoice existing = new Invoice(1, 1, LocalDate.now(), 200.0);
+        Invoice existing = new Invoice(1,LocalDate.now(), 200.0);
         Database.getInvoices().add(existing);
         List<Invoice> before = new ArrayList<>(Database.getInvoices());
 
-        Invoice invoice = new Invoice(2, 2, LocalDate.now(), 500.0);
+        Invoice invoice = new Invoice(2,LocalDate.now(), 500.0);
         FakeInvoiceRepository repository = new FakeInvoiceRepository();
         RuntimeException failure =
                 new IllegalStateException("Storage unavailable");
         repository.saveFailure = failure;
 
-        InvoiceService service = new InvoiceService(
-                repository, new StubGarageSystem(invoice)
+        InvoiceService service = new StubInvoiceService(
+                repository, invoice
         );
 
         RuntimeException thrown = assertThrows(
@@ -123,13 +123,13 @@ class InvoiceServiceTest {
 
     @Test
     void rejectedInvoiceDoesNotCallRepositoryOrChangeMemory() {
-        Invoice existing = new Invoice(1, 1, LocalDate.now(), 200.0);
+        Invoice existing = new Invoice(1, LocalDate.now(), 200.0);
         Database.getInvoices().add(existing);
         List<Invoice> before = new ArrayList<>(Database.getInvoices());
 
         FakeInvoiceRepository repository = new FakeInvoiceRepository();
-        InvoiceService service = new InvoiceService(
-                repository, new StubGarageSystem(null)
+        InvoiceService service = new StubInvoiceService(
+                repository, null
         );
 
         Invoice result = service.createInvoice(2, "", "", 0.0);
@@ -141,16 +141,15 @@ class InvoiceServiceTest {
 
     @Test
     void previewInvoiceDoesNotSaveOrChangeMemory() {
-        Invoice existing = new Invoice(1, 1, LocalDate.now(), 200.0);
+        Invoice existing = new Invoice(1, LocalDate.now(), 200.0);
         Database.getInvoices().add(existing);
         List<Invoice> before = new ArrayList<>(Database.getInvoices());
 
-        Invoice prepared = new Invoice(2, 2, LocalDate.now(), 500.0);
+        Invoice prepared = new Invoice(2, LocalDate.now(), 500.0);
         FakeInvoiceRepository repository = new FakeInvoiceRepository();
 
-        InvoiceService service = new InvoiceService(
-                repository,
-                new StubGarageSystem(prepared)
+        InvoiceService service = new StubInvoiceService(
+                repository, prepared
         );
 
         Invoice preview = service.previewInvoice(2, "", "", 0.0);
@@ -210,9 +209,7 @@ class InvoiceServiceTest {
             Database.getWorkOrders().add(order);
 
             FakeInvoiceRepository repository = new FakeInvoiceRepository();
-            InvoiceService service = new InvoiceService(
-                    repository, new GarageSystem()
-            );
+            InvoiceService service = createService(repository);
 
             Invoice preview = service.previewInvoice(
                     order.getId(), "WELCOME10", "", 0.0
@@ -336,13 +333,17 @@ class InvoiceServiceTest {
             Database.getWorkOrders().add(confirmed);
             Database.getWorkOrders().add(draft);
 
-            Database.getInvoices().add(
-                    new Invoice(1, alreadyInvoiced.getId(),
-                            LocalDate.now(), 500.0)
+            FakeInvoiceRepository repository = new FakeInvoiceRepository();
+
+            repository.save(
+                    new Invoice(
+                            alreadyInvoiced.getId(),
+                            LocalDate.now(),
+                            500.0
+                    )
             );
 
-            InvoiceService service =
-                    new InvoiceService(new FakeInvoiceRepository());
+            InvoiceService service = createService(repository);
 
             List<WorkOrder> result = service.getInvoiceableWorkOrders();
 
@@ -359,6 +360,191 @@ class InvoiceServiceTest {
         }
     }
 
+    @Test
+    void missingBookingStopsPreviewAndCreation() {
+        List<WorkOrder> originalOrders =
+                new ArrayList<>(Database.getWorkOrders());
+        List<Booking> originalBookings =
+                new ArrayList<>(Database.getBookings());
+
+        try {
+            Database.getWorkOrders().clear();
+            Database.getBookings().clear();
+
+            WorkOrder order = new WorkOrder(
+                    1, 1, 1, WorkOrderTypeEnum.PLANNED
+            );
+            order.changeStatus(WorkOrderStatus.IN_PROGRESS);
+            order.changeStatus(WorkOrderStatus.COMPLETED);
+            Database.getWorkOrders().add(order);
+
+            FakeInvoiceRepository repository = new FakeInvoiceRepository();
+            InvoiceService service = createService(repository);
+
+            InvoiceValidationException previewError = assertThrows(
+                    InvoiceValidationException.class,
+                    () -> service.previewInvoice(1, "", "", 0.0)
+            );
+
+            InvoiceValidationException creationError = assertThrows(
+                    InvoiceValidationException.class,
+                    () -> service.createInvoice(1, "", "", 0.0)
+            );
+
+            assertEquals(
+                    "createInvoice.bookingMissing",
+                    previewError.getMessage()
+            );
+            assertEquals(
+                    "createInvoice.bookingMissing",
+                    creationError.getMessage()
+            );
+            assertEquals(0, repository.saveCalls);
+            assertTrue(Database.getInvoices().isEmpty());
+
+        } finally {
+            Database.getWorkOrders().clear();
+            Database.getWorkOrders().addAll(originalOrders);
+            Database.getBookings().clear();
+            Database.getBookings().addAll(originalBookings);
+        }
+    }
+
+    @Test
+    void missingPriceHistoryStopsPreviewAndCreation() {
+        List<WorkOrder> originalOrders =
+                new ArrayList<>(Database.getWorkOrders());
+        List<Booking> originalBookings =
+                new ArrayList<>(Database.getBookings());
+
+        try {
+            Database.getWorkOrders().clear();
+            Database.getBookings().clear();
+
+            Booking booking = new Booking(
+                    1, 1, LocalDate.now(), "Bokning utan sparade priser"
+            );
+            Database.getBookings().add(booking);
+
+            WorkOrder order = new WorkOrder(
+                    1, booking.getId(), 1, WorkOrderTypeEnum.PLANNED
+            );
+            order.changeStatus(WorkOrderStatus.IN_PROGRESS);
+            order.changeStatus(WorkOrderStatus.COMPLETED);
+            Database.getWorkOrders().add(order);
+
+            FakeInvoiceRepository repository = new FakeInvoiceRepository();
+            InvoiceService service = createService(repository);
+
+            InvoiceValidationException previewError = assertThrows(
+                    InvoiceValidationException.class,
+                    () -> service.previewInvoice(1, "", "", 0.0)
+            );
+
+            InvoiceValidationException creationError = assertThrows(
+                    InvoiceValidationException.class,
+                    () -> service.createInvoice(1, "", "", 0.0)
+            );
+
+            assertEquals(
+                    "createInvoice.missingPriceHistory",
+                    previewError.getMessage()
+            );
+            assertEquals(
+                    "createInvoice.missingPriceHistory",
+                    creationError.getMessage()
+            );
+            assertEquals(0, repository.saveCalls);
+            assertTrue(Database.getInvoices().isEmpty());
+
+        } finally {
+            Database.getWorkOrders().clear();
+            Database.getWorkOrders().addAll(originalOrders);
+            Database.getBookings().clear();
+            Database.getBookings().addAll(originalBookings);
+        }
+    }
+
+    @Test
+    void complaintWithoutPriceHistoryCanBeInvoicedAtZero() {
+        List<WorkOrder> originalOrders =
+                new ArrayList<>(Database.getWorkOrders());
+        List<Booking> originalBookings =
+                new ArrayList<>(Database.getBookings());
+        List<ServiceItem> originalServices =
+                new ArrayList<>(Database.getServiceItems());
+
+        try {
+            Database.getWorkOrders().clear();
+            Database.getBookings().clear();
+            Database.getServiceItems().clear();
+
+            ServiceItem serviceItem = new ServiceItem(
+                    "Oil change", "Testtjänst", 1000.0, 60
+            );
+            // Fast ID enbart för testdata, utan databasanslutning.
+            serviceItem.setId(1);
+            Database.getServiceItems().add(serviceItem);
+
+            Booking booking = new Booking(
+                    1, 1, LocalDate.now(), "Reklamation"
+            );
+            Database.getBookings().add(booking);
+
+            WorkOrder order = new WorkOrder(
+                    1, booking.getId(), 1, WorkOrderTypeEnum.COMPLAINT
+            );
+            order.addServiceItem(serviceItem.getId());
+            order.changeStatus(WorkOrderStatus.IN_PROGRESS);
+            order.changeStatus(WorkOrderStatus.COMPLETED);
+            Database.getWorkOrders().add(order);
+
+            FakeInvoiceRepository repository = new FakeInvoiceRepository();
+            InvoiceService service = createService(repository);
+
+            Invoice preview = service.previewInvoice(1, "", "", 0.0);
+
+            assertNotNull(preview);
+            assertEquals(1, preview.getLines().size());
+            assertEquals(
+                    "Oil change",
+                    preview.getLines().get(0).getServiceName()
+            );
+            assertEquals(0.0, preview.getTotalAmount(), 0.001);
+            assertEquals(0, repository.saveCalls);
+            assertTrue(Database.getInvoices().isEmpty());
+
+            Invoice created = service.createInvoice(1, "", "", 0.0);
+
+            assertNotNull(created);
+            assertEquals(1, created.getLines().size());
+            assertEquals(0.0, created.getTotalAmount(), 0.001);
+            assertEquals(1, repository.saveCalls);
+            assertSame(created, repository.savedInvoice);
+            assertEquals(1, Database.getInvoices().size());
+            assertSame(created, Database.getInvoices().get(0));
+
+        } finally {
+            Database.getWorkOrders().clear();
+            Database.getWorkOrders().addAll(originalOrders);
+            Database.getBookings().clear();
+            Database.getBookings().addAll(originalBookings);
+            Database.getServiceItems().clear();
+            Database.getServiceItems().addAll(originalServices);
+        }
+    }
+
+    private InvoiceService createService(IInvoiceRepository repository) {
+        return new InvoiceService(
+                repository,
+                Database::getWorkOrders,
+                Database::getBookings,
+                Database::getVehicles,
+                Database::getCustomers,
+                Database::getServiceItems
+        );
+    }
+
     private static class FakeInvoiceRepository
             implements IInvoiceRepository {
 
@@ -368,15 +554,17 @@ class InvoiceServiceTest {
         private int saveCalls;
 
         @Override
-        public void save(Invoice invoice) {
-
+        public Invoice save(Invoice invoice) {
             saveCalls++;
 
             if (saveFailure != null) {
                 throw saveFailure;
             }
+
             savedInvoice = invoice;
             invoices.add(invoice);
+
+            return invoice;
         }
 
         @Override
@@ -390,11 +578,22 @@ class InvoiceServiceTest {
         }
     }
 
-    private static class StubGarageSystem extends GarageSystem {
+    private static class StubInvoiceService extends InvoiceService {
 
         private final Invoice preparedInvoice;
 
-        private StubGarageSystem(Invoice preparedInvoice) {
+        private StubInvoiceService(
+                IInvoiceRepository repository,
+                Invoice preparedInvoice) {
+
+            super(
+                    repository,
+                    Database::getWorkOrders,
+                    Database::getBookings,
+                    Database::getVehicles,
+                    Database::getCustomers,
+                    Database::getServiceItems
+            );
             this.preparedInvoice = preparedInvoice;
         }
 
@@ -415,9 +614,9 @@ class InvoiceServiceTest {
             String expectedMessage) {
 
         FakeInvoiceRepository repository = new FakeInvoiceRepository();
-        Invoice prepared = new Invoice(1, 1, LocalDate.now(), 500.0);
-        InvoiceService service = new InvoiceService(
-                repository, new StubGarageSystem(prepared)
+        Invoice prepared = new Invoice(1, LocalDate.now(), 500.0);
+        InvoiceService service = new StubInvoiceService(
+                repository, prepared
         );
 
         List<Invoice> before = new ArrayList<>(Database.getInvoices());

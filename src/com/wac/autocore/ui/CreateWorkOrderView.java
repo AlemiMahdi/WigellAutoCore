@@ -498,16 +498,21 @@ public class CreateWorkOrderView  extends VBox {
                     bookingRepository.save(booking);
                 } else {
                     if (!Database.getBookings().isEmpty()) {
-                        Booking autoBooking = Database.getBookings().get(Database.getBookings().size() - 1);
+                        Booking autoBooking = Database.getBookings()
+                                .get(Database.getBookings().size() - 1);
 
-                        if (autoBooking != null && autoBooking.getId() == workOrder.getBookingId()) {
+                        if (autoBooking != null
+                                && autoBooking.getId() == workOrder.getBookingId()) {
+
                             workOrderRepository.saveDropInOrder(workOrder, autoBooking);
+
                             if (!Database.getBookings().contains(autoBooking)) {
                                 Database.getBookings().add(autoBooking);
                             }
                         }
                     }
                 }
+
                 if (!Database.getWorkOrders().contains(workOrder)) {
                     Database.getWorkOrders().add(workOrder);
                 }

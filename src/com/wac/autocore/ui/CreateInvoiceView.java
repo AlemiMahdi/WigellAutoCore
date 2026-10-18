@@ -2,7 +2,7 @@ package com.wac.autocore.ui;
 
 
 import com.wac.autocore.model.*;
-import com.wac.autocore.service.exception.InvoiceValidationException;
+import com.wac.autocore.exception.InvoiceValidationException;
 import com.wac.autocore.ui.language.LanguageManager;
 import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
 import com.wac.autocore.service.InvoiceService;
@@ -87,8 +87,8 @@ public class CreateInvoiceView {
 
         // --- Rabatt ---
         // Rabatten anges som en rabattkod (t.ex. WELCOME10 eller SERVICE200)
-        TextField discoutField = new TextField();
-        discoutField.promptTextProperty().bind(language.text("createInvoice.discountPrompt"));
+        TextField discountField = new TextField();
+        discountField.promptTextProperty().bind(language.text("createInvoice.discountPrompt"));
 
         // --- Total ---
         Label totalValue = new Label(ShowInvoiceView.formatSek(0));
@@ -119,7 +119,7 @@ public class CreateInvoiceView {
 
                 Invoice preview = invoiceService.previewInvoice(
                         selected.getId(),
-                        discoutField.getText(),
+                        discountField.getText(),
                         extraCostDescriptionField.getText().trim(),
                         extraCost
                 );
@@ -162,7 +162,7 @@ public class CreateInvoiceView {
                 (obs, oldValue, newValue) -> updateTotal.run()
         );
 
-        discoutField.textProperty().addListener(
+        discountField.textProperty().addListener(
                 (observable, oldValue, newValue) -> updateTotal.run()
         );
 
@@ -185,7 +185,7 @@ public class CreateInvoiceView {
                 return;
             }
             int workOrderId = selectedWorkOrder.getId();
-            String discountCode = discoutField.getText();
+            String discountCode = discountField.getText();
 
 
             double extraCost = 0.0;
@@ -229,7 +229,7 @@ public class CreateInvoiceView {
                 );
 
                 workOrderBox.setValue(null);
-                discoutField.clear();
+                discountField.clear();
 
                 loadCompletedWorkOrders(workOrderBox, invoiceService);
 
@@ -257,7 +257,7 @@ public class CreateInvoiceView {
                 complaintCosts,
                 UiKit.formRow(
                         UiKit.formField(language.text("invoices.amount"), amountField),
-                        UiKit.formField(language.text("invoices.discount"), discoutField)),
+                        UiKit.formField(language.text("invoices.discount"), discountField)),
                 UiKit.totalBox(language.text("createInvoice.totalLabel"), totalValue),
                 createButton,
                 statusLabel);
@@ -273,9 +273,9 @@ public class CreateInvoiceView {
     private static void fillComplaintPrice(WorkOrder selected,
                                            TextField extraCostAmountField,
                                            TextField extraCostDescriptionField, LanguageManager language) {
-        boolean isComplaint = selected != null && selected.getType() == WorkOrderTypeEnum.COMPLAINT;
-        assert selected != null;
-        if (selected.getEstimatedPrice() != null) {
+        if (selected == null) {
+            return;
+        }        if (selected.getEstimatedPrice() != null) {
             extraCostAmountField.setText(selected.getEstimatedPrice().toPlainString());
             extraCostDescriptionField.setText(language.text("createInvoice.getComplaintCost").get());
         } else {

@@ -100,7 +100,8 @@ class MechanicServiceTest {
 
         MechanicService service = new MechanicService(
                 new FakeMechanicRepository(),
-                () -> new ArrayList<>(input)
+                () -> new ArrayList<>(input),
+                () -> new ArrayList<WorkOrder>()
         );
 
         List<Booking> result = service.getSchedule(1);
@@ -129,7 +130,8 @@ class MechanicServiceTest {
 
         MechanicService service = new MechanicService(
                 new FakeMechanicRepository(),
-                () -> Arrays.asList(booking)
+                () -> Arrays.asList(booking),
+                () -> Arrays.asList(order)
         );
 
         assertTrue(service.getSchedule(1).isEmpty());
@@ -154,7 +156,8 @@ class MechanicServiceTest {
                 new FakeMechanicRepository(),
                 () -> {
                     throw failure;
-                }
+                },
+                () -> new ArrayList<WorkOrder>()
         );
 
         RuntimeException thrown = assertThrows(
