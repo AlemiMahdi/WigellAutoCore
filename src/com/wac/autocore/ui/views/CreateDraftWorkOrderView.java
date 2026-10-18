@@ -1,16 +1,13 @@
 package com.wac.autocore.ui.views;
 
 import com.wac.autocore.data.Database;
-import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.Vehicle;
 import com.wac.autocore.model.WorkOrder;
 import com.wac.autocore.model.WorkOrderStatus;
-import com.wac.autocore.repository.WorkOrderRepository;
-import com.wac.autocore.service.GarageSystem;
+import com.wac.autocore.model.WorkOrderTypeEnum;
+import com.wac.autocore.service.WorkOrderService;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
-import com.wac.autocore.model.WorkOrderTypeEnum;
-
 import javafx.collections.FXCollections;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -26,8 +23,14 @@ import javafx.util.StringConverter;
 public class CreateDraftWorkOrderView {
 
     private final LanguageManager language = LanguageManager.getInstance();
-    private final GarageSystem garageSystem = new GarageSystem();
-    private final WorkOrderRepository workOrderRepository = new WorkOrderRepository();
+    private final WorkOrderService workOrderService;
+
+//    private final GarageSystem garageSystem = new GarageSystem();
+//    private final WorkOrderRepository workOrderRepository = new WorkOrderRepository();
+
+    public CreateDraftWorkOrderView(WorkOrderService workOrderService) {
+        this.workOrderService = workOrderService;
+    }
 
     public VBox getView() {
 
@@ -127,33 +130,35 @@ public class CreateDraftWorkOrderView {
                 }
                 originalId = originalOrder.getId();
             }
-
-            //GarageSystem kontrollerar reglerna och skapar utkast + boking i minnet
-            WorkOrder draft;
+            // WorkOrderSErvice kontrollerar reglerna, sparar i MySQL och lägger i minnet.
             try {
-                draft = garageSystem.createDraftWorkOrder(
+                workOrderService.createNewDraftWorkOrder(
                         vehicle.getId(), descriptionField.getText(), type, originalId);
             } catch (IllegalArgumentException exception) {
                 // Felets text är en språknyckel, t.ex. "createDraft.descriptionMissing"
                 UiKit.showError(messageLabel, language.text(exception.getMessage()).get());
                 return;
-            }
-
-            //Spara bokning och utkast i MySQL i samma transaktion
-            Booking booking = findBooking(draft.getBookingId());
-            try {
-                workOrderRepository.saveWithBooking(draft, booking);
-              if(!Database.getWorkOrders().contains(draft)) {
-                  Database.getWorkOrders().add(draft);
-              }
-            } catch (RuntimeException e) {
-                //Tar bort ur minnet om sparandet misslyckades
-                Database.getWorkOrders().remove(draft);
-                Database.getBookings().remove(booking);
+            } catch (RuntimeException exception) {
                 UiKit.showError(messageLabel, language.text("createDraft.saveError").get());
-                e.printStackTrace();
+                exception.printStackTrace();
                 return;
             }
+//              servicen gör jobbet nu.
+//            //Spara bokning och utkast i MySQL i samma transaktion
+//            Booking booking = findBooking(draft.getBookingId());
+//            try {
+//                workOrderRepository.saveWithBooking(draft, booking);
+//              if(!Database.getWorkOrders().contains(draft)) {
+//                  Database.getWorkOrders().add(draft);
+//              }
+//            } catch (RuntimeException e) {
+//                //Tar bort ur minnet om sparandet misslyckades
+//                Database.getWorkOrders().remove(draft);
+//                Database.getBookings().remove(booking);
+//                UiKit.showError(messageLabel, language.text("createDraft.saveError").get());
+//                e.printStackTrace();
+//                return;
+//            }
 
             UiKit.showSuccess(messageLabel, language.text("createDraft.success").get());
 
@@ -179,15 +184,15 @@ public class CreateDraftWorkOrderView {
 
     }
 
-    // Hittar bokningen som GarageSystem nyss skapade
-    private Booking findBooking(int id) {
-        for (Booking booking: Database.getBookings()) {
-            if (booking.getId() == id) {
-                return booking;
-            }
-        }
-        return null;
-    }
+//    // Hittar bokningen som GarageSystem nyss skapade
+//    private Booking findBooking(int id) {
+//        for (Booking booking: Database.getBookings()) {
+//            if (booking.getId() == id) {
+//                return booking;
+//            }
+//        }
+//        return null;
+//    }
 
     //Visar fordon som "ABC123 · Volvo V70"
     private StringConverter<Vehicle> vehicleConverter() {

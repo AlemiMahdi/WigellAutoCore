@@ -3,8 +3,6 @@ package com.wac.autocore.service;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
 import com.wac.autocore.model.WorkOrderTypeEnum;
-import com.wac.autocore.ui.UiKit;
-import javafx.beans.binding.StringExpression;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -70,19 +68,19 @@ public class GarageSystem {
         }
     }
 
-//    public void showWorkOrders() {
-//        System.out.println();
-//        System.out.println("=== WORK ORDERS ===");
-//
-//        if (Database.getWorkOrders().isEmpty()) {
-//            System.out.println("No work orders found.");
-//            return;
-//        }
-//
-//        for (WorkOrder workOrder : Database.getWorkOrders()) {
-//            System.out.println(workOrder);
-//        }
-//    }
+    public void showWorkOrders() {
+        System.out.println();
+        System.out.println("=== WORK ORDERS ===");
+
+        if (Database.getWorkOrders().isEmpty()) {
+            System.out.println("No work orders found.");
+            return;
+        }
+
+        for (WorkOrder workOrder : Database.getWorkOrders()) {
+            System.out.println(workOrder);
+        }
+    }
 
     public void showInvoices() {
         System.out.println();
@@ -205,7 +203,7 @@ public class GarageSystem {
 
     public List<String> validateWorkOrderForConfirmation(int workOrderId) {
         List<String> errors = new ArrayList<>();
-        WorkOrder workOrder = workOrderRepository.findWorkOrder(workOrderId);
+        WorkOrder workOrder = findWorkOrder(workOrderId);
 
         if (workOrder == null) {
             errors.add("confirmWorkOrder.orderMissing");
@@ -224,7 +222,7 @@ public class GarageSystem {
             } else if (originalId == workOrder.getId()) {
                 errors.add("confirmWorkOrder.originalSelfReference");
             } else {
-                WorkOrder original = workOrderRepository.findWorkOrder(originalId);
+                WorkOrder original = findWorkOrder(originalId);
 
                 if (original == null) {
                     errors.add("confirmWorkOrder.originalMissing");
@@ -272,75 +270,75 @@ public class GarageSystem {
         return errors;
     }
 
-    // Samma logik som tidigare: starta via GarageSystem och spara via repositories.
-    private void startSelectedWorkOrder() {
-
-        feedbackLabel.textProperty().unbind();
-        feedbackLabel.setText("");
-
-        WorkOrder workorder = selectedWorkOrder;
-        if (workorder == null) {
-            UiKit.showError(feedbackLabel, language.text("startWorkOrder.select").get());
-            return;
-        }
-
-        List<String> errors =
-                garageSystem.validateWorkOrderForConfirmation(workorder.getId());
-
-        if (!errors.isEmpty()) {
-            StringExpression message = language.text(errors.get(0));
-
-            for (int i = 1; i < errors.size(); i++) {
-                message = message.concat("\n").concat(
-                        language.text(errors.get(i))
-                );
-            }
-
-            feedbackLabel.setWrapText(true);
-            UiKit.showError(feedbackLabel, "");
-            feedbackLabel.textProperty().bind(message);
-            return;
-        }
-
-        // Sparar den valda arbetsorderns status innan vi försöker starta den.
-        WorkOrderStatus previousStatus = workorder.getStatus();
-
-        garageSystem.startWorkOrder(workorder.getId());
-
-        if (previousStatus == WorkOrderStatus.CONFIRMED
-                && workorder.getStatus() == WorkOrderStatus.IN_PROGRESS) {
-            // Hämtar bokningen och mekanikern som startWorkOrder har ändrat.
-            Booking booking = findBooking(workorder);
-            Mechanic mechanic = findMechanic(workorder);
-
-            try {
-                // Sparar arbetsorderns, bokningens och mekanikerns nya status.
-                workOrderRepository.save(workorder);
-
-                if (booking != null) {
-                    bookingRepository.save(booking);
-                }
-
-                if (mechanic != null) {
-                    mechanicRepository.save(mechanic);
-                }
-
-                UiKit.showSuccess(feedbackLabel,
-                        language.text("startWorkOrder.success").get() + " " + workorder.getId());
-            } catch (RuntimeException exception) {
-                UiKit.showError(feedbackLabel,
-                        language.text("startWorkOrder.saveError").get());
-                exception.printStackTrace();
-            }
-
-        } else {
-            UiKit.showError(feedbackLabel, language.text("startWorkOrder.cannotStart").get());
-        }
-
-        // Återställer valet och laddar om listan (startad order försvinner ur den).
-        // Inget kort väljs automatiskt, så man startar inte nästa order av misstag.
-        reloadList(false);
-    }
+//    // Samma logik som tidigare: starta via GarageSystem och spara via repositories.
+//    private void startSelectedWorkOrder() {
+//
+//        feedbackLabel.textProperty().unbind();
+//        feedbackLabel.setText("");
+//
+//        WorkOrder workorder = selectedWorkOrder;
+//        if (workorder == null) {
+//            UiKit.showError(feedbackLabel, language.text("startWorkOrder.select").get());
+//            return;
+//        }
+//
+//        List<String> errors =
+//                garageSystem.validateWorkOrderForConfirmation(workorder.getId());
+//
+//        if (!errors.isEmpty()) {
+//            StringExpression message = language.text(errors.get(0));
+//
+//            for (int i = 1; i < errors.size(); i++) {
+//                message = message.concat("\n").concat(
+//                        language.text(errors.get(i))
+//                );
+//            }
+//
+//            feedbackLabel.setWrapText(true);
+//            UiKit.showError(feedbackLabel, "");
+//            feedbackLabel.textProperty().bind(message);
+//            return;
+//        }
+//
+//        // Sparar den valda arbetsorderns status innan vi försöker starta den.
+//        WorkOrderStatus previousStatus = workorder.getStatus();
+//
+//        garageSystem.startWorkOrder(workorder.getId());
+//
+//        if (previousStatus == WorkOrderStatus.CONFIRMED
+//                && workorder.getStatus() == WorkOrderStatus.IN_PROGRESS) {
+//            // Hämtar bokningen och mekanikern som startWorkOrder har ändrat.
+//            Booking booking = findBooking(workorder);
+//            Mechanic mechanic = findMechanic(workorder);
+//
+//            try {
+//                // Sparar arbetsorderns, bokningens och mekanikerns nya status.
+//                workOrderRepository.save(workorder);
+//
+//                if (booking != null) {
+//                    bookingRepository.save(booking);
+//                }
+//
+//                if (mechanic != null) {
+//                    mechanicRepository.save(mechanic);
+//                }
+//
+//                UiKit.showSuccess(feedbackLabel,
+//                        language.text("startWorkOrder.success").get() + " " + workorder.getId());
+//            } catch (RuntimeException exception) {
+//                UiKit.showError(feedbackLabel,
+//                        language.text("startWorkOrder.saveError").get());
+//                exception.printStackTrace();
+//            }
+//
+//        } else {
+//            UiKit.showError(feedbackLabel, language.text("startWorkOrder.cannotStart").get());
+//        }
+//
+//        // Återställer valet och laddar om listan (startad order försvinner ur den).
+//        // Inget kort väljs automatiskt, så man startar inte nästa order av misstag.
+//        reloadList(false);
+//    }
 
     public void startWorkOrder(int workOrderId) {
         WorkOrder workOrder = findWorkOrder(workOrderId);

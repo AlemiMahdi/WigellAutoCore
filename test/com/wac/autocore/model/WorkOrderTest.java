@@ -12,7 +12,7 @@ public class WorkOrderTest {
     @Test
     void allowedChangeUpdatesStatus() {
         // En ny arbetsorder börjar alltid som CONFIRMED
-        WorkOrder workOrder = new WorkOrder(1, 1, 1, WorkOrderTypeEnum.PLANNED);
+        WorkOrder workOrder = new WorkOrder(1, 1, WorkOrderTypeEnum.PLANNED);
 
         workOrder.changeStatus(WorkOrderStatus.IN_PROGRESS);
 
@@ -23,7 +23,7 @@ public class WorkOrderTest {
     // och statusen ska vara oförändrad efteråt.
     @Test
     void forbiddenChangeThrowsAndKeepsStatus() {
-        WorkOrder workOrder = new WorkOrder(1, 1, 1, WorkOrderTypeEnum.PLANNED);
+        WorkOrder workOrder = new WorkOrder(1, 1, WorkOrderTypeEnum.PLANNED);
 
         // Hoppar över IN_PROGRESS – det är inte tillåtet
         assertThrows(IllegalStateException.class,

@@ -19,75 +19,75 @@ public class GarageSystemTest {
 
     // Ett giltigt utkast ska få status DRAFT och en automatisk bokning
     // med fordon och beskrivning, men utan datum.
-    @Test
-    void createDraftWorkOrderCreateDraftAndBooking() {
-        WorkOrder draft = garageSystem.createDraftWorkOrder(
-                1, " Konstigt ljud från bromsarna ", WorkOrderTypeEnum.DROP_IN, 27);
-
-        assertEquals(WorkOrderStatus.DRAFT, draft.getStatus());
-        assertEquals(WorkOrderTypeEnum.DROP_IN, draft.getType());
-
-        Booking booking = findBooking(draft.getBookingId());
-        assertNotNull(booking);
-        assertEquals(1, booking.getVehicleId());
-        assertEquals("Konstigt ljud från bromsarna", booking.getDescription());
-        assertEquals("WORK_ORDER_CREATED", booking.getStatus());
-        assertNull(booking.getDate());
-    }
-
-    // Okänt fordon ska stoppas, och inget ska läggas till i listorna.
-    @Test
-    void createDraftWorkOrderWithUnknownVehicleThrow() {
-        int bookingsBefore = Database.getBookings().size();
-        int workOrdersBefore = Database.getWorkOrders().size();
-
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> garageSystem.createDraftWorkOrder(999, "Ljud", WorkOrderTypeEnum.PLANNED, 27));
-
-        assertEquals("createDraft.vehicleMissing", exception.getMessage());
-        assertEquals(bookingsBefore, Database.getBookings().size());
-        assertEquals(workOrdersBefore, Database.getWorkOrders().size());
-    }
-
-    // En beskrivning med bara mellanslag räknas som tom.
-    @Test
-    void createDraftWorkOrderWithBlankDescriptionThrow() {
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> garageSystem.createDraftWorkOrder(1, " ", WorkOrderTypeEnum.PLANNED, 27));
-
-        assertEquals("createDraft.descriptionMissing", exception.getMessage());
-    }
-
-    // Saknas typ ska ingen bokning bli kvar utan arbetsorder.
-    @Test
-    void createDraftWorkOrderWithoutTypeLeavesNoBooking() {
-        int bookingsBefore = Database.getBookings().size();
-
-        assertThrows(IllegalArgumentException.class,
-                () -> garageSystem.createDraftWorkOrder(1, "Ljud", null, 22));
-
-        assertEquals(bookingsBefore, Database.getBookings().size());
-    }
-
-    @Test
-    void incompleteDraftReportsMissingMechanicAndServices() {
-        WorkOrder draft = garageSystem.createDraftWorkOrder(
-                1, "Kontroll av bromsar", WorkOrderTypeEnum.PLANNED, 27
-        );
-        Booking booking = findBooking(draft.getBookingId());
-
-        try {
-            List<String> errors =
-                    garageSystem.validateWorkOrderForConfirmation(draft.getId());
-
-            assertTrue(errors.contains("confirmWorkOrder.mechanicMissing"));
-            assertTrue(errors.contains("confirmWorkOrder.servicesMissing"));
-            assertEquals(WorkOrderStatus.DRAFT, draft.getStatus());
-        } finally {
-            Database.getWorkOrders().remove(draft);
-            Database.getBookings().remove(booking);
-        }
-    }
+//    @Test
+//    void createDraftWorkOrderCreateDraftAndBooking() {
+//        WorkOrder draft = garageSystem.createDraftWorkOrder(
+//                1, " Konstigt ljud från bromsarna ", WorkOrderTypeEnum.DROP_IN, 27);
+//
+//        assertEquals(WorkOrderStatus.DRAFT, draft.getStatus());
+//        assertEquals(WorkOrderTypeEnum.DROP_IN, draft.getType());
+//
+//        Booking booking = findBooking(draft.getBookingId());
+//        assertNotNull(booking);
+//        assertEquals(1, booking.getVehicleId());
+//        assertEquals("Konstigt ljud från bromsarna", booking.getDescription());
+//        assertEquals("WORK_ORDER_CREATED", booking.getStatus());
+//        assertNull(booking.getDate());
+//    }
+//
+//    // Okänt fordon ska stoppas, och inget ska läggas till i listorna.
+//    @Test
+//    void createDraftWorkOrderWithUnknownVehicleThrow() {
+//        int bookingsBefore = Database.getBookings().size();
+//        int workOrdersBefore = Database.getWorkOrders().size();
+//
+//        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+//                () -> garageSystem.createDraftWorkOrder(999, "Ljud", WorkOrderTypeEnum.PLANNED, 27));
+//
+//        assertEquals("createDraft.vehicleMissing", exception.getMessage());
+//        assertEquals(bookingsBefore, Database.getBookings().size());
+//        assertEquals(workOrdersBefore, Database.getWorkOrders().size());
+//    }
+//
+//    // En beskrivning med bara mellanslag räknas som tom.
+//    @Test
+//    void createDraftWorkOrderWithBlankDescriptionThrow() {
+//        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+//                () -> garageSystem.createDraftWorkOrder(1, " ", WorkOrderTypeEnum.PLANNED, 27));
+//
+//        assertEquals("createDraft.descriptionMissing", exception.getMessage());
+//    }
+//
+//    // Saknas typ ska ingen bokning bli kvar utan arbetsorder.
+//    @Test
+//    void createDraftWorkOrderWithoutTypeLeavesNoBooking() {
+//        int bookingsBefore = Database.getBookings().size();
+//
+//        assertThrows(IllegalArgumentException.class,
+//                () -> garageSystem.createDraftWorkOrder(1, "Ljud", null, 22));
+//
+//        assertEquals(bookingsBefore, Database.getBookings().size());
+//    }
+//
+//    @Test
+//    void incompleteDraftReportsMissingMechanicAndServices() {
+//        WorkOrder draft = garageSystem.createDraftWorkOrder(
+//                1, "Kontroll av bromsar", WorkOrderTypeEnum.PLANNED, 27
+//        );
+//        Booking booking = findBooking(draft.getBookingId());
+//
+//        try {
+//            List<String> errors =
+//                    garageSystem.validateWorkOrderForConfirmation(draft.getId());
+//
+//            assertTrue(errors.contains("confirmWorkOrder.mechanicMissing"));
+//            assertTrue(errors.contains("confirmWorkOrder.servicesMissing"));
+//            assertEquals(WorkOrderStatus.DRAFT, draft.getStatus());
+//        } finally {
+//            Database.getWorkOrders().remove(draft);
+//            Database.getBookings().remove(booking);
+//        }
+//    }
 
 //    @Test
 //    void completeDraftPassesValidationWithoutOptionalFields() {

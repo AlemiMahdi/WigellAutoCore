@@ -611,7 +611,7 @@ public class AutoCoreApp extends Application {
                 createNavItem("show-work-orders", "menu.workOrders", () -> showView(new ShowWorkOrdersView(new WorkOrderService(workOrderRepository, bookingRepository, serviceRepository)).getView())),
                 createNavItem("create-work-order", "menu.createWorkOrder", () -> showView(new CreateWorkOrderView(new WorkOrderService(workOrderRepository, bookingRepository, serviceRepository)))),
                 createNavItem("create-draft-work-order", "menu.createDraftWorkOrder",
-                        () -> showView(new CreateDraftWorkOrderView().getView())),
+                        () -> showView(new CreateDraftWorkOrderView(new WorkOrderService( workOrderRepository, bookingRepository, serviceRepository)).getView())),
                 createNavItem("start-work-order", "menu.startWorkOrder", () -> showView(new StartWorkOrderView())),
                 createNavItem("complete-work-order", "menu.completeWorkOrder", () -> showView(new CompleteWorkOrderView(new WorkOrderService(workOrderRepository, bookingRepository, serviceRepository)).getView())));
 
@@ -753,10 +753,10 @@ public class AutoCoreApp extends Application {
     public GarageSystem getGarageSystem() {
         return garageSystem;
     }
-
-    public WorkOrderRepository getWorkOrderRepository() {
-        return workOrderRepository;
-    }
+    // Vyerna får WorkOrderService via konstruktorn i stället.
+//    public WorkOrderRepository getWorkOrderRepository() {
+//        return workOrderRepository;
+//    }
 
     public BookingRepository getBookingRepository() {
         return bookingRepository;

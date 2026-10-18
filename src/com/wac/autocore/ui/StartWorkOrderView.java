@@ -176,7 +176,75 @@ public class StartWorkOrderView extends VBox {
         detailColumn.getChildren().setAll(detailCard);
     }
 
+    // Samma logik som tidigare: starta via GarageSystem och spara via repositories.
+    private void startSelectedWorkOrder() {
 
+        feedbackLabel.textProperty().unbind();
+        feedbackLabel.setText("");
+
+        WorkOrder workorder = selectedWorkOrder;
+        if (workorder == null) {
+            UiKit.showError(feedbackLabel, language.text("startWorkOrder.select").get());
+            return;
+        }
+
+        List<String> errors =
+                garageSystem.validateWorkOrderForConfirmation(workorder.getId());
+
+        if (!errors.isEmpty()) {
+            StringExpression message = language.text(errors.get(0));
+
+            for (int i = 1; i < errors.size(); i++) {
+                message = message.concat("\n").concat(
+                        language.text(errors.get(i))
+                );
+            }
+
+            feedbackLabel.setWrapText(true);
+            UiKit.showError(feedbackLabel, "");
+            feedbackLabel.textProperty().bind(message);
+            return;
+        }
+
+        // Sparar den valda arbetsorderns status innan vi försöker starta den.
+        WorkOrderStatus previousStatus = workorder.getStatus();
+
+        garageSystem.startWorkOrder(workorder.getId());
+
+        if (previousStatus == WorkOrderStatus.CONFIRMED
+                && workorder.getStatus() == WorkOrderStatus.IN_PROGRESS) {
+            // Hämtar bokningen och mekanikern som startWorkOrder har ändrat.
+            Booking booking = findBooking(workorder);
+            Mechanic mechanic = findMechanic(workorder);
+
+            try {
+                // Sparar arbetsorderns, bokningens och mekanikerns nya status.
+                workOrderRepository.save(workorder);
+
+                if (booking != null) {
+                    bookingRepository.save(booking);
+                }
+
+                if (mechanic != null) {
+                    mechanicRepository.save(mechanic);
+                }
+
+                UiKit.showSuccess(feedbackLabel,
+                        language.text("startWorkOrder.success").get() + " " + workorder.getId());
+            } catch (RuntimeException exception) {
+                UiKit.showError(feedbackLabel,
+                        language.text("startWorkOrder.saveError").get());
+                exception.printStackTrace();
+            }
+
+        } else {
+            UiKit.showError(feedbackLabel, language.text("startWorkOrder.cannotStart").get());
+        }
+
+        // Återställer valet och laddar om listan (startad order försvinner ur den).
+        // Inget kort väljs automatiskt, så man startar inte nästa order av misstag.
+        reloadList(false);
+    }
 
     // ------------------------------------------------------------
     // Hjälpmetoder för att slå upp och formatera data

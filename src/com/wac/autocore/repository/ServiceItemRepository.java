@@ -7,7 +7,7 @@ import org.hibernate.Transaction;
 
 import java.util.List;
 
-public class ServiceItemRepository {
+public class ServiceItemRepository implements IServiceItemRepository {
 
     public void save(ServiceItem serviceItem) {
         try (Session session =
