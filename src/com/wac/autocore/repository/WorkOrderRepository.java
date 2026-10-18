@@ -101,10 +101,10 @@ public class WorkOrderRepository implements IWorkOrderRepository {
             }
         }
     }
-
-    public List<WorkOrder> findAllWorkOrders() {
-        return findAll();
-    }
+//      Dubblet av findAll().
+//    public List<WorkOrder> findAllWorkOrders() {
+//        return findAll();
+//    }
 
     public List<String> confirmDraft(int workOrderId) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {

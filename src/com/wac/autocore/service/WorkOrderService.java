@@ -6,12 +6,8 @@ import com.wac.autocore.model.*;
 import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.repository.IServiceItemRepository;
 import com.wac.autocore.repository.IWorkOrderRepository;
-import com.wac.autocore.repository.WorkOrderRepository;
-import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
-import javafx.beans.binding.StringExpression;
 
-import javax.xml.crypto.Data;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -153,7 +149,7 @@ public class WorkOrderService {
             return errors;
         }
 
-        errors = new WorkOrderRepository().confirmDraft(workOrderId);
+        errors = workOrderRepository.confirmDraft(workOrderId);
 
         if (errors.isEmpty()) {
             // Uppdatera minnet först när databasen har sparats.
