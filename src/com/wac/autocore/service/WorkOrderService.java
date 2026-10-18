@@ -282,5 +282,19 @@ public class WorkOrderService {
         // 5. Returnera utkastet
         return draft;
     }
+
+    // Hämtar arbetsordrar som enligt statusreglerna får startas (flyttad från StartWorkOrderView, WAC-97).
+    public List<WorkOrder> findStartableWorkOrders() {
+
+        List<WorkOrder> startable = new ArrayList<WorkOrder>();
+        // Läser från Database så att vyn får samma objekt som resten av appen använder.
+        for (WorkOrder workOrder : Database.getWorkOrders()) {
+            // Statusmodellen avgör (idag bara CONFIRMED → IN_PROGRESS).
+            if (workOrder.getStatus().canChangeTo(WorkOrderStatus.IN_PROGRESS)) {
+                startable.add(workOrder);
+            }
+        }
+        return startable;
+    }
 }
 
