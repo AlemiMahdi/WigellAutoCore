@@ -37,9 +37,11 @@ public class CreateWorkOrderView  extends VBox {
 
     private final LanguageManager language = LanguageManager.getInstance();
     private final ObservableList<ServiceItem> selectedServices = FXCollections.observableArrayList();
+    private final BookingService bookingService;
 
+    public CreateWorkOrderView( BookingService bookingService) {
+        this.bookingService = bookingService;
 
-    public CreateWorkOrderView() {
         // Centrerar formulärkolumnen i innehållsytan
         setAlignment(Pos.TOP_CENTER);
 
@@ -329,7 +331,6 @@ public class CreateWorkOrderView  extends VBox {
             GarageSystem garageSystem = app.getGarageSystem();
             WorkOrderRepository workOrderRepository = app.getWorkOrderRepository();
             BookingRepository bookingRepository = app.getBookingRepository();
-            BookingService bookingService = new BookingService(bookingRepository);
             Mechanic mechanic = mechanicComboBox.getValue();
             WorkOrderTypeEnum selectedType = typeComboBox.getValue();
 

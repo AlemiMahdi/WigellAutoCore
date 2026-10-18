@@ -30,7 +30,7 @@ public class CustomerService {
 
         customer.setName(name);
         customer.setEmail(email);
-        customer.setEmail(email);
+        customer.setPhone(phone);
         
         customerRepository.save(customer);
 

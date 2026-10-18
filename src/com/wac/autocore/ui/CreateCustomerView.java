@@ -19,7 +19,7 @@ public class CreateCustomerView extends VBox {
 
     private final LanguageManager language = LanguageManager.getInstance();
     
-    private final CustomerService customerService = new CustomerService(new CustomerRepository());
+    private final CustomerService customerService;
 
     // Kunduppgifter
     private final TextField nameField = new TextField();
@@ -29,7 +29,8 @@ public class CreateCustomerView extends VBox {
     // Visar resultat eller felmeddelande under knappen
     private final Label feedback = UiKit.feedbackLabel();
 
-    public CreateCustomerView() {
+    public CreateCustomerView( CustomerService customerService) {
+        this.customerService = customerService;
         // Formulärkolumnen ska ligga centrerad högst upp i innehållsytan
         setAlignment(Pos.TOP_CENTER);
 

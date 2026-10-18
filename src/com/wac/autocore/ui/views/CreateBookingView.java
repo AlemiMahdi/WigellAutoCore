@@ -2,8 +2,6 @@ package com.wac.autocore.ui.views;
 
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
-import com.wac.autocore.repository.BookingRepository;
-import com.wac.autocore.repository.WorkOrderRepository;
 import com.wac.autocore.service.GarageSystem;
 import com.wac.autocore.ui.AutoCoreApp;
 import com.wac.autocore.ui.UiKit;
@@ -41,15 +39,21 @@ public class CreateBookingView {
 
     private final LanguageManager language = LanguageManager.getInstance();
     private final GarageSystem garageSystem = new GarageSystem();
+    private  final BookingService bookingService;
 
     private final Booking sourceBooking;
 
     // tomt formulär
-    public CreateBookingView() {
-        this(null);
-    }
-    // tidigare bokning som underlag
-    public CreateBookingView(Booking sourceBooking) {
+    public CreateBookingView(BookingService bookingService) {
+    this(bookingService, null);
+}
+
+    // Tidigare bokning som underlag
+    public CreateBookingView(
+            BookingService bookingService,
+            Booking sourceBooking
+    ) {
+        this.bookingService = bookingService;
         this.sourceBooking = sourceBooking;
     }
 
@@ -202,7 +206,6 @@ public class CreateBookingView {
 
         createButton.setOnAction(event -> {
             AutoCoreApp app = AutoCoreApp.getInstance();
-            BookingService bookingService = new BookingService(new BookingRepository());
 
 
             Vehicle vehicle = vehicleCombo.getValue();
@@ -269,14 +272,25 @@ public class CreateBookingView {
             );
 
             } catch (IllegalArgumentException exception) {
-                UiKit.showError(
-                    messageLabel, 
-                    language.text("createBooking.saveError").get()
-                );
 
-                exception.printStackTrace();
-                return;
-            }
+            // Visa det specifika valideringsfelet från BookingService.
+            UiKit.showError(
+                messageLabel,
+                language.text(exception.getMessage()).get()
+            );
+            return;
+
+        } catch (RuntimeException exception) {
+
+            // Visa ett generellt felmeddelande om databaslagringen misslyckas.
+            UiKit.showError(
+                messageLabel,
+                language.text("createBooking.saveError").get()
+            );
+
+            exception.printStackTrace();
+            return;
+        }
 
             // Tömmer formuläret så att nästa bokning kan skrivas in direkt
             vehicleCombo.getSelectionModel().clearSelection();

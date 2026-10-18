@@ -62,6 +62,8 @@ public class AutoCoreApp extends Application {
     private final IServiceItemRepository serviceRepository;
     private final VehicleService vehicleService;
     private final ServicePackageService servicePackageService;
+    private final CustomerService customerService;
+    private final BookingService bookingService;
 
     // FIX 1: Konstruktorn MÅSTE vara publik i en JavaFX-applikation!
     public AutoCoreApp() {
@@ -73,6 +75,8 @@ public class AutoCoreApp extends Application {
         this.servicePackageService = new ServicePackageService(new ServicePackageRepository());
         this.paymentRepository = new PaymentRepository();
         this.serviceRepository = new ServiceItemRepository();
+        this.customerService = new CustomerService(new CustomerRepository());
+        this.bookingService = new BookingService(bookingRepository);
 
         // Sätt instansen i samma sekund som JavaFX startar appen
         synchronized (AutoCoreApp.class) {
@@ -188,7 +192,7 @@ public class AutoCoreApp extends Application {
 
     private void loadCustomers() {
         CustomerRepository repository = new CustomerRepository();
-        List<Customer> savedCustomers = repository.findAllCustomers();
+        List<Customer> savedCustomers = repository.findAll();
 
         if (savedCustomers.isEmpty()) {
 
@@ -426,7 +430,7 @@ public class AutoCoreApp extends Application {
     // eftersom varje bokning måste peka på ett befintligt fordon.
     private void loadBookings() {
         BookingRepository repository = new BookingRepository();
-        List<Booking> savedBookings = repository.findAllBookings();
+        List<Booking> savedBookings = repository.findAll();
 
         // Tom tabell betyder att appen startas för första gången.
         boolean firstRun = savedBookings.isEmpty();
@@ -634,17 +638,17 @@ public class AutoCoreApp extends Application {
 
         addNavSection(menuBox, "menu.section.customersVehicles",
                 createNavItem("show-customers", "menu.customers", () -> showView(new CustomerView())),
-                createNavItem("create-customer", "menu.createCustomer", () -> showView(new CreateCustomerView())),
+                createNavItem("create-customer", "menu.createCustomer", () -> showView(new CreateCustomerView(customerService))),
                 createNavItem("show-vehicles", "menu.vehicles", () -> showView(ShowVehicleView.build(vehicleService))),
                 createNavItem("create-vehicle", "menu.createVehicle", () -> showView(CreateVehicleView.build(vehicleService))));
 
         addNavSection(menuBox, "menu.section.bookings",
-                createNavItem("show-bookings", "menu.bookings", () -> showView(new ShowBookingsView().getView())),
-                createNavItem("create-booking", "menu.createBooking", () -> showView(new CreateBookingView().getView())));
+                createNavItem("show-bookings", "menu.bookings", () -> showView(new ShowBookingsView(bookingService).getView())),
+                createNavItem("create-booking", "menu.createBooking", () -> showView(new CreateBookingView(bookingService).getView())));
 
         addNavSection(menuBox, "menu.section.workOrders",
                 createNavItem("show-work-orders", "menu.workOrders", () -> showView(new ShowWorkOrdersView(new ServiceItemService(serviceRepository)).getView())),
-                createNavItem("create-work-order", "menu.createWorkOrder", () -> showView(new CreateWorkOrderView())),
+                createNavItem("create-work-order", "menu.createWorkOrder", () -> showView(new CreateWorkOrderView(bookingService))),
                 createNavItem("create-draft-work-order", "menu.createDraftWorkOrder",
                         () -> showView(new CreateDraftWorkOrderView().getView())),
                 createNavItem("start-work-order", "menu.startWorkOrder", () -> showView(new StartWorkOrderView())),

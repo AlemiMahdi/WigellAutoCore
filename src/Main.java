@@ -115,7 +115,7 @@ public class Main {
         System.out.println();
         System.out.println("=============== MAIN MENU =================");
         System.out.println(" 1. Show customers");
-        System.out.println(" 2. Create customer");
+        //System.out.println(" 2. Create customer");
         System.out.println(" 3. Show vehicles");
         System.out.println(" 4. Create vehicle");
         System.out.println(" 5. Show bookings");

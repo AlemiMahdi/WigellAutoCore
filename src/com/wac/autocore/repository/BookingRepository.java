@@ -183,10 +183,6 @@ public class BookingRepository implements IBookingRepository{
                 }
         }
 
-        public List<Booking> findAllBookings() {
-                return findAll();
-        }
-
         @Override
         public Booking findById(int id) {
 

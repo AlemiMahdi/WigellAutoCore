@@ -59,8 +59,4 @@ public class CustomerRepository implements ICustomerRepository{
             }
         }
     }
-
-    public List<Customer> findAllCustomers() {
-        return findAll();
-    }
 }
