@@ -107,13 +107,13 @@ public class CreateDraftWorkOrderView {
             //Kontollera att något är valt i listorna
             Vehicle vehicle = vehicleComboBox.getValue();
             if (vehicle == null) {
-                UiKit.showError(messageLabel, language.text("createDraft.vehicleMissing").get());
+                UiKit.showError(messageLabel, language.text("createDraft.vehicleMissing"));
                 return;
             }
 
             WorkOrderTypeEnum type = typeCombo.getValue();
             if (type == null) {
-                UiKit.showError(messageLabel, language.text("createDraft.typeMissing").get());
+                UiKit.showError(messageLabel, language.text("createDraft.typeMissing"));
                 return;
             }
 
@@ -122,7 +122,7 @@ public class CreateDraftWorkOrderView {
                 WorkOrder originalOrder = originalWorkOrderCombo.getValue();
                 if (originalOrder == null) {
                     // Visar felmeddelande om man glömt att välja vilken order som reklameras
-                    UiKit.showError(messageLabel, language.text("createDraft.originalMissing").get());
+                    UiKit.showError(messageLabel, language.text("createDraft.originalMissing"));
                     return;
                 }
                 originalId = originalOrder.getId();
@@ -136,7 +136,7 @@ public class CreateDraftWorkOrderView {
                         vehicle.getId(), descriptionField.getText(), type, originalId);
             } catch (IllegalArgumentException exception) {
                 // Felets text är en språknyckel, t.ex. "createDraft.descriptionMissing"
-                UiKit.showError(messageLabel, language.text(exception.getMessage()).get());
+                UiKit.showError(messageLabel, language.text(exception.getMessage()));
                 return;
             }
 
@@ -152,12 +152,12 @@ public class CreateDraftWorkOrderView {
                 //Tar bort ur minnet om sparandet misslyckades
                 Database.getWorkOrders().remove(draft);
                 Database.getBookings().remove(booking);
-                UiKit.showError(messageLabel, language.text("createDraft.saveError").get());
+                UiKit.showError(messageLabel, language.text("createDraft.saveError"));
                 e.printStackTrace();
                 return;
             }
 
-            UiKit.showSuccess(messageLabel, language.text("createDraft.success").get());
+            UiKit.showSuccess(messageLabel, language.text("createDraft.success"));
 
             //Tömmer formuläret så att nästa utkast kan skriva i direkt
             vehicleComboBox.setValue(null);

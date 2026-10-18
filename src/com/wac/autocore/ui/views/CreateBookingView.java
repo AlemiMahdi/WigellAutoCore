@@ -207,7 +207,7 @@ public class CreateBookingView {
 
             Vehicle vehicle = vehicleCombo.getValue();
             if (vehicle == null) {
-                UiKit.showError(messageLabel, language.text("createBooking.selectVehicle").get());
+                UiKit.showError(messageLabel, language.text("createBooking.selectVehicle"));
                 return;
 
             }
@@ -215,7 +215,7 @@ public class CreateBookingView {
 
             LocalDate date = datePicker.getValue();
             if (date == null) {
-                UiKit.showError(messageLabel, language.text("createBooking.selectDate").get());
+                UiKit.showError(messageLabel, language.text("createBooking.selectDate"));
                 return;
             }
 
@@ -223,7 +223,7 @@ public class CreateBookingView {
             try {
                 startTime = LocalTime.parse(startTimeField.getText().trim());
             } catch (DateTimeParseException exception) {
-                UiKit.showError(messageLabel, language.text("createBooking.invalidStartTime").get());
+                UiKit.showError(messageLabel, language.text("createBooking.invalidStartTime"));
                 return;
             }
 
@@ -231,25 +231,25 @@ public class CreateBookingView {
             try {
                 durationMinutes = Integer.parseInt(durationField.getText().trim());
             } catch (NumberFormatException exception) {
-                UiKit.showError(messageLabel, language.text("createBooking.invalidDuration").get());
+                UiKit.showError(messageLabel, language.text("createBooking.invalidDuration"));
                 return;
             }
 
             if (durationMinutes <= 0) {
-                UiKit.showError(messageLabel, language.text("createBooking.durationGreaterThanZero").get());
+                UiKit.showError(messageLabel, language.text("createBooking.durationGreaterThanZero"));
                 return;
             }
 
             Mechanic mechanic = mechanicCombo.getValue();
             if (mechanic == null) {
-                UiKit.showError(messageLabel, language.text("createBooking.selectMechanic").get());
+                UiKit.showError(messageLabel, language.text("createBooking.selectMechanic"));
                 return;
             }
 
             if (selectedServices.isEmpty()) {
                 UiKit.showError(
                         messageLabel,
-                        language.text("createBooking.selectService").get()
+                        language.text("createBooking.selectService")
                 );
                 return;
             }
@@ -265,7 +265,7 @@ public class CreateBookingView {
                     mechanic.getId()
                 );
 
-                UiKit.showSuccess(messageLabel, language.text("createBooking.success").get()
+                UiKit.showSuccess(messageLabel, language.text("createBooking.success")
             );
 
             } catch (IllegalArgumentException exception) {
@@ -273,7 +273,7 @@ public class CreateBookingView {
             // Visa det specifika valideringsfelet från BookingService.
             UiKit.showError(
                 messageLabel,
-                language.text(exception.getMessage()).get()
+                language.text(exception.getMessage())
             );
             return;
 
@@ -282,7 +282,7 @@ public class CreateBookingView {
             // Visa ett generellt felmeddelande om databaslagringen misslyckas.
             UiKit.showError(
                 messageLabel,
-                language.text("createBooking.saveError").get()
+                language.text("createBooking.saveError")
             );
 
             exception.printStackTrace();

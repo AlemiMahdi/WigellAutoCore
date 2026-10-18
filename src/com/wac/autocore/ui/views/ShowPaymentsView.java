@@ -15,9 +15,11 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.VBox;
+import javafx.beans.value.ObservableValue;
 
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
+import java.util.Observable;
 
 public class ShowPaymentsView {
     private final PaymentService paymentService;
@@ -43,9 +45,7 @@ public class ShowPaymentsView {
                 new TableColumn<>("Invoice");
 
         invoiceColumn.setCellValueFactory(cellData ->
-                new SimpleStringProperty(
                         describeInvoice(cellData.getValue().getInvoiceId())
-                )
         );
 
         // Amount – fetstil och högerställd så beloppen står under varandra
@@ -65,8 +65,8 @@ public class ShowPaymentsView {
                 new TableColumn<>("Type");
 
         paymentTypeColumn.setCellValueFactory(cellData ->
-                new SimpleStringProperty(
-                        ViewHelpMethod.formatPaymentType(cellData.getValue().getPaymentType())
+                ViewHelpMethod.paymentTypeText(
+                        cellData.getValue().getPaymentType()
                 )
         );
         paymentTypeColumn.getStyleClass().add("cell-muted");
@@ -138,14 +138,18 @@ public class ShowPaymentsView {
 
     // Letar upp fakturan för att kunna visa dess arbetsorder-nummer.
     // Hittas den inte visas faktura-id:t i stället.
-    private static String describeInvoice(int invoiceId) {
+    private static ObservableValue<String> describeInvoice(int invoiceId) {
         LanguageManager language = LanguageManager.getInstance();
         for (Invoice invoice : Database.getInvoices()) {
             if (invoice.getId() == invoiceId) {
-                return ShowInvoiceView.workOrderCode(invoice.getWorkOrderId()) + " "
-                        + language.text("payments.invoiceSuffix").get();
+                return javafx.beans.binding.Bindings.concat(
+                        ShowInvoiceView.workOrderCode(invoice.getWorkOrderId()),
+                        " ",
+                        language.text("payments.invoiceSuffix")
+                );
             }
         }
-        return language.text("payments.invoiceNumber").get() + invoiceId;
+        return language.text("payments.invoiceNumber")
+                .concat(String.valueOf(invoiceId));
     }
 }

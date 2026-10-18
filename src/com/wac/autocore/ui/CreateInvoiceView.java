@@ -12,6 +12,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
+import javafx.beans.value.ObservableValue;
 
 import javafx.util.StringConverter;
 
@@ -172,16 +173,16 @@ public class CreateInvoiceView {
 
         // Tala om varför listan är tom, annars ser det ut som ett fel
         if (workOrderBox.getItems().isEmpty()) {
-            UiKit.showInfo(statusLabel, language.text("createInvoice.noCompleted").get());
+            UiKit.showInfo(statusLabel, language.text("createInvoice.noCompleted"));
         } else {
-            UiKit.showInfo(statusLabel, language.text("createInvoice.discountInfo").get());
+            UiKit.showInfo(statusLabel, language.text("createInvoice.discountInfo"));
         }
 
         createButton.setOnAction(actionEvent -> {
             WorkOrder selectedWorkOrder = workOrderBox.getValue();
 
             if (selectedWorkOrder == null) {
-                UiKit.showError(statusLabel, language.text("startWorkOrder.select").get());
+                UiKit.showError(statusLabel, language.text("startWorkOrder.select"));
                 return;
             }
             int workOrderId = selectedWorkOrder.getId();
@@ -200,7 +201,7 @@ public class CreateInvoiceView {
                     } catch (NumberFormatException exception) {
                         UiKit.showError(
                                 statusLabel,
-                                language.text("createInvoice.invalidExtraCost").get()
+                                language.text("createInvoice.invalidExtraCost")
                         );
                         return;
                     }
@@ -215,17 +216,24 @@ public class CreateInvoiceView {
                 if (invoice == null) {
                     UiKit.showError(
                             statusLabel,
-                            language.text("createInvoice.createError").get()
+                            language.text("createInvoice.createError")
                     );
                     return;
                 }
 
                 UiKit.showSuccess(
                         statusLabel,
-                        language.text("createInvoice.successFor").get() + " "
-                                + ShowInvoiceView.workOrderCode(workOrderId)
-                                + ". " + language.text("createInvoice.totalLabel").get() + ": "
-                                + ShowInvoiceView.formatSek(invoice.getTotalAmount())
+                        language.text("createInvoice.successFor")
+                                .concat(" ")
+                                .concat(ShowInvoiceView.workOrderCode(workOrderId))
+                                .concat(". ")
+                                .concat(language.text("createInvoice.totalLabel"))
+                                .concat(": ")
+                                .concat(
+                                        ShowInvoiceView.formatSek(
+                                                invoice.getTotalAmount()
+                                        )
+                                )
                 );
 
                 workOrderBox.setValue(null);
@@ -236,16 +244,18 @@ public class CreateInvoiceView {
             } catch (InvoiceValidationException exception) {
                 UiKit.showError(
                         statusLabel,
-                        language.text(exception.getMessage()).get()
+                        language.text(exception.getMessage())
                 );
 
             } catch (RuntimeException exception) {
 
                 UiKit.showError(statusLabel,
-                        language.text("createInvoice.saveError").get()
+                        language.text("createInvoice.saveError")
                 );
                 exception.printStackTrace();
             }
+
+
 
 
         });

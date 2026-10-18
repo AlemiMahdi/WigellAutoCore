@@ -5,6 +5,8 @@ import com.wac.autocore.ui.language.LanguageManager;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.scene.control.*;
+import javafx.beans.value.ObservableValue;
+import javafx.beans.property.ReadOnlyStringWrapper;
 
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
@@ -18,11 +20,17 @@ public class ViewHelpMethod {
      * Används i ProcessPaymentView och ShowPaymentsView så att betalsätt ser likadant ut.
      */
     public static String formatPaymentType(String type) {
+        return paymentTypeText(type).getValue();
+    }
+
+    public static ObservableValue<String> paymentTypeText(String type) {
         if (type == null || type.trim().isEmpty()) {
-            return "—";
+            return new ReadOnlyStringWrapper("—");
         }
-        return LanguageManager.getInstance()
-                .text("payment.type." + type.trim().toUpperCase()).get();
+
+        return LanguageManager.getInstance().text(
+                "payment.type." + type.trim().toUpperCase(Locale.ROOT)
+        );
     }
 
     // 1450.0 -> "1 450 SEK" (mellanslag som tusentalsavgränsare, som i designen)

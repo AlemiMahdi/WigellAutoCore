@@ -24,6 +24,7 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.SVGPath;
+import javafx.beans.value.ObservableValue;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -65,7 +66,7 @@ public class ShowBookingsView {
             e.printStackTrace();
 
             return buildErrorView(
-                    language.text("bookings.loadError").get()
+                    language.text("bookings.loadError")
             );
         }
 
@@ -76,11 +77,7 @@ public class ShowBookingsView {
                 new TableColumn<>("Vehicle");
 
         vehicleColumn.setCellValueFactory(cell ->
-                new ReadOnlyStringWrapper(
-                        vehicleText(
-                                cell.getValue().getVehicleId()
-                        )
-                )
+                vehicleText(cell.getValue().getVehicleId())
         );
 
         TableColumn<Booking, String> dateColumn =
@@ -139,36 +136,24 @@ public class ShowBookingsView {
                     cell.getValue().getId();
 
             if (!mechanicByBooking.containsKey(bookingId)) {
-                return new ReadOnlyStringWrapper(
-                        language.text(
-                                "bookings.notSaved"
-                        ).get()
-                );
+                return language.text("bookings.notSaved");
             }
 
             Integer mechanicId =
                     mechanicByBooking.get(bookingId);
 
             if (mechanicId == null) {
-                return new ReadOnlyStringWrapper(
-                        language.text(
-                                "bookings.notAssigned"
-                        ).get()
-                );
+                return language.text("bookings.notAssigned");
             }
 
             String mechanicName =
                     mechanicNames.get(mechanicId);
 
             if (mechanicName == null) {
-                return new ReadOnlyStringWrapper(
-                        language.text(
-                                "bookings.unknownMechanic"
-                        ).get()
-                                + " (ID: "
-                                + mechanicId
-                                + ")"
-                );
+                return language.text("bookings.unknownMechanic")
+                        .concat(" (ID: ")
+                        .concat(String.valueOf(mechanicId))
+                        .concat(")");
             }
 
             return new ReadOnlyStringWrapper(
@@ -505,8 +490,7 @@ public class ShowBookingsView {
 
     // Visas om bokningarna inte gick att läsa från databasen.
     private VBox buildErrorView(
-            String message
-    ) {
+            ObservableValue<String> message    ) {
 
         Label errorLabel =
                 UiKit.feedbackLabel();
@@ -524,28 +508,26 @@ public class ShowBookingsView {
     }
 
     // Gör om ett fordons-ID till "regnr · märke modell".
-    private String vehicleText(
-            int vehicleId
-    ) {
+    private ObservableValue<String> vehicleText(int vehicleId) {
 
         for (Vehicle vehicle :
                 Database.getVehicles()) {
 
             if (vehicle.getId() == vehicleId) {
 
-                return vehicle.getRegistrationNumber()
-                        + " · "
-                        + vehicle.getBrand()
-                        + " "
-                        + vehicle.getModel();
+                return new ReadOnlyStringWrapper(
+                        vehicle.getRegistrationNumber()
+                                + " · "
+                                + vehicle.getBrand()
+                                + " "
+                                + vehicle.getModel()
+                );
             }
         }
 
         // Fordonet finns inte längre – visa åtminstone ID:t.
-        return language.text(
-                "bookings.vehicleId"
-        ).get()
-                + " "
-                + vehicleId;
+        return language.text("bookings.vehicleId")
+                .concat(" ")
+                .concat(String.valueOf(vehicleId));
     }
 }

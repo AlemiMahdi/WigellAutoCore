@@ -17,9 +17,12 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.FlowPane;
+import javafx.beans.value.ObservableValue;
+import javafx.beans.property.ReadOnlyStringWrapper;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Observable;
 
 import com.wac.autocore.ui.EditWorkOrderDraftView;
 import javafx.scene.control.Button;
@@ -78,13 +81,16 @@ public class ShowWorkOrdersView {
         Label idLabel = new Label("WO-" + workOrder.getId());
         idLabel.getStyleClass().add("kanban-card-title");
 
-        Label vehicleLabel = new Label(vehicleText(workOrder.getBookingId()));
+        Label vehicleLabel = new Label();
+        vehicleLabel.textProperty().bind(vehicleText(workOrder.getBookingId()));
         vehicleLabel.getStyleClass().add("kanban-card-text");
 
-        Label mechanicLabel = new Label(mechanicName(workOrder.getMechanicId()));
+        Label mechanicLabel = new Label();
+        mechanicLabel.textProperty().bind(mechanicName(workOrder.getMechanicId()));
         mechanicLabel.getStyleClass().add("kanban-card-sub");
 
-        Label servicesLabel = new Label(servicesText(workOrder.getServiceItemIds()));
+        Label servicesLabel = new Label();
+        servicesLabel.textProperty().bind(servicesText(workOrder.getServiceItemIds()));
         servicesLabel.getStyleClass().add("kanban-card-hint");
         servicesLabel.setWrapText(true);
 
@@ -234,36 +240,42 @@ public class ShowWorkOrdersView {
     }
 
     // Arbetsordern pekar på en bokning, som i sin tur pekar på fordonet
-    private String vehicleText(int bookingId) {
+    private ObservableValue<String> vehicleText(int bookingId) {
         for (Booking booking : Database.getBookings()) {
             if (booking.getId() == bookingId) {
                 for (Vehicle vehicle : Database.getVehicles()) {
                     if (vehicle.getId() == booking.getVehicleId()) {
-                        return vehicle.getRegistrationNumber() + " · "
-                                + vehicle.getBrand() + " " + vehicle.getModel();
+                        return new ReadOnlyStringWrapper(
+                                vehicle.getRegistrationNumber() + " · "
+                                        + vehicle.getBrand() + " " + vehicle.getModel()
+                        );
                     }
                 }
-                return language.text("bookings.vehicleId").get() + " " + booking.getVehicleId();
+                return language.text("bookings.vehicleId")
+                        .concat(" ")
+                        .concat(String.valueOf(booking.getVehicleId()));
             }
         }
-        return language.text("workOrders.bookingId").get() + " " + bookingId;
+        return language.text("workOrders.bookingId")
+                .concat(" ")
+                .concat(String.valueOf(bookingId));
     }
 
-    private String mechanicName(int mechanicId) {
+    private ObservableValue<String> mechanicName(int mechanicId) {
         for (Mechanic mechanic : Database.getMechanics()) {
             if (mechanic.getId() == mechanicId) {
-                return mechanic.getName();
+                return new ReadOnlyStringWrapper(mechanic.getName());
             }
         }
         // Ingen mekaniker med det ID:t (t.ex. 0) = inte tilldelad ännu
-        return language.text("bookings.notAssigned").get();
+        return language.text("bookings.notAssigned");
     }
 
     // Gör om listan med tjänste-ID:n till "Oil change, Brake pads"
-    private String servicesText(List<Integer> serviceItemIds) {
+    private ObservableValue<String> servicesText(List<Integer> serviceItemIds) {
         List<String> names = new ArrayList<>();
         if (serviceItemIds == null) {
-            return language.text("workOrders.noServices").get();
+            return language.text("workOrders.noServices");
         }
         for (Integer serviceItemId : serviceItemIds) {
             for (ServiceItem serviceItem : Database.getServiceItems()) {
@@ -273,8 +285,8 @@ public class ShowWorkOrdersView {
             }
         }
         if (names.isEmpty()) {
-            return language.text("workOrders.noServices").get();
+            return language.text("workOrders.noServices");
         }
-        return String.join(", ", names);
+        return new ReadOnlyStringWrapper(String.join(", ", names));
     }
 }

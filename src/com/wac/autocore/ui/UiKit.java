@@ -19,6 +19,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Callback;
+import javafx.beans.value.ObservableValue;
 
 /**
  * Små byggklossar som alla innehållsvyer delar.
@@ -363,12 +364,43 @@ public final class UiKit {
         showFeedback(label, message, "info-text");
     }
 
-    // Samma etikett kan visa fel ena gången och lyckat nästa,
-    // därför tar vi bort den gamla färgklassen innan vi lägger till den nya.
-    private static void showFeedback(Label label, String message, String styleClass) {
-        label.getStyleClass().removeAll("error-text", "success-text", "info-text");
+    public static void showError(
+            Label label,
+            ObservableValue<String> message) {
+        showFeedback(label, message, "error-text");
+    }
+
+    public static void showSuccess(
+            Label label,
+            ObservableValue<String> message) {
+        showFeedback(label, message, "success-text");
+    }
+
+    public static void showInfo(
+            Label label,
+            ObservableValue<String> message) {
+        showFeedback(label, message, "info-text");
+    }
+
+    private static void showFeedback(
+            Label label,
+            String message,
+            String styleClass) {
+        label.textProperty().unbind();
+        label.getStyleClass().removeAll(
+                "error-text", "success-text", "info-text"
+        );
         label.getStyleClass().add(styleClass);
         label.setText(message);
+    }
+
+    // Samma etikett kan visa fel ena gången och lyckat nästa,
+    // därför tar vi bort den gamla färgklassen innan vi lägger till den nya.
+    private static void showFeedback(Label label, ObservableValue<String> message, String styleClass) {
+       label.textProperty().unbind();
+        label.getStyleClass().removeAll("error-text", "success-text", "info-text");
+        label.getStyleClass().add(styleClass);
+        label.textProperty().bind(message);
     }
 
     // ------------------------------------------------------------

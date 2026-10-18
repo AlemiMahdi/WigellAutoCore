@@ -98,7 +98,7 @@ public class ProcessPaymentView {
         Label messageLabel = UiKit.feedbackLabel();
 
         if (invoiceBox.getItems().isEmpty()) {
-            UiKit.showInfo(messageLabel, language.text("processPayment.noInvoices").get());
+            UiKit.showInfo(messageLabel, language.text("processPayment.noInvoices"));
         }
 
 
@@ -110,15 +110,15 @@ public class ProcessPaymentView {
         processButton.setOnAction(event -> {
             try {
                 paymentService.processPayment(invoiceBox.getValue(), paymentTypeBox.getValue());
-                UiKit.showSuccess(messageLabel, language.text("processPayment.success").get());
+                UiKit.showSuccess(messageLabel, language.text("processPayment.success"));
                 invoiceBox.setValue(null);
                 paymentTypeBox.setValue(null);
                 refreshInvoices(invoiceBox);
             } catch (IllegalArgumentException exception) {
-                UiKit.showError(messageLabel, language.text(exception.getMessage()).get());
+                UiKit.showError(messageLabel, language.text(exception.getMessage()));
             } catch (RuntimeException exception) {
                 refreshInvoices(invoiceBox);
-                UiKit.showError(messageLabel, language.text("processPayment.saveError").get());
+                UiKit.showError(messageLabel, language.text("processPayment.saveError"));
                 exception.printStackTrace();
             }
 
@@ -145,9 +145,9 @@ public class ProcessPaymentView {
     private static String describeInvoice(Invoice invoice) {
         LanguageManager language = LanguageManager.getInstance();
         return ShowInvoiceView.workOrderCode(invoice.getWorkOrderId()) + " "
-                + language.text("payments.invoiceSuffix").get() + " · "
+                + language.text("payments.invoiceSuffix") + " · "
                 + ShowInvoiceView.formatSek(invoice.getTotalAmount()) + " · "
-                + language.text(invoice.isPaid() ? "badge.PAID" : "badge.UNPAID").get();
+                + language.text(invoice.isPaid() ? "badge.PAID" : "badge.UNPAID");
     }
 
     private void refreshInvoices(ComboBox<Invoice> invoiceBox) {
