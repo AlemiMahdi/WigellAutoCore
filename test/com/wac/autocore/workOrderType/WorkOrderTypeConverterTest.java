@@ -1,5 +1,7 @@
 package com.wac.autocore.workOrderType;
 
+import com.wac.autocore.model.WorkOrderTypeEnum;
+import com.wac.autocore.repository.WorkOrderTypeConverter;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
