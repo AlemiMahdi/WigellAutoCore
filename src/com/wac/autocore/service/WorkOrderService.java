@@ -268,15 +268,15 @@ public class WorkOrderService {
             throw new IllegalArgumentException("createDraft.descriptionMissing");
         }
 
-        // 2. Skapa utkastet (id 0 = MySQL ger id) och bokningen (id räknas fram)
-        // TODO WAC-89: när Booking får AUTO_INCREMENT → new Booking(0, ...) och sätt bookingId i saveWithBooking
-        int bookingId = Database.getBookings().size() + 1;
-        WorkOrder draft = WorkOrder.createDraft(0, bookingId, type);
+        // 2. Skapa utkastset och bokningen (id 0 = MySQL ger id till båda,
+        //    saveWithBooking kopplar ihop dem när bokningen fått sitt id)
+//        int bookingId = Database.getBookings().size() + 1;
+        WorkOrder draft = WorkOrder.createDraft(0, 0, type);
         if (type == WorkOrderTypeEnum.COMPLAINT && originalWorkOrderId != null) {
             draft.setOriginalWorkOrderId(originalWorkOrderId);
         }
 
-        Booking booking = new Booking(bookingId, vehicleId, null, description.trim());
+        Booking booking = new Booking(0, vehicleId, null, description.trim());
         booking.setStatus("WORK_ORDER_CREATED");
 
         // 3. Spara bokning och utkast i samma transaktion
