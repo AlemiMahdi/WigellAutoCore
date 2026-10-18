@@ -24,6 +24,9 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.SVGPath;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.TextArea;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -178,16 +181,7 @@ public class ShowBookingsView {
 
         mechanicColumn.getStyleClass().add("cell-muted");
 
-        TableColumn<Booking, String> descriptionColumn =
-                new TableColumn<>("Description");
 
-        descriptionColumn.setCellValueFactory(
-                new PropertyValueFactory<Booking, String>(
-                        "description"
-                )
-        );
-
-        descriptionColumn.getStyleClass().add("cell-muted");
 
         // Status visas som en färgad badge.
         TableColumn<Booking, String> statusColumn =
@@ -223,10 +217,6 @@ public class ShowBookingsView {
                 language.text("bookings.mechanic")
         );
 
-        descriptionColumn.textProperty().bind(
-                language.text("bookings.description")
-        );
-
         statusColumn.textProperty().bind(
                 language.text("bookings.status")
         );
@@ -236,7 +226,6 @@ public class ShowBookingsView {
         table.getColumns().add(startTimeColumn);
         table.getColumns().add(durationColumn);
         table.getColumns().add(mechanicColumn);
-        table.getColumns().add(descriptionColumn);
         table.getColumns().add(statusColumn);
 
         // Beskrivningen får mest plats, status minst.
@@ -258,10 +247,6 @@ public class ShowBookingsView {
 
         mechanicColumn.setMaxWidth(
                 1f * Integer.MAX_VALUE * 15
-        );
-
-        descriptionColumn.setMaxWidth(
-                1f * Integer.MAX_VALUE * 22
         );
 
         statusColumn.setMaxWidth(
@@ -290,19 +275,60 @@ public class ShowBookingsView {
         TableColumn<Booking, Void> editColumn =
                 new TableColumn<>();
 
+        editColumn.textProperty().bind(
+                language.text("bookings.actions")
+        );
         editColumn.setSortable(false);
-        editColumn.setMinWidth(60);
-        editColumn.setPrefWidth(60);
-        editColumn.setMaxWidth(60);
+        editColumn.setMinWidth(360);
+        editColumn.setPrefWidth(380);
+        editColumn.setMaxWidth(420);
 
         editColumn.setCellFactory(
                 column ->
                         new TableCell<Booking, Void>() {
 
-                            private final Button editButton =
-                                    UiKit.primaryButton("");
+                            private final Button editButton = new Button();
+
+                            private final Button descriptionButton = new Button();
+
+                            private final HBox actions =
+                                    new HBox(8, descriptionButton, editButton);
 
                             {
+                                descriptionButton.textProperty().bind(
+                                        language.text("bookings.showDescription")
+                                );
+
+                                editButton.textProperty().bind(
+                                        language.text("bookings.editServices")
+                                );
+
+                                descriptionButton.getStyleClass().add("booking-description-button");
+                                editButton.getStyleClass().add("booking-edit-button");
+
+                                actions.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
+                                descriptionButton.setOnAction(event -> {
+                                    int index = getIndex();
+
+                                    if (index < 0
+                                            || index >= getTableView().getItems().size()) {
+                                        return;
+                                    }
+
+                                    Booking booking = getTableView().getItems().get(index);
+
+                                    if (booking != null) {
+                                        showDescription(root, booking);
+                                    }
+                                });
+
+// Knappklick ska inte också öppna radens dubbelklicksredigering.
+                                actions.addEventHandler(
+                                        javafx.scene.input.MouseEvent.MOUSE_CLICKED,
+                                        event -> event.consume()
+                                );
+
                                 SVGPath pencil =
                                         new SVGPath();
 
@@ -319,28 +345,11 @@ public class ShowBookingsView {
                                         pencil
                                 );
 
-                                editButton.getStyleClass().add(
-                                        "icon-button"
-                                );
-
-                                Tooltip tooltip =
-                                        new Tooltip();
-
-                                tooltip.textProperty().bind(
-                                        language.text(
-                                                "bookings.edit"
-                                        )
-                                );
-
-                                editButton.setTooltip(
-                                        tooltip
-                                );
-
                                 editButton
                                         .accessibleTextProperty()
                                         .bind(
                                                 language.text(
-                                                        "bookings.edit"
+                                                        "bookings.editServices"
                                                 )
                                         );
 
@@ -389,11 +398,7 @@ public class ShowBookingsView {
 
                                 setText(null);
 
-                                setGraphic(
-                                        empty
-                                                ? null
-                                                : editButton
-                                );
+                                setGraphic(empty ? null : actions);
                             }
                         }
         );
@@ -447,6 +452,58 @@ public class ShowBookingsView {
         });
 
         return root;
+    }
+
+    private void showDescription(VBox root, Booking booking) {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.initOwner(root.getScene().getWindow());
+
+        dialog.titleProperty().bind(
+                language.text("bookings.description")
+        );
+
+        dialog.setHeaderText(
+                vehicleText(booking.getVehicleId())
+                        + " · #" + booking.getId()
+                        + (booking.getDate() == null
+                        ? ""
+                        : " · " + booking.getDate())
+        );
+
+        TextArea description = new TextArea();
+        description.setEditable(false);
+        description.setWrapText(true);
+        description.setPrefRowCount(8);
+
+        String text = booking.getDescription();
+
+        if (text == null || text.trim().isEmpty()) {
+            description.textProperty().bind(
+                    language.text("bookings.noDescription")
+            );
+        } else {
+            description.setText(text);
+        }
+
+        dialog.getDialogPane().setContent(description);
+        dialog.getDialogPane().setPrefWidth(560);
+        dialog.getDialogPane().getStylesheets().addAll(
+                root.getScene().getStylesheets()
+        );
+
+        dialog.getDialogPane().getButtonTypes().add(
+                ButtonType.CLOSE
+        );
+
+        Button closeButton = (Button) dialog.getDialogPane()
+                .lookupButton(ButtonType.CLOSE);
+
+        closeButton.textProperty().bind(
+                language.text("bookings.closeDescription")
+        );
+
+        dialog.setResizable(true);
+        dialog.showAndWait();
     }
 
     // Används av både pennknappen och dubbelklicket.
