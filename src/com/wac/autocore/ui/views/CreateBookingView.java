@@ -256,12 +256,12 @@ public class CreateBookingView {
 
             try {
                 bookingService.createBooking(
-                    vehicleId, 
-                    date, 
-                    startTime, 
-                    durationMinutes, 
-                    descriptionField.getText(), 
-                    new ArrayList<>(selectedServices), 
+                    vehicleId,
+                    date,
+                    startTime,
+                    durationMinutes,
+                    descriptionField.getText(),
+                    new ArrayList<>(selectedServices),
                     mechanic.getId()
                 );
 

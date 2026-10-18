@@ -45,6 +45,7 @@ import java.util.logging.Level;
 import java.util.HashMap;
 
 import com.wac.autocore.ui.views.MechanicScheduleView;
+import org.hibernate.jdbc.Work;
 
 import java.util.List;
 import java.util.Map;
@@ -60,7 +61,7 @@ public class AutoCoreApp extends Application {
     private static AutoCoreApp instance;
 
     private final GarageSystem garageSystem;
-    private final WorkOrderRepository workOrderRepository;
+    private final IWorkOrderRepository workOrderRepository;
     private final BookingRepository bookingRepository;
     private final VehicleRepository vehicleRepository;
     private final InvoiceService invoiceService;
@@ -69,6 +70,7 @@ public class AutoCoreApp extends Application {
     private final IServiceItemRepository serviceRepository;
     private final VehicleService vehicleService;
     private final ServicePackageService servicePackageService;
+    private final WorkOrderService workOrderService;
     private final CustomerService customerService;
     private final BookingService bookingService;
 
@@ -84,6 +86,7 @@ public class AutoCoreApp extends Application {
         this.servicePackageService = new ServicePackageService(new ServicePackageRepository());
         this.paymentRepository = new PaymentRepository();
         this.serviceRepository = new ServiceItemRepository();
+        this.workOrderService = new WorkOrderService(workOrderRepository, bookingRepository, serviceRepository, vehicleRepository);
         this.customerService = new CustomerService(new CustomerRepository());
         this.bookingService = new BookingService(bookingRepository);
 
@@ -213,7 +216,7 @@ public class AutoCoreApp extends Application {
 
                 //Spara ursprungligt ID för att kunna uppdatera fordonen
                 int oldId = customer.getId();
-                
+
                 //Låt MySQL generera ett nytt ID
                 customer.setId(0);
                 repository.save(customer);
@@ -466,7 +469,7 @@ public class AutoCoreApp extends Application {
     private void loadWorkOrders() {
 
         WorkOrderRepository repository = new WorkOrderRepository();
-        List<WorkOrder> savedWorkOrders = repository.findAllWorkOrders();
+        List<WorkOrder> savedWorkOrders = repository.findAll();
 
         // Originalet har inga exempelarbetsordrar,
         // så en tom tabell betyder att det inte finns något att läsa in.
@@ -474,51 +477,44 @@ public class AutoCoreApp extends Application {
             return;
         }
 
-        for (int i = 0; i < savedWorkOrders.size(); i++) {
-            WorkOrder workOrder = savedWorkOrders.get(i);
-
-            // Originalet räknar ut nästa ID som listans storlek + 1,
-            // så ID:na måste vara 1, 2, 3... utan luckor.
-            if (workOrder.getId() != i + 1) {
-                throw new IllegalStateException(
-                        "Work order IDs must be consecutive, starting at 1."
-                );
-            }
-            // Kontrollerar att arbetsorderns bokning finns.
-            boolean bookingExists = Database.getBookings().stream()
-                    .anyMatch(booking ->
-                            booking.getId() == workOrder.getBookingId());
-
-            if (!bookingExists) {
-                throw new IllegalStateException(
-                        "Booking missing for work order " + workOrder.getId()
-                );
-            }
-            // Kontrollerar att arbetsorderns mekaniker finns.
-            // 0 betyder att ingen mekaniker är vald än (utkast, WAC-63)
-            if (workOrder.getMechanicId() != 0) {
-                boolean mechanicsExist = Database.getMechanics().stream()
-                        .anyMatch(mechanic -> mechanic.getId() == workOrder.getMechanicId());
-
-                if (!mechanicsExist) {
-                    throw new IllegalStateException(
-                            "Mechanic missing for work order " + workOrder.getId()
-                    );
-                }
-            }
-            // Kontrollerar att alla arbetsorderns tjänster finns.
-            for (int serviceItemId : workOrder.getServiceItemIds()) {
-                boolean serviceItemExists = Database.getServiceItems().stream().
-                        anyMatch(serviceItem ->
-                                serviceItem.getId() == serviceItemId);
-
-                if (!serviceItemExists) {
-                    throw new IllegalStateException(
-                            "Service item missing for work order " + workOrder.getId()
-                    );
-                }
-            }
-        }
+//        for (int i = 0; i < savedWorkOrders.size(); i++) {
+//            WorkOrder workOrder = savedWorkOrders.get(i);
+//
+//            // Kontrollerar att arbetsorderns bokning finns.
+//            boolean bookingExists = Database.getBookings().stream()
+//                    .anyMatch(booking ->
+//                            booking.getId() == workOrder.getBookingId());
+//
+//            if (!bookingExists) {
+//                throw new IllegalStateException(
+//                        "Booking missing for work order " + workOrder.getId()
+//                );
+//            }
+//            // Kontrollerar att arbetsorderns mekaniker finns.
+//            // 0 betyder att ingen mekaniker är vald än (utkast, WAC-63)
+//            if (workOrder.getMechanicId() != 0) {
+//                boolean mechanicsExist = Database.getMechanics().stream()
+//                        .anyMatch(mechanic -> mechanic.getId() == workOrder.getMechanicId());
+//
+//                if (!mechanicsExist) {
+//                    throw new IllegalStateException(
+//                            "Mechanic missing for work order " + workOrder.getId()
+//                    );
+//                }
+//            }
+//            // Kontrollerar att alla arbetsorderns tjänster finns.
+//            for (int serviceItemId : workOrder.getServiceItemIds()) {
+//                boolean serviceItemExists = Database.getServiceItems().stream().
+//                        anyMatch(serviceItem ->
+//                                serviceItem.getId() == serviceItemId);
+//
+//                if (!serviceItemExists) {
+//                    throw new IllegalStateException(
+//                            "Service item missing for work order " + workOrder.getId()
+//                    );
+//                }
+//            }
+//        }
         // Ersätter arbetsordrarna i minnet med de sparade arbetsordrarna.
         Database.getWorkOrders().clear();
         Database.getWorkOrders().addAll(savedWorkOrders);
@@ -641,12 +637,12 @@ public class AutoCoreApp extends Application {
                 createNavItem("create-booking", "menu.createBooking", () -> showView(new CreateBookingView(bookingService).getView())));
 
         addNavSection(menuBox, "menu.section.workOrders",
-                createNavItem("show-work-orders", "menu.workOrders", () -> showView(new ShowWorkOrdersView(new ServiceItemService(serviceRepository)).getView())),
-                createNavItem("create-work-order", "menu.createWorkOrder", () -> showView(new CreateWorkOrderView(bookingService))),
+                createNavItem("show-work-orders", "menu.workOrders", () -> showView(new ShowWorkOrdersView(workOrderService).getView())),
+                createNavItem("create-work-order", "menu.createWorkOrder", () -> showView(new CreateWorkOrderView(workOrderService, bookingService))),
                 createNavItem("create-draft-work-order", "menu.createDraftWorkOrder",
-                        () -> showView(new CreateDraftWorkOrderView().getView())),
-                createNavItem("start-work-order", "menu.startWorkOrder", () -> showView(new StartWorkOrderView(mechanicService))),
-                createNavItem("complete-work-order", "menu.completeWorkOrder", () -> showView(CompleteWorkOrderView.build(mechanicService))));
+                        () -> showView(new CreateDraftWorkOrderView(workOrderService).getView())),
+                createNavItem("start-work-order", "menu.startWorkOrder", () -> showView(new StartWorkOrderView())),
+                createNavItem("complete-work-order", "menu.completeWorkOrder", () -> showView(new CompleteWorkOrderView(workOrderService).getView())));
 
         addNavSection(menuBox, "menu.section.servicesMechanics",
                 createNavItem("show-services", "menu.services", () -> showView(new ServiceView(new ServiceItemService(serviceRepository)))),
@@ -794,16 +790,6 @@ public class AutoCoreApp extends Application {
     public GarageSystem getGarageSystem() {
         return garageSystem;
     }
-
-    public WorkOrderRepository getWorkOrderRepository() {
-        return workOrderRepository;
-    }
-
-    public BookingRepository getBookingRepository() {
-        return bookingRepository;
-    }
-
-
 
     public static void main(String[] args) {launch(args);
     }

@@ -1,4 +1,4 @@
-package com.wac.autocore.workOrderType;
+package com.wac.autocore.service;
 
 import com.wac.autocore.DTO.WorkOrderDto;
 import com.wac.autocore.model.WorkOrder;
@@ -11,6 +11,4 @@ public interface WorkOrderTypeInterface {
     //Manager spindeln i nätet
 
     WorkOrder createWorkOrder(WorkOrderDto workOrderDto);
-    void startWorkOrder(int workOrderId);
-    void completeWorkOrder(int workOrderId);
 }
