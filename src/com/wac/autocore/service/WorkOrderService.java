@@ -297,5 +297,32 @@ public class WorkOrderService {
         }
         return startable;
     }
+
+    // Startar en bekräftad arbetsorder (flyttad från GarageSystem/StartWorkOrderView, WAC-97).
+    public void startWorkOrder(int workOrderId) {
+        // 1. hitta ordern
+        WorkOrder workOrder = findWorkOrderInMemory(workOrderId);
+
+        if (workOrder == null) {
+            throw new IllegalArgumentException("confirmWorkOrder.orderMissing");
+        }
+        // 2. Får den startas?
+        if (!workOrder.getStatus().canChangeTo(WorkOrderStatus.IN_PROGRESS)) {
+            throw new IllegalArgumentException("startWorkOrder.cannotStart");
+        }
+        // 3. Övriga kontroller        (nästa bit)
+        // 4. Är mekanikern ledig?     (nästa bit)
+        // 5. Ändra och spara          (del 2c)
+
+    }
+
+    private WorkOrder findWorkOrderInMemory(int id) {
+        for (WorkOrder workOrder : Database.getWorkOrders()) {
+            if (workOrder.getId() == id) {
+                return workOrder;
+            }
+        }
+        return null;
+    }
 }
 
