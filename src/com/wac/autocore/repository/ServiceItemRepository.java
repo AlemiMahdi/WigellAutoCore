@@ -7,7 +7,7 @@ import org.hibernate.Transaction;
 
 import java.util.List;
 
-public class ServiceItemRepository {
+public class ServiceItemRepository implements IServiceItemRepository {
 
     public void save(ServiceItem serviceItem) {
         try (Session session =
@@ -57,7 +57,15 @@ public class ServiceItemRepository {
         }
     }
 
-    public List<ServiceItem> findAllServiceItems() {
-        return findAll();
+    public ServiceItem findById(int id) {
+        // Try-with-resources öppnar och stänger sessionen automatiskt
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+
+            // Hämtar raden live från tabellen service_items via dess primärnyckel
+            return session.get(ServiceItem.class, id);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Kunde inte hämta tjänst från databasen med ID: " + id, e);
+        }
     }
 }

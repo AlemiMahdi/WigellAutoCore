@@ -3,10 +3,10 @@ package com.wac.autocore.ui;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
 import com.wac.autocore.repository.BookingRepository;
-import com.wac.autocore.repository.MechanicRepository;
 import com.wac.autocore.repository.WorkOrderRepository;
 import com.wac.autocore.service.GarageSystem;
 import com.wac.autocore.ui.language.LanguageManager;
+import com.wac.autocore.service.MechanicService;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -25,7 +25,7 @@ public class StartWorkOrderView extends VBox {
     private final GarageSystem garageSystem = new GarageSystem();
     private final WorkOrderRepository workOrderRepository = new WorkOrderRepository();
     private final BookingRepository bookingRepository = new BookingRepository();
-    private final MechanicRepository mechanicRepository = new MechanicRepository();
+    private final MechanicService mechanicService;
 
     // Vänster spalt (korten) och höger spalt (detaljkortet)
     private final VBox listColumn = new VBox(12);
@@ -38,7 +38,9 @@ public class StartWorkOrderView extends VBox {
     private WorkOrder selectedWorkOrder;
     private VBox selectedCard;
 
-    public StartWorkOrderView() {
+    public StartWorkOrderView(MechanicService mechanicService) {
+        this.mechanicService = mechanicService;
+
         setSpacing(20);
 
         // Båda spalterna är lika breda, precis som i designen
@@ -72,6 +74,9 @@ public class StartWorkOrderView extends VBox {
                 startable.add(workOrder);
             }
         }
+        startable.sort((first, second) ->
+            Integer.compare(second.getId(), first.getId())
+        );
 
         if (Database.getWorkOrders().isEmpty()) {
             showEmptyState("startWorkOrder.empty");
@@ -226,7 +231,7 @@ public class StartWorkOrderView extends VBox {
                 }
 
                 if (mechanic != null) {
-                    mechanicRepository.save(mechanic);
+                    mechanicService.save(mechanic);
                 }
 
                 UiKit.showSuccess(feedbackLabel,

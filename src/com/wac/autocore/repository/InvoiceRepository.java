@@ -8,9 +8,11 @@ import org.hibernate.Transaction;
 
 import java.util.List;
 
-public class InvoiceRepository {
 
-    public void save(Invoice invoice) {
+public class InvoiceRepository implements IInvoiceRepository {
+
+    @Override
+    public Invoice save(Invoice invoice) {
 
         try (Session session =
                      HibernateUtil.getSessionFactory().openSession()) {
@@ -19,10 +21,11 @@ public class InvoiceRepository {
 
             try {
 
-                // InvoiceLine sparas automatiskt genom cascade från Invoice.
-                session.saveOrUpdate(invoice);
+                Invoice savedInvoice = (Invoice) session.merge(invoice);
 
                 transaction.commit();
+
+                return savedInvoice;
 
             } catch (RuntimeException exception) {
 
@@ -35,6 +38,7 @@ public class InvoiceRepository {
         }
     }
 
+    @Override
     public List<Invoice> findAll() {
 
         try (Session session =
@@ -67,6 +71,7 @@ public class InvoiceRepository {
         }
     }
 
+    @Override
     public List<Invoice> findAllInvoices() {
         return findAll();
     }

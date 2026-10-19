@@ -1,38 +1,38 @@
 package com.wac.autocore.ui;
 
-import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
-import com.wac.autocore.ui.UiKit;
+import com.wac.autocore.service.WorkOrderService;
+import com.wac.autocore.ui.views.ViewHelpMethod;
+import com.wac.autocore.model.WorkOrderTypeEnum;
 import com.wac.autocore.ui.language.LanguageManager;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
-import javafx.scene.control.TextArea;
+import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import com.wac.autocore.model.WorkOrder;
 import com.wac.autocore.model.WorkOrderStatus;
-import javafx.scene.control.DatePicker;
-import javafx.scene.control.TextField;
-import javafx.scene.control.Hyperlink;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.Mechanic;
-import javafx.scene.control.ComboBox;
 import javafx.util.StringConverter;
 import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.repository.WorkOrderRepository;
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.Label;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
+import java.time.LocalDate;
 import java.util.List;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 public class EditWorkOrderDraftView {
 
     private final LanguageManager language =
             LanguageManager.getInstance();
+    private final WorkOrderService workOrderService;
+
+    public EditWorkOrderDraftView(WorkOrderService workOrderService) {
+        this.workOrderService = workOrderService;
+    }
 
     private void showFeedback(Label label, String key, boolean success) {
         label.textProperty().unbind();
@@ -80,7 +80,10 @@ public class EditWorkOrderDraftView {
                 language.text("createWorkOrder.selectOriginalWorkOrder")
         );
 
-        for (WorkOrder order : Database.getWorkOrders()) {
+        for (WorkOrder order : UiKit.newestFirst(
+            Database.getWorkOrders(), 
+            WorkOrder::getId
+        )) {
             if (order.getId() != draft.getId()
                     && order.getStatus() == WorkOrderStatus.COMPLETED) {
                 originalCombo.getItems().add(order);
@@ -151,47 +154,19 @@ public class EditWorkOrderDraftView {
 
         VBox mechanicFields = new VBox(10, mechanicCombo, clearMechButton);
 
-        Set<Integer> selectedServiceIds = new LinkedHashSet<>(draft.getServiceItemIds());
-
-        VBox serviceChoices = new VBox(10);
-
-        for (ServiceItem service : Database.getServiceItems()) {
-            CheckBox serviceCheckBox = new CheckBox(service.getName());
-            serviceCheckBox.setSelected(selectedServiceIds.contains(service.getId()));
-
-            serviceCheckBox.selectedProperty().addListener((observable, oldValue, selected) -> {
-                        if (selected) {
-                            selectedServiceIds.add(service.getId());
-                        } else {
-                            selectedServiceIds.remove(service.getId());
-                        }
-                    }
-            );
-            serviceChoices.getChildren().add(serviceCheckBox);
-        }
-
-        if (serviceChoices.getChildren().isEmpty()) {
-            Label emptyLabel = UiKit.emptyText("");
-            emptyLabel.textProperty().bind(
-                    language.text("editWorkOrderDraft.emptyService")
-            );
-            serviceChoices.getChildren().add(emptyLabel);
-        }
-
         DatePicker plannedDateField = new DatePicker();
-
         plannedDateField.setValue(booking.getDate());
 
         TextField estimatedMinutesField = new TextField();
 
+        Label totalPriceLabel = new Label();
+
+        TextField priceField = new TextField();
         if (booking.getDurationMinutes() > 0) {
             estimatedMinutesField.setText(
                     String.valueOf(booking.getDurationMinutes())
             );
         }
-
-        TextField priceField = new TextField();
-
         if (draft.getEstimatedPrice() != null) {
             priceField.setText(draft.getEstimatedPrice().toPlainString());
         }
@@ -206,9 +181,7 @@ public class EditWorkOrderDraftView {
         TextArea instructionsField = new TextArea();
         instructionsField.setPrefRowCount(3);
         instructionsField.setWrapText(true);
-        instructionsField.setText(
-                draft.getCustomerInstructions() == null ? "" : draft.getCustomerInstructions()
-        );
+        instructionsField.setText(draft.getCustomerInstructions() == null ? "" : draft.getCustomerInstructions());
 
         TextArea commentsField = new TextArea();
         commentsField.setPrefRowCount(3);
@@ -222,6 +195,21 @@ public class EditWorkOrderDraftView {
         saveButton.textProperty().bind(
                 language.text("editWorkOrderDraft.saveButton")
         );
+
+        ObservableList<ServiceItem> selectedServiceIds = FXCollections.observableArrayList();
+        ListView<ServiceItem> serviceList = new ListView<>(
+                FXCollections.observableArrayList(Database.getServiceItems())
+        );
+        serviceList.setPrefHeight(150);
+
+        ViewHelpMethod.setupServiceChecklist(
+                serviceList,
+                selectedServiceIds,
+                estimatedMinutesField,
+                totalPriceLabel,
+                booking.getServices() // Skickar med existerande tjänster som förval
+        );
+
 
         saveButton.setOnAction(event -> {
             int minutes;
@@ -258,7 +246,7 @@ public class EditWorkOrderDraftView {
                 }
             }
 
-            java.time.LocalDate plannedDate = plannedDateField.getValue();
+            LocalDate plannedDate = plannedDateField.getValue();
 
             // Läs även datum som användaren har skrivit utan att lämna fältet.
             try {
@@ -274,23 +262,23 @@ public class EditWorkOrderDraftView {
             Mechanic mechanic = mechanicCombo.getValue();
             int mechanicId = mechanic == null ? 0 : mechanic.getId();
 
-            List<Integer> serviceIds = new ArrayList<>(selectedServiceIds);
+            List<Integer> serviceIds = selectedServiceIds.stream()
+                    .map(ServiceItem::getId)
+                    .collect(Collectors.toList());
 
             try {
-                new WorkOrderRepository().updateDraft(
-                        draft,
+                workOrderService.updateDraftWorkOrder(draft,
                         booking,
                         serviceIds,
-                        mechanicId,
-                        plannedDate,
-                        minutes,
-                        price,
-                        instructionsField.getText(),
-                        commentsField.getText(),
+                mechanicId,
+                plannedDate,
+                minutes,
+                price,
+                instructionsField.getText(),
+                commentsField.getText(),
                         isComplaint && originalCombo.getValue() != null
                                 ? Integer.valueOf(originalCombo.getValue().getId())
-                                : null
-                );
+                                : null);
 
                 showFeedback(messageLabel, "editWorkOrderDraft.saved", true);
 
@@ -307,7 +295,7 @@ public class EditWorkOrderDraftView {
         VBox form = UiKit.formContainer(
                 UiKit.pageHeader(language.text("editWorkOrderDraft.title"), null ),originalField,
                 UiKit.formField(language.text("editWorkOrderDraft.mechanic"), mechanicFields),
-                UiKit.formField(language.text("editWorkOrderDraft.services"), serviceChoices
+                UiKit.formField(language.text("editWorkOrderDraft.services"), serviceList
                 ),
                 UiKit.formRow(
                         UiKit.formField(language.text("editWorkOrderDraft.plannedDate"), plannedDateField),

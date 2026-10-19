@@ -1,16 +1,12 @@
 package com.wac.autocore.service;
 
-import com.wac.autocore.DTO.WorkOrderDto;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
-import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
-import com.wac.autocore.workOrderType.WorkOrderTypeManager;
+import com.wac.autocore.model.WorkOrderTypeEnum;
 
-import java.awt.print.Book;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import com.wac.autocore.repository.WorkOrderRepository;
 
 public class GarageSystem {
 
@@ -56,19 +52,7 @@ public class GarageSystem {
         }
     }
 
-    public void showServiceItems() {
-        System.out.println();
-        System.out.println("=== SERVICES ===");
 
-        if (Database.getServiceItems().isEmpty()) {
-            System.out.println("No services found.");
-            return;
-        }
-
-        for (ServiceItem serviceItem : Database.getServiceItems()) {
-            System.out.println(serviceItem);
-        }
-    }
 
     public void showMechanics() {
         System.out.println();
@@ -112,20 +96,6 @@ public class GarageSystem {
         }
     }
 
-    public void showPayments() {
-        System.out.println();
-        System.out.println("=== PAYMENTS ===");
-
-        if (Database.getPayments().isEmpty()) {
-            System.out.println("No payments found.");
-            return;
-        }
-
-        for (Payment payment : Database.getPayments()) {
-            System.out.println(payment);
-        }
-    }
-
     public Customer createCustomer(String name, String phone, String email) {
         int id = Database.getCustomers().size() + 1;
 
@@ -151,10 +121,7 @@ public class GarageSystem {
             return null;
         }
 
-        int id = Database.getVehicles().size() + 1;
-
         Vehicle vehicle = new Vehicle(
-                id,
                 registrationNumber,
                 brand,
                 model,
@@ -198,70 +165,41 @@ public class GarageSystem {
         return booking;
     }
 
-    public WorkOrder createWorkOrder(WorkOrderDto dto, WorkOrderTypeEnum type) {
-
-        Mechanic mechanic = findMechanic(dto.getMechanicId());
-        if (mechanic == null) {
-            System.out.println("Mechanic with ID " + dto.getMechanicId() + " does not exist or is not available.");
-            return null;
-        }
-
-        WorkOrderTypeManager manager = new WorkOrderTypeManager();
-        manager.setStrategy(type);
-        WorkOrder workOrder = manager.createWorkOrderType(dto);
-        if (workOrder == null) {
-            System.out.println("WorkOrder does not exist.");
-            return null;
-        }
-
-        Booking booking = findBooking(workOrder.getBookingId());
-        if (booking != null && type != WorkOrderTypeEnum.COMPLAINT) {
-            booking.setStatus("WORK_ORDER_CREATED");
-        }
-
-        int id = Database.getWorkOrders().stream()
-        .mapToInt(WorkOrder::getId)
-        .max()
-        .orElse(0) + 1;
-
-        workOrder.setId(id);
-
-        System.out.println("Work order created successfully.");
-        System.out.println(workOrder);
-
-        Database.getWorkOrders().add(workOrder);
-        return workOrder;
-    }
-
-    // Skapar en arbetsorder som utkast med en automatiskt bokning (WAC-63)
-    public WorkOrder createDraftWorkOrder(int vehicleId, String description, WorkOrderTypeEnum type) {
-         //1. Kontroller allt först
-        Vehicle vehicle = findVehicle(vehicleId);
-        if (vehicle == null) {
-            throw new IllegalArgumentException("createDraft.vehicleMissing");
-        }
-        if (findCustomer(vehicle.getCustomerId()) == null) {
-            throw new IllegalArgumentException("createDraft.customerMissing");
-        }
-        if (description == null || description.trim().isEmpty()) {
-            throw new IllegalArgumentException("createDraft.descriptionMissing");
-        }
-
-        //2. Skapa utkastet (kastar fel om typ saknas)
-        int bookingId = Database.getBookings().size() + 1;
-        int workOrderId = Database.getWorkOrders().size() + 1;
-        WorkOrder draft = WorkOrder.createDraft(workOrderId, bookingId, type);
-
-        //3. Skapa den automatiska bokingen
-        Booking booking = new Booking(bookingId, vehicleId, null, description.trim());
-        booking.setStatus("WORK_ORDER_CREATED");
-
-        //4. Lägg till båda i listorna
-        Database.getBookings().add(booking);
-        Database.getWorkOrders().add(draft);
-
-        return draft;
-    }
+    //Konsol app gammal metod, no longer in use!
+//    public WorkOrder createWorkOrder(WorkOrderDto dto, WorkOrderTypeEnum type) {
+//
+//        Mechanic mechanic = findMechanic(dto.getMechanicId());
+//        if (mechanic == null) {
+//            System.out.println("Mechanic with ID " + dto.getMechanicId() + " does not exist or is not available.");
+//            return null;
+//        }
+//
+//        WorkOrderTypeManager manager = new WorkOrderTypeManager();
+//        manager.setStrategy(type);
+//        WorkOrder workOrder = manager.createWorkOrderType(dto, language);
+//        if (workOrder == null) {
+//            System.out.println("WorkOrder does not exist.");
+//            return null;
+//        }
+//
+//        Booking booking = findBooking(workOrder.getBookingId());
+//        if (booking != null && type != WorkOrderTypeEnum.COMPLAINT) {
+//            booking.setStatus("WORK_ORDER_CREATED");
+//        }
+//
+//        int id = Database.getWorkOrders().stream()
+//        .mapToInt(WorkOrder::getId)
+//        .max()
+//        .orElse(0) + 1;
+//
+//        workOrder.setId(id);
+//
+//        System.out.println("Work order created successfully.");
+//        System.out.println(workOrder);
+//
+//        Database.getWorkOrders().add(workOrder);
+//        return workOrder;
+//    }
 
     public List<String> validateWorkOrderForConfirmation(int workOrderId) {
         List<String> errors = new ArrayList<>();
@@ -281,7 +219,7 @@ public class GarageSystem {
 
             if (originalId == null) {
                 errors.add("confirmWorkOrder.originalRequired");
-            } else if (originalId.intValue() == workOrder.getId()) {
+            } else if (originalId == workOrder.getId()) {
                 errors.add("confirmWorkOrder.originalSelfReference");
             } else {
                 WorkOrder original = findWorkOrder(originalId);
@@ -332,29 +270,75 @@ public class GarageSystem {
         return errors;
     }
 
-    public List<String> confirmWorkOrder(int workOrderId) {
-        WorkOrder workOrder = findWorkOrder(workOrderId);
-        List<String> errors = new ArrayList<>();
-
-        if (workOrder == null) {
-            errors.add("confirmWorkOrder.orderMissing");
-            return errors;
-        }
-
-        if (workOrder.getStatus() != WorkOrderStatus.DRAFT) {
-            errors.add("confirmWorkOrder.onlyDraft");
-            return errors;
-        }
-
-        errors = new WorkOrderRepository().confirmDraft(workOrderId);
-
-        if (errors.isEmpty()) {
-            // Uppdatera minnet först när databasen har sparats.
-            workOrder.changeStatus(WorkOrderStatus.CONFIRMED);
-        }
-
-        return errors;
-    }
+//    // Samma logik som tidigare: starta via GarageSystem och spara via repositories.
+//    private void startSelectedWorkOrder() {
+//
+//        feedbackLabel.textProperty().unbind();
+//        feedbackLabel.setText("");
+//
+//        WorkOrder workorder = selectedWorkOrder;
+//        if (workorder == null) {
+//            UiKit.showError(feedbackLabel, language.text("startWorkOrder.select").get());
+//            return;
+//        }
+//
+//        List<String> errors =
+//                garageSystem.validateWorkOrderForConfirmation(workorder.getId());
+//
+//        if (!errors.isEmpty()) {
+//            StringExpression message = language.text(errors.get(0));
+//
+//            for (int i = 1; i < errors.size(); i++) {
+//                message = message.concat("\n").concat(
+//                        language.text(errors.get(i))
+//                );
+//            }
+//
+//            feedbackLabel.setWrapText(true);
+//            UiKit.showError(feedbackLabel, "");
+//            feedbackLabel.textProperty().bind(message);
+//            return;
+//        }
+//
+//        // Sparar den valda arbetsorderns status innan vi försöker starta den.
+//        WorkOrderStatus previousStatus = workorder.getStatus();
+//
+//        garageSystem.startWorkOrder(workorder.getId());
+//
+//        if (previousStatus == WorkOrderStatus.CONFIRMED
+//                && workorder.getStatus() == WorkOrderStatus.IN_PROGRESS) {
+//            // Hämtar bokningen och mekanikern som startWorkOrder har ändrat.
+//            Booking booking = findBooking(workorder);
+//            Mechanic mechanic = findMechanic(workorder);
+//
+//            try {
+//                // Sparar arbetsorderns, bokningens och mekanikerns nya status.
+//                workOrderRepository.save(workorder);
+//
+//                if (booking != null) {
+//                    bookingRepository.save(booking);
+//                }
+//
+//                if (mechanic != null) {
+//                    mechanicRepository.save(mechanic);
+//                }
+//
+//                UiKit.showSuccess(feedbackLabel,
+//                        language.text("startWorkOrder.success").get() + " " + workorder.getId());
+//            } catch (RuntimeException exception) {
+//                UiKit.showError(feedbackLabel,
+//                        language.text("startWorkOrder.saveError").get());
+//                exception.printStackTrace();
+//            }
+//
+//        } else {
+//            UiKit.showError(feedbackLabel, language.text("startWorkOrder.cannotStart").get());
+//        }
+//
+//        // Återställer valet och laddar om listan (startad order försvinner ur den).
+//        // Inget kort väljs automatiskt, så man startar inte nästa order av misstag.
+//        reloadList(false);
+//    }
 
     public void startWorkOrder(int workOrderId) {
         WorkOrder workOrder = findWorkOrder(workOrderId);
@@ -403,36 +387,35 @@ public class GarageSystem {
         System.out.println("Work order " + workOrderId + " has been started.");
     }
 
-    public void completeWorkOrder(int workOrderId) {
-        WorkOrder workOrder = findWorkOrder(workOrderId);
 
-        if (workOrder == null) {
-            System.out.println("Work order with ID " + workOrderId + " does not exist.");
-            return;
+
+    //refaktoriserad till InvoiceService
+
+    /*
+    public Invoice createInvoice(
+            int workOrderId,
+            String discountCode,
+            String extraDescription,
+            double extraCost) {
+
+        Invoice invoice = prepareInvoice(
+                workOrderId,
+                discountCode,
+                extraDescription,
+                extraCost
+        );
+
+        if (invoice != null) {
+            Database.getInvoices().add(invoice);
         }
 
-        if (!workOrder.getStatus().canChangeTo(WorkOrderStatus.COMPLETED)) {
-            System.out.println("Only work orders in progress can be completed.");
-            return;
-        }
-
-        Mechanic mechanic = findMechanic(workOrder.getMechanicId());
-        Booking booking = findBooking(workOrder.getBookingId());
-
-        workOrder.changeStatus(WorkOrderStatus.COMPLETED);
-
-        if (mechanic != null) {
-            mechanic.setAvailable(true);
-        }
-
-        if (booking != null && !sharesOriginalBooking(workOrder)) {
-            booking.setStatus("COMPLETED");
-        }
-
-        System.out.println("Work order " + workOrderId + " has been completed.");
+        return invoice;
     }
 
-    public Invoice createInvoice(
+     */
+
+    /*
+    public Invoice prepareInvoice(
             int workOrderId, 
             String discountCode,
             String extraDescription,
@@ -476,10 +459,8 @@ public class GarageSystem {
             return null;
         }
 
-            int id = Database.getInvoices().size() + 1;
 
             Invoice invoice = new Invoice(
-                    id,
                     workOrderId,
                     LocalDate.now(),
                     0.0
@@ -562,78 +543,9 @@ public class GarageSystem {
         invoice.setDiscount(discount);
         invoice.distributeDiscountToLines();
 
-        Database.getInvoices().add(invoice);
-
-        System.out.println("Invoice created successfully.");
-        System.out.println(invoice);
-
-        System.out.println("Sending invoice notification to customer...");
-        System.out.println("Notification sent.");
-
         return invoice;
     }
-
-    public Payment processPayment(int invoiceId, String paymentType) {
-        Invoice invoice = findInvoice(invoiceId);
-
-        if (invoice == null) {
-            System.out.println("Invoice with ID " + invoiceId + " does not exist.");
-            return null;
-        }
-
-        if (invoice.isPaid()) {
-            System.out.println("Invoice has already been paid.");
-            return null;
-        }
-
-        int id = Database.getPayments().size() + 1;
-
-        Payment payment = new Payment(
-                id,
-                invoiceId,
-                invoice.getTotalAmount(),
-                paymentType
-        );
-
-        boolean successful = false;
-
-        if (paymentType.equalsIgnoreCase("CARD")) {
-
-            System.out.println("Connecting directly to SuperCardPayment...");
-            System.out.println("Card payment approved.");
-            successful = true;
-
-        } else if (paymentType.equalsIgnoreCase("SWISH")) {
-
-            System.out.println("Calling Swish payment service...");
-            System.out.println("Swish payment approved.");
-            successful = true;
-
-        } else if (paymentType.equalsIgnoreCase("CASH")) {
-
-            System.out.println("Registering cash payment...");
-            successful = true;
-
-        } else {
-
-            System.out.println("Unknown payment type.");
-        }
-
-        payment.setSuccessful(successful);
-        Database.getPayments().add(payment);
-
-        if (successful) {
-            invoice.setPaid(true);
-
-            System.out.println("Payment completed successfully.");
-            System.out.println("Sending payment confirmation to customer...");
-            System.out.println("Confirmation sent.");
-        } else {
-            System.out.println("Payment failed.");
-        }
-
-        return payment;
-    }
+    */
 
     private boolean sharesOriginalBooking(WorkOrder workOrder) {
         if (workOrder.getType() != WorkOrderTypeEnum.COMPLAINT
@@ -689,20 +601,20 @@ public class GarageSystem {
         return null;
     }
 
-    private WorkOrder findWorkOrder(int id) {
-        for (WorkOrder workOrder : Database.getWorkOrders()) {
-            if (workOrder.getId() == id) {
-                return workOrder;
+    static Invoice findInvoice(int id) {
+        for (Invoice invoice : Database.getInvoices()) {
+            if (invoice.getId() == id) {
+                return invoice;
             }
         }
 
         return null;
     }
 
-    private Invoice findInvoice(int id) {
-        for (Invoice invoice : Database.getInvoices()) {
-            if (invoice.getId() == id) {
-                return invoice;
+    private WorkOrder findWorkOrder(int id) {
+        for (WorkOrder workOrder : Database.getWorkOrders()) {
+            if (workOrder.getId() == id) {
+                return workOrder;
             }
         }
 

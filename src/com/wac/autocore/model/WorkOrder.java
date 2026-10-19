@@ -1,7 +1,6 @@
 package com.wac.autocore.model;
 
-import com.wac.autocore.workOrderType.WorkOrderTypeConverter;
-import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
+import com.wac.autocore.repository.WorkOrderTypeConverter;
 
 import javax.persistence.*;
 
@@ -14,6 +13,8 @@ import java.math.BigDecimal;
 public class WorkOrder {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column()
     private int id;
 
     @Column(name = "booking_id")
@@ -55,12 +56,10 @@ public class WorkOrder {
     }
 
     public WorkOrder(
-            int id,
             int bookingId,
             int mechanicId,
             WorkOrderTypeEnum type
     ) {
-        this.id = id;
         this.bookingId = bookingId;
         this.mechanicId = mechanicId;
         this.serviceItemIds = new ArrayList<>();
@@ -86,7 +85,7 @@ public class WorkOrder {
     public int getId() {
         return id;
     }
-
+    //Not in use
     public void setId(int id) {
         this.id = id;
     }

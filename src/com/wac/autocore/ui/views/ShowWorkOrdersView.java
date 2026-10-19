@@ -1,15 +1,10 @@
 package com.wac.autocore.ui.views;
 
 import com.wac.autocore.data.Database;
-import com.wac.autocore.model.Booking;
-import com.wac.autocore.model.Mechanic;
-import com.wac.autocore.model.ServiceItem;
-import com.wac.autocore.model.Vehicle;
-import com.wac.autocore.model.WorkOrder;
-import com.wac.autocore.model.WorkOrderStatus;
+import com.wac.autocore.model.*;
+import com.wac.autocore.service.WorkOrderService;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
-import com.wac.autocore.service.GarageSystem;
 
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
@@ -27,6 +22,9 @@ import javafx.scene.control.Button;
 public class ShowWorkOrdersView {
 
     private final LanguageManager language = LanguageManager.getInstance();
+    private final WorkOrderService workOrderService;
+
+    public ShowWorkOrdersView(WorkOrderService workOrderService) { this.workOrderService = workOrderService; }
 
     public VBox getView() {
 
@@ -38,7 +36,11 @@ public class ShowWorkOrdersView {
         VBox completedColumn = UiKit.kanbanColumn(language.text("badge.COMPLETED"), "green");
 
         // Sorterar varje arbetsorder till rätt kolumn utifrån dess status
-        for (WorkOrder workOrder : Database.getWorkOrders()) {
+        // Visa senaste arbetsordern överst i varje statuskolumn
+        for (WorkOrder workOrder : UiKit.newestFirst(
+                Database.getWorkOrders(),
+                WorkOrder::getId
+        )) {
             WorkOrderStatus status = workOrder.getStatus();
 
             if (status == WorkOrderStatus.DRAFT) {
@@ -142,7 +144,7 @@ public class ShowWorkOrdersView {
                 );
 
                 VBox editView =
-                        new EditWorkOrderDraftView().getView(workOrder);
+                        new EditWorkOrderDraftView(workOrderService).getView(workOrder);
 
                 root.getChildren().setAll(backButton, editView);
             });
@@ -164,7 +166,7 @@ public class ShowWorkOrdersView {
                 List<String> errors;
 
                 try {
-                    errors = new GarageSystem().confirmWorkOrder(workOrder.getId());
+                    errors = workOrderService.confirmWorkOrder(workOrder.getId());
                 } catch (RuntimeException exception) {
                     Label errorLabel = UiKit.feedbackLabel();
                     errorLabel.setWrapText(true);

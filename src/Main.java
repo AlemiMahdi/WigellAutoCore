@@ -1,10 +1,12 @@
 
 import com.wac.autocore.service.GarageSystem;
-import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.Scanner;
+
+import com.wac.autocore.service.InvoiceService;
+import com.wac.autocore.repository.InvoiceRepository;
 
 public class Main {
 
@@ -29,10 +31,6 @@ public class Main {
                     garageSystem.showCustomers();
                     break;
 
-                case 2:
-                    createCustomer();
-                    break;
-
                 case 3:
                     garageSystem.showVehicles();
                     break;
@@ -50,7 +48,7 @@ public class Main {
                     break;
 
                 case 7:
-                    garageSystem.showServiceItems();
+                  //  ServiceItemService.showServiceItems();
                     break;
 
                 case 8:
@@ -62,15 +60,15 @@ public class Main {
                     break;
 
                 case 10:
-                    createWorkOrder();
+//                    createWorkOrder();
                     break;
 
                 case 11:
-                    startWorkOrder();
+//                    startWorkOrder();
                     break;
 
                 case 12:
-                    completeWorkOrder();
+//                    completeWorkOrder();
                     break;
 
                 case 13:
@@ -82,11 +80,11 @@ public class Main {
                     break;
 
                 case 15:
-                    garageSystem.showPayments();
-                    break;
+//                    garageSystem.showPayments();
+//                    break;
 
                 case 16:
-                    processPayment();
+//                    processPayment();
                     break;
 
                 case 0:
@@ -118,7 +116,7 @@ public class Main {
         System.out.println();
         System.out.println("=============== MAIN MENU =================");
         System.out.println(" 1. Show customers");
-        System.out.println(" 2. Create customer");
+        //System.out.println(" 2. Create customer");
         System.out.println(" 3. Show vehicles");
         System.out.println(" 4. Create vehicle");
         System.out.println(" 5. Show bookings");
@@ -137,22 +135,7 @@ public class Main {
         System.out.println("===========================================");
     }
 
-    private static void createCustomer() {
-
-        System.out.println();
-        System.out.println("=== CREATE CUSTOMER ===");
-
-        System.out.print("Name: ");
-        String name = scanner.nextLine();
-
-        System.out.print("Phone: ");
-        String phone = scanner.nextLine();
-
-        System.out.print("Email: ");
-        String email = scanner.nextLine();
-
-        garageSystem.createCustomer(name, phone, email);
-    }
+    
 
     private static void createVehicle() {
 
@@ -204,46 +187,46 @@ public class Main {
         );
     }
 
-    private static void createWorkOrder() {
+//    private static void createWorkOrder() {
+//
+//        System.out.println();
+//        System.out.println("=== CREATE WORK ORDER ===");
+//
+//        garageSystem.showBookings();
+//        int bookingId = readInt("Booking ID: ");
+//
+//        garageSystem.showMechanics();
+//        int mechanicId = readInt("Mechanic ID: ");
+//
+////        garageSystem.createWorkOrder(
+////                bookingId,
+////                mechanicId, WorkOrderTypeEnum.PLANNED
+////        );
+//    }
 
-        System.out.println();
-        System.out.println("=== CREATE WORK ORDER ===");
-
-        garageSystem.showBookings();
-        int bookingId = readInt("Booking ID: ");
-
-        garageSystem.showMechanics();
-        int mechanicId = readInt("Mechanic ID: ");
-
-//        garageSystem.createWorkOrder(
-//                bookingId,
-//                mechanicId, WorkOrderTypeEnum.PLANNED
-//        );
-    }
-
-    private static void startWorkOrder() {
-
-        System.out.println();
-        System.out.println("=== START WORK ORDER ===");
-
-        garageSystem.showWorkOrders();
-
-        int workOrderId = readInt("Work order ID: ");
-
-        garageSystem.startWorkOrder(workOrderId);
-    }
-
-    private static void completeWorkOrder() {
-
-        System.out.println();
-        System.out.println("=== COMPLETE WORK ORDER ===");
-
-        garageSystem.showWorkOrders();
-
-        int workOrderId = readInt("Work order ID: ");
-
-        garageSystem.completeWorkOrder(workOrderId);
-    }
+//    private static void startWorkOrder() {
+//
+//        System.out.println();
+//        System.out.println("=== START WORK ORDER ===");
+//
+//        garageSystem.showWorkOrders();
+//
+//        int workOrderId = readInt("Work order ID: ");
+//
+//        garageSystem.startWorkOrder(workOrderId);
+//    }
+//
+//    private static void completeWorkOrder() {
+//
+//        System.out.println();
+//        System.out.println("=== COMPLETE WORK ORDER ===");
+//
+//        garageSystem.showWorkOrders();
+//
+//        int workOrderId = readInt("Work order ID: ");
+//
+//        garageSystem.completeWorkOrder(workOrderId);
+//    }
 
     private static void createInvoice() {
 
@@ -257,35 +240,14 @@ public class Main {
         System.out.print("Discount code (leave empty for none): ");
         String discountCode = scanner.nextLine();
 
-        garageSystem.createInvoice(
+        InvoiceService invoiceService =
+                new InvoiceService(new InvoiceRepository());
+
+        invoiceService.createInvoice(
                 workOrderId,
                 discountCode,
                 "",
                 0.0
-        );
-    }
-
-    private static void processPayment() {
-
-        System.out.println();
-        System.out.println("=== PROCESS PAYMENT ===");
-
-        garageSystem.showInvoices();
-
-        int invoiceId = readInt("Invoice ID: ");
-
-        System.out.println();
-        System.out.println("Available payment types:");
-        System.out.println("CARD");
-        System.out.println("SWISH");
-        System.out.println("CASH");
-
-        System.out.print("Payment type: ");
-        String paymentType = scanner.nextLine();
-
-        garageSystem.processPayment(
-                invoiceId,
-                paymentType
         );
     }
 

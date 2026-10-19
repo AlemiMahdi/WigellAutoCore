@@ -1,13 +1,11 @@
 package com.wac.autocore.ui;
 
 
-import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
-import com.wac.autocore.repository.BookingRepository;
-import com.wac.autocore.service.GarageSystem;
+import com.wac.autocore.exception.InvoiceValidationException;
 import com.wac.autocore.ui.language.LanguageManager;
 import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
-
+import com.wac.autocore.service.InvoiceService;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -17,19 +15,14 @@ import javafx.scene.layout.VBox;
 
 import javafx.util.StringConverter;
 
-import com.wac.autocore.repository.InvoiceRepository;
-
 
 import java.time.LocalDate;
 
 
 public class CreateInvoiceView {
 
-    public static VBox build(){
+    public static VBox build(InvoiceService invoiceService) {
         LanguageManager language = LanguageManager.getInstance();
-        GarageSystem garageSystem = new GarageSystem();
-        InvoiceRepository invoiceRepository = new InvoiceRepository();
-        BookingRepository bookingRepository = new BookingRepository();
 
 
         // --- Arbetsorder ---
@@ -39,9 +32,8 @@ public class CreateInvoiceView {
         workOrderBox.setConverter(new StringConverter<WorkOrder>() {
             @Override
             public String toString(WorkOrder workOrder) {
-                return workOrder == null ? "" : describeWorkOrder(workOrder);
+                return workOrder == null ? "" : describeWorkOrder(workOrder, invoiceService);
             }
-
 
 
             @Override
@@ -49,7 +41,7 @@ public class CreateInvoiceView {
                 return null; // Används inte – listan går inte att skriva i
             }
         });
-        loadCompletedWorkOrders(workOrderBox);
+        loadCompletedWorkOrders(workOrderBox, invoiceService);
         UiKit.keepPromptWhenCleared(workOrderBox);
 
         // --- Datum ---
@@ -70,22 +62,22 @@ public class CreateInvoiceView {
         // --- Nya kostnader för reklamationer ---
         TextField extraCostDescriptionField = new TextField();
         extraCostDescriptionField.promptTextProperty().bind(
-            language.text("createInvoice.extraCostDescriptionPrompt")
+                language.text("createInvoice.extraCostDescriptionPrompt")
         );
 
         TextField extraCostAmountField = new TextField();
         extraCostAmountField.promptTextProperty().bind(
-            language.text("createInvoice.extraCostAmountPrompt")
+                language.text("createInvoice.extraCostAmountPrompt")
         );
 
         VBox extraCostSection = UiKit.formField(
-            language.text("createInvoice.extraCostDescriptionPrompt"),
-            extraCostDescriptionField
+                language.text("createInvoice.extraCostDescriptionPrompt"),
+                extraCostDescriptionField
         );
 
         VBox extraCostAmountSection = UiKit.formField(
-            language.text("createInvoice.extraCostAmountPrompt"),
-            extraCostAmountField
+                language.text("createInvoice.extraCostAmountPrompt"),
+                extraCostAmountField
         );
 
         VBox complaintCosts = new VBox(10, extraCostSection, extraCostAmountSection);
@@ -93,18 +85,10 @@ public class CreateInvoiceView {
         complaintCosts.setVisible(false);
         complaintCosts.setManaged(false);
 
-        workOrderBox.valueProperty().addListener((obs, oldValue, selected) -> {
-            boolean isComplaint = selected != null
-                && selected.getType() == WorkOrderTypeEnum.COMPLAINT;
-
-            complaintCosts.setVisible(isComplaint);
-            complaintCosts.setManaged(isComplaint);
-        });
-
         // --- Rabatt ---
         // Rabatten anges som en rabattkod (t.ex. WELCOME10 eller SERVICE200)
-        TextField discoutField = new TextField();
-        discoutField.promptTextProperty().bind(language.text("createInvoice.discountPrompt"));
+        TextField discountField = new TextField();
+        discountField.promptTextProperty().bind(language.text("createInvoice.discountPrompt"));
 
         // --- Total ---
         Label totalValue = new Label(ShowInvoiceView.formatSek(0));
@@ -122,48 +106,68 @@ public class CreateInvoiceView {
                 totalValue.setText(ShowInvoiceView.formatSek(0));
                 return;
             }
+            try {
+                double extraCost = 0.0;
 
-            Booking booking = bookingRepository.findById(selected.getBookingId());
-            double amount = sumServicePrices(selected, booking);
+                if (selected.getType() == WorkOrderTypeEnum.COMPLAINT) {
+                    String input = extraCostAmountField.getText().trim();
 
-            
-
-            if (selected.getType() == WorkOrderTypeEnum.COMPLAINT) {
-                String input = extraCostAmountField.getText().trim();
-
-                if (!input.isEmpty()) {
-                    try {
-                        double extraCost = Double.parseDouble(input.replace(",", "."));
-
-                        if (!Double.isFinite(extraCost) || extraCost < 0) {
-                            amountField.clear();
-                            totalValue.setText("—");
-                            return;
-                        }
-
-                        amount += extraCost;
-
-                    } catch (NumberFormatException exception) {
-                        amountField.clear();
-                        totalValue.setText("—");
-                        return;
+                    if (!input.isEmpty()) {
+                        extraCost = Double.parseDouble(input.replace(',', '.'));
                     }
                 }
+
+                Invoice preview = invoiceService.previewInvoice(
+                        selected.getId(),
+                        discountField.getText(),
+                        extraCostDescriptionField.getText().trim(),
+                        extraCost
+                );
+
+                if (preview == null) {
+                    amountField.clear();
+                    totalValue.setText("—");
+                    return;
+                }
+
+                amountField.setText(
+                        ShowInvoiceView.formatSek(preview.getAmount())
+                );
+                totalValue.setText(
+                        ShowInvoiceView.formatSek(preview.getTotalAmount())
+                );
+
+            } catch (IllegalArgumentException | ArithmeticException exception) {
+                amountField.clear();
+                totalValue.setText("—");
             }
-            amountField.setText(ShowInvoiceView.formatSek(amount));
-            totalValue.setText(ShowInvoiceView.formatSek(amount));
         };
 
-        workOrderBox.valueProperty().addListener(
-            (obs, oldValue, selected) -> {
-                extraCostDescriptionField.clear();
-                extraCostAmountField.clear();
-                updateTotal.run();
+        workOrderBox.valueProperty().addListener((obs, oldValue, selected) -> {
+            extraCostDescriptionField.clear();
+            extraCostAmountField.clear();
+            boolean isComplaint = selected != null
+                    && selected.getType() == WorkOrderTypeEnum.COMPLAINT;
+
+            complaintCosts.setVisible(isComplaint);
+            complaintCosts.setManaged(isComplaint);
+            if (isComplaint) {
+                fillComplaintPrice(selected, extraCostAmountField, extraCostDescriptionField, language);
             }
-        );
+            updateTotal.run();
+
+        });
 
         extraCostAmountField.textProperty().addListener(
-            (obs, oldValue, newValue) -> updateTotal.run()
+                (obs, oldValue, newValue) -> updateTotal.run()
+        );
+
+        discountField.textProperty().addListener(
+                (observable, oldValue, newValue) -> updateTotal.run()
+        );
+
+        extraCostDescriptionField.textProperty().addListener(
+                (observable, oldValue, newValue) -> updateTotal.run()
         );
 
         // Tala om varför listan är tom, annars ser det ut som ett fel
@@ -181,7 +185,7 @@ public class CreateInvoiceView {
                 return;
             }
             int workOrderId = selectedWorkOrder.getId();
-            String discountCode = discoutField.getText();
+            String discountCode = discountField.getText();
 
 
             double extraCost = 0.0;
@@ -192,67 +196,55 @@ public class CreateInvoiceView {
 
                 if (!input.isEmpty()) {
                     try {
-                        extraCost = Double.parseDouble(input.replace(",", "."));
-
-                        if (!Double.isFinite(extraCost) || extraCost < 0) {
-                            UiKit.showError(statusLabel,
-                                language.text("createInvoice.invalidExtraCost").get());
-                            return;
-                        }
+                        extraCost = Double.parseDouble(input.replace(',', '.'));
                     } catch (NumberFormatException exception) {
-                        UiKit.showError(statusLabel,
-                            language.text("createInvoice.invalidExtraCost").get());
+                        UiKit.showError(
+                                statusLabel,
+                                language.text("createInvoice.invalidExtraCost").get()
+                        );
                         return;
                     }
-
-                    if (extraCost > 0 && extraDescription.trim().isEmpty()) {
-                        UiKit.showError(statusLabel,
-                            language.text("createInvoice.missingExtraDescription").get());
-                        return;
-                    }
-                } else if (!extraDescription.isEmpty()) {
-                    UiKit.showError(statusLabel,
-                        language.text("createInvoice.invalidExtraCost").get());
-                    return;
                 }
             }
-            Invoice invoice = garageSystem.createInvoice(
-                workOrderId, 
-                discountCode,
-                extraDescription,
-                extraCost
-            );
 
-            if (invoice == null) {
+            try {
 
-                UiKit.showError(statusLabel,
-                        language.text("createInvoice.createError").get()
-                );
+                Invoice invoice = invoiceService.createInvoice(workOrderId, discountCode, extraDescription, extraCost);
 
-            } else {
 
-                try {
-
-                    invoiceRepository.save(invoice);
-
-                    UiKit.showSuccess(statusLabel, language.text("createInvoice.successFor").get() + " "
-                            + ShowInvoiceView.workOrderCode(workOrderId)
-                            + ". " + language.text("createInvoice.totalLabel").get() + ": "
-                            + ShowInvoiceView.formatSek(invoice.getTotalAmount())
+                if (invoice == null) {
+                    UiKit.showError(
+                            statusLabel,
+                            language.text("createInvoice.createError").get()
                     );
-
-                    workOrderBox.setValue(null);
-                    discoutField.clear();
-
-                } catch (RuntimeException exception) {
-
-                    Database.getInvoices().remove(invoice);
-                    UiKit.showError(statusLabel,
-                            language.text("createInvoice.saveError").get()
-                    );
-                    exception.printStackTrace();
+                    return;
                 }
 
+                UiKit.showSuccess(
+                        statusLabel,
+                        language.text("createInvoice.successFor").get() + " "
+                                + ShowInvoiceView.workOrderCode(workOrderId)
+                                + ". " + language.text("createInvoice.totalLabel").get() + ": "
+                                + ShowInvoiceView.formatSek(invoice.getTotalAmount())
+                );
+
+                workOrderBox.setValue(null);
+                discountField.clear();
+
+                loadCompletedWorkOrders(workOrderBox, invoiceService);
+
+            } catch (InvoiceValidationException exception) {
+                UiKit.showError(
+                        statusLabel,
+                        language.text(exception.getMessage()).get()
+                );
+
+            } catch (RuntimeException exception) {
+
+                UiKit.showError(statusLabel,
+                        language.text("createInvoice.saveError").get()
+                );
+                exception.printStackTrace();
             }
 
 
@@ -265,7 +257,7 @@ public class CreateInvoiceView {
                 complaintCosts,
                 UiKit.formRow(
                         UiKit.formField(language.text("invoices.amount"), amountField),
-                        UiKit.formField(language.text("invoices.discount"), discoutField)),
+                        UiKit.formField(language.text("invoices.discount"), discountField)),
                 UiKit.totalBox(language.text("createInvoice.totalLabel"), totalValue),
                 createButton,
                 statusLabel);
@@ -278,8 +270,25 @@ public class CreateInvoiceView {
 
     }
 
+    private static void fillComplaintPrice(WorkOrder selected,
+                                           TextField extraCostAmountField,
+                                           TextField extraCostDescriptionField, LanguageManager language) {
+        if (selected == null) {
+            return;
+        }        if (selected.getEstimatedPrice() != null) {
+            extraCostAmountField.setText(selected.getEstimatedPrice().toPlainString());
+            extraCostDescriptionField.setText(language.text("createInvoice.getComplaintCost").get());
+        } else {
+            extraCostDescriptionField.clear();
+            extraCostAmountField.clear();
+        }
+    }
+
     private static void loadCompletedWorkOrders(ComboBox<WorkOrder> workOrderBox) {
-        for (WorkOrder workOrder : Database.getWorkOrders()) {
+        for (WorkOrder workOrder : UiKit.newestFirst(
+            Database.getWorkOrders(),
+            WorkOrder::getId
+        )) {
 
             boolean alreadyInvoiced = Database.getInvoices()
                     .stream()
@@ -287,11 +296,7 @@ public class CreateInvoiceView {
                             invoice.getWorkOrderId() == workOrder.getId()
                     );
 
-            if (workOrder.getStatus() == WorkOrderStatus.COMPLETED
-                    && !alreadyInvoiced) {
-                workOrderBox.getItems().add(workOrder);
-            }
-        }
+        workOrderBox.promptTextProperty().unbind();
 
         if (workOrderBox.getItems().isEmpty()) {
             workOrderBox.promptTextProperty().bind(
@@ -305,56 +310,18 @@ public class CreateInvoiceView {
     }
 
     // "WO-2 · Volkswagen Passat" – bilen gör det lättare att hitta rätt order
-    private static String describeWorkOrder(WorkOrder workOrder) {
+    private static String describeWorkOrder(WorkOrder workOrder, InvoiceService invoiceService) {
         String text = ShowInvoiceView.workOrderCode(workOrder.getId());
-        Vehicle vehicle = findVehicleFor(workOrder);
+        Vehicle vehicle = invoiceService.findVehicleForWorkOrder(
+                workOrder.getId()
+        );
+
         if (vehicle != null) {
             text += " · " + vehicle.getBrand() + " " + vehicle.getModel();
         }
         return text;
     }
 
-    // Arbetsorder -> bokning -> fordon (null om något saknas)
-    private static Vehicle findVehicleFor(WorkOrder workOrder) {
-        for (Booking booking : Database.getBookings()) {
-            if (booking.getId() == workOrder.getBookingId()) {
-                for (Vehicle vehicle : Database.getVehicles()) {
-                    if (vehicle.getId() == booking.getVehicleId()) {
-                        return vehicle;
-                    }
-                }
-            }
-        }
-        return null;
-    }
 
-    // Samma summa som GarageSystem.createInvoice räknar fram (före rabatt)
-    //Lägga till att kolla efter specifika bokningens tjänst
-    private static double sumServicePrices(WorkOrder workOrder, Booking booking) {
-        
-        if (workOrder.getType() == WorkOrderTypeEnum.COMPLAINT) {
-            return 0.0;
-        }
-        double sum = 0.0;
-
-        
-            if(booking != null) {
-                for (InvoiceLine frozenLine : booking.getFrozenPrice()){
-                    sum+= frozenLine.getPrice();
-                }
-                return sum;
-
-                }
-            else {
-                for (Integer serviceItemId : workOrder.getServiceItemIds()) {
-                for (ServiceItem serviceItem : Database.getServiceItems()) {
-                    if (serviceItem.getId() == serviceItemId) {
-                        sum += serviceItem.getPrice();
-                    }
-                }
-            }
-        }
-        return sum;
-    }
 
 }

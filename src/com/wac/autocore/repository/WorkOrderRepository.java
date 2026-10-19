@@ -1,28 +1,17 @@
 package com.wac.autocore.repository;
 
 import com.wac.autocore.data.HibernateUtil;
-import com.wac.autocore.model.Booking;
-import com.wac.autocore.model.WorkOrder;
-import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
-
+import com.wac.autocore.model.*;
+import org.hibernate.LockMode;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 
-import java.util.List;
-import com.wac.autocore.model.Mechanic;
-import com.wac.autocore.model.ServiceItem;
-import com.wac.autocore.model.WorkOrderStatus;
-import org.hibernate.LockMode;
-
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import com.wac.autocore.model.Vehicle;
-import com.wac.autocore.model.Customer;
+import java.util.List;
 
-public class WorkOrderRepository {
+public class WorkOrderRepository implements IWorkOrderRepository {
 
     public void save(WorkOrder workOrder) {
 
@@ -57,6 +46,7 @@ public class WorkOrderRepository {
 
             try {
                 session.save(booking);
+                workOrder.setBookingId(booking.getId());
                 session.save(workOrder);
 
                 transaction.commit();
@@ -66,6 +56,14 @@ public class WorkOrderRepository {
                  }
                  throw e;
             }
+        }
+    }
+
+    public WorkOrder findWorkOrder(int id) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.get(WorkOrder.class, id);
+        } catch (Exception e) {
+            throw new RuntimeException("Kunde inte hämta arbetsorder med ID: " + id, e);
         }
     }
 
@@ -97,10 +95,6 @@ public class WorkOrderRepository {
                 throw e;
             }
         }
-    }
-
-    public List<WorkOrder> findAllWorkOrders() {
-        return findAll();
     }
 
     public List<String> confirmDraft(int workOrderId) {
@@ -211,63 +205,25 @@ public class WorkOrderRepository {
     }
 
     public void updateDraft(
-            WorkOrder draft,
-            Booking booking,
-            List<Integer> serviceIds,
+            int draft,
+            int bookingId,
+            List<Integer> selectedIds,
             int mechanicId,
+            BigDecimal normalizedPrice,
+            String savedInstructions,
+            String savedComments,
+            Integer originalWorkOrderId,
             LocalDate plannedDate,
-            int minutes,
-            BigDecimal price,
-            String instructions,
-            String comments,
-            Integer originalWorkOrderId
+            int minutes
     ) {
-        if (draft == null || draft.getStatus() != WorkOrderStatus.DRAFT) {
-            throw new IllegalArgumentException("editWorkOrderDraft.onlyDraft");
-        }
 
-        if (booking == null || booking.getId() != draft.getBookingId()) {
-            throw new IllegalArgumentException("editWorkOrderDraft.bookingMissing");
-        }
-
-        if (minutes < 0) {
-            throw new IllegalArgumentException("editWorkOrderDraft.invalidMinutes");
-        }
-
-        BigDecimal normalizedPrice = price;
-
-        if (price != null) {
-            try {
-                normalizedPrice = price.setScale(2, RoundingMode.UNNECESSARY);
-            } catch (ArithmeticException exception) {
-                throw new IllegalArgumentException("editWorkOrderDraft.invalidPrice");
-            }
-
-            if (normalizedPrice.signum() < 0
-                    || normalizedPrice.compareTo(
-                    new BigDecimal("9999999999.99")) > 0) {
-                throw new IllegalArgumentException("editWorkOrderDraft.invalidPrice");
-            }
-        }
-
-        String savedInstructions = instructions == null ? "" : instructions.trim();
-        String savedComments = comments == null ? "" : comments.trim();
-
-        if (savedInstructions.length() > 4000 || savedComments.length() > 4000) {
-            throw new IllegalArgumentException("editWorkOrderDraft.textTooLong");
-        }
-
-        List<Integer> selectedIds =
-                new ArrayList<>(new LinkedHashSet<>(serviceIds));
-
-        List<ServiceItem> savedServices = new ArrayList<>();
 
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             Transaction transaction = session.beginTransaction();
 
             try {
                 WorkOrder savedDraft = session.get(
-                        WorkOrder.class, draft.getId(), LockMode.PESSIMISTIC_WRITE
+                        WorkOrder.class, draft, LockMode.PESSIMISTIC_WRITE
                 );
 
                 if (savedDraft == null
@@ -282,7 +238,7 @@ public class WorkOrderRepository {
                         throw new IllegalArgumentException("confirmWorkOrder.originalWrongType");
                     }
 
-                    if (originalWorkOrderId.intValue() == savedDraft.getId()) {
+                    if (originalWorkOrderId == savedDraft.getId()) {
                         throw new IllegalArgumentException("confirmWorkOrder.originalSelfReference");
                     }
 
@@ -303,7 +259,7 @@ public class WorkOrderRepository {
                         LockMode.PESSIMISTIC_WRITE
                 );
 
-                if (savedBooking == null || savedBooking.getId() != booking.getId()) {
+                if (savedBooking == null || savedBooking.getId() != bookingId) {
                     throw new IllegalArgumentException(
                             "editWorkOrderDraft.bookingMissing"
                     );
@@ -316,18 +272,15 @@ public class WorkOrderRepository {
                     );
                 }
 
+                List<ServiceItem> savedServices = new ArrayList<>();
                 for (Integer serviceId : selectedIds) {
-                    ServiceItem service = serviceId == null
-                            ? null
-                            : session.get(ServiceItem.class, serviceId);
-
-                    if (service == null) {
-                        throw new IllegalArgumentException(
-                                "editWorkOrderDraft.serviceMissing"
-                        );
+                    if (serviceId != null) {
+                        ServiceItem service = session.get(ServiceItem.class, serviceId);
+                        if (service == null) {
+                            throw new IllegalArgumentException("editWorkOrderDraft.serviceMissing");
+                        }
+                        savedServices.add(service);
                     }
-
-                    savedServices.add(service);
                 }
 
                 savedDraft.getServiceItemIds().clear();
@@ -343,6 +296,7 @@ public class WorkOrderRepository {
                 savedBooking.getServices().clear();
                 savedBooking.getServices().addAll(savedServices);
                 savedDraft.setOriginalWorkOrderId(originalWorkOrderId);
+                savedBooking.setFrozenPrice(createFrozenPrices(savedServices));
 
                 // Status, problembeskrivning och historiska priser ändras inte.
                 transaction.commit();
@@ -354,38 +308,89 @@ public class WorkOrderRepository {
                 throw exception;
             }
         }
-
-        // Uppdaterar appens objekt först efter lyckad commit.
-        draft.setServiceItemIds(new ArrayList<>(selectedIds));
-        draft.setMechanicId(mechanicId);
-        draft.setEstimatedPrice(normalizedPrice);
-        draft.setCustomerInstructions(savedInstructions);
-        draft.setDraftComments(savedComments);
-        draft.setOriginalWorkOrderId(originalWorkOrderId);
-
-        booking.setDate(plannedDate);
-        booking.setDurationMinutes(minutes);
-        booking.setMechanicId(mechanicId == 0 ? null : mechanicId);
-        booking.setServices(new ArrayList<>(savedServices));
     }
+
     public void saveDropInOrder(WorkOrder workOrder, Booking booking) {
-        org.hibernate.Session session = HibernateUtil.getSessionFactory().openSession();
-        org.hibernate.Transaction tx = null;
-        try {
-            tx = session.beginTransaction();
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Transaction transaction = session.beginTransaction();
+            try {
+                // 1. Spara bokningen först så att MySQL genererar dess data och fordonet länkas
+                session.save(booking);
+                workOrder.setBookingId(booking.getId());
+                session.save(workOrder);
 
-            // 1. Spara bokningen först så att MySQL genererar dess data och fordonet länkas
-            session.save(booking);
-            session.save(workOrder);
+                transaction.commit();
+            } catch (Exception e) {
+                if (transaction != null) transaction.rollback();
+                throw new RuntimeException("workOrders.couldNotSaveDropIn");
+            }
+        }
+    }
 
-            tx.commit();
-            System.out.println("Drop-in order och skuggbokning sparades i samma transaktion via DI!");
-        } catch (Exception e) {
-            if (tx != null) tx.rollback();
-            e.printStackTrace();
-            throw new RuntimeException("Kunde inte spara drop-in-order via repository: " + e.getMessage());
-        } finally {
-            session.close();
+    public List<InvoiceLine> createFrozenPrices(List<ServiceItem> serviceItems) {
+        List<InvoiceLine> frozenPrices = new ArrayList<>();
+        for (ServiceItem service : serviceItems) {
+            InvoiceLine frozenLine = new InvoiceLine(
+                    service.getId(),
+                    service.getName(),
+                    service.getPrice() // Sparar priset inför faktureringen
+            );
+            frozenPrices.add(frozenLine);
+        }
+        return frozenPrices;
+    }
+
+    public void completeWorkOrder(int workOrderId) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Transaction tx = null;
+            try {
+                tx = session.beginTransaction();
+
+                WorkOrder workOrder = session.get(WorkOrder.class, workOrderId);
+                Mechanic mechanic = session.get(Mechanic.class, workOrder.getMechanicId());
+                Booking booking = session.get(Booking.class, workOrder.getBookingId());
+
+                workOrder.changeStatus(WorkOrderStatus.COMPLETED);
+
+                if (mechanic != null) {
+                    mechanic.setAvailable(true);
+                    session.merge(mechanic);
+                }
+
+                if (booking != null && !sharesOriginalBooking(booking.getId(), workOrderId)) {
+                    booking.setStatus("COMPLETED");
+                    session.merge(booking);
+                }
+
+                session.merge(workOrder);
+
+                tx.commit();
+            } catch (RuntimeException exception) {
+                if (tx != null && tx.isActive()) {
+                    tx.rollback();
+                }
+                throw exception;
+            }
+        }
+    }
+
+    // Returnerar true om någon annan order delar på denna bokning
+    private boolean sharesOriginalBooking(int workOrderId, int bookingId) {
+        if (bookingId == 0) return false;
+
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Transaction transaction = session.beginTransaction();
+            {
+                Long count = session.createQuery(
+                                "select count(w) from WorkOrder w where w.bookingId = :bId and w.id != :currentId", Long.class)
+                        .setParameter("bId", bookingId)
+                        .setParameter("currentId", workOrderId)
+                        .getSingleResult();
+
+                return count > 0;
+            }
+        } catch (RuntimeException e) {
+            throw new RuntimeException("createWorkOrder.bookingNotFound");
         }
     }
 }

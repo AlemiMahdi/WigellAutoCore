@@ -7,11 +7,9 @@ import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.model.Vehicle;
 import com.wac.autocore.model.WorkOrder;
 import com.wac.autocore.model.WorkOrderStatus;
-import com.wac.autocore.repository.BookingRepository;
-import com.wac.autocore.repository.MechanicRepository;
-import com.wac.autocore.repository.WorkOrderRepository;
-import com.wac.autocore.service.GarageSystem;
+import com.wac.autocore.service.WorkOrderService;
 import com.wac.autocore.ui.language.LanguageManager;
+import com.wac.autocore.service.MechanicService;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
@@ -27,22 +25,17 @@ public class CompleteWorkOrderView {
     private static final double CARD_MAX_WIDTH = 680;
 
     private final LanguageManager language = LanguageManager.getInstance();
-    private final GarageSystem garageSystem = new GarageSystem();
-    private final WorkOrderRepository workOrderRepository = new WorkOrderRepository();
-    private final BookingRepository bookingRepository = new BookingRepository();
-    private final MechanicRepository mechanicRepository = new MechanicRepository();
+    private final WorkOrderService workOrderService;
+
 
     // Meddelandet ligger ovanför korten så att det syns kvar när korten byggs om
     private final Label statusLabel = UiKit.feedbackLabel();
     private final VBox cardList = new VBox(20);
     private final VBox root;
 
-    // AutoCoreApp anropar build() – den skapar vyn och lämnar ut dess rot-VBox
-    public static VBox build() {
-        return new CompleteWorkOrderView().root;
-    }
+    public CompleteWorkOrderView(WorkOrderService workOrderService) {
+        this.workOrderService = workOrderService;
 
-    private CompleteWorkOrderView() {
         statusLabel.setMaxWidth(CARD_MAX_WIDTH);
         // Tomt meddelande ska inte ta plats ovanför korten
         statusLabel.managedProperty().bind(statusLabel.textProperty().isNotEmpty());
@@ -59,11 +52,22 @@ public class CompleteWorkOrderView {
         reloadCards();
     }
 
+    // AutoCoreApp anropar build() – den skapar vyn och lämnar ut dess rot-VBox
+//    public static VBox build() {
+//        return new CompleteWorkOrderView().root;
+//    }
+
+    public VBox getView() {
+        return this.root;
+    }
+
     // Bygger ett kort per order som kan slutföras (status IN_PROGRESS).
     private void reloadCards() {
         cardList.getChildren().clear();
 
-        for (WorkOrder order : Database.getWorkOrders()) {
+        for (WorkOrder order : UiKit.newestFirst(
+            Database.getWorkOrders(), 
+            WorkOrder::getId)) {
             if (order.getStatus().canChangeTo(WorkOrderStatus.COMPLETED)) {
                 Button completeButton = UiKit.successButton("Complete work order");
                 completeButton.textProperty().bind(language.text("completeWorkOrder.button"));
@@ -82,7 +86,7 @@ public class CompleteWorkOrderView {
             cardList.getChildren().add(createEmptyCard());
         }
     }
-
+//Måste ändras hämta från BookingRepo findbooking
     // Ett kort: rubrik, STARTED-badge, mekaniker, tjänster som checkboxar och grön knapp.
     private VBox createWorkOrderCard(WorkOrder order, Button completeButton) {
         Booking booking = findBooking(order.getBookingId());
@@ -146,49 +150,15 @@ public class CompleteWorkOrderView {
     // Samma kontroller och anrop som tidigare: hitta ordern, kolla status,
     // slutför via GarageSystem och spara via repositories. Returnerar true om det lyckades.
     private boolean completeWorkOrder(int workOderId) {
-        WorkOrder foundOrder = null;
-
-        for (WorkOrder order : Database.getWorkOrders()) {
-            if (order.getId() == workOderId) {
-                foundOrder = order;
-                break;
-            }
-        }
-        if (foundOrder == null) {
-            UiKit.showError(statusLabel, language.text("completeWorkOrder.notFound").get());
-            return false;
-        }
-        if (!foundOrder.getStatus().canChangeTo(WorkOrderStatus.COMPLETED)) {
-            UiKit.showError(statusLabel, language.text("completeWorkOrder.invalidStatus").get());
-            return false;
-        }
-
-        garageSystem.completeWorkOrder(workOderId);
-
-        // Hämtar bokningen och mekanikern som completeWorkOrder har ändrat.
-        Booking booking = findBooking(foundOrder.getBookingId());
-        Mechanic mechanic = findMechanic(foundOrder.getMechanicId());
 
         try {
-            // Sparar arbetsorderns, bokningens och mekanikerns nya status.
-            workOrderRepository.save(foundOrder);
-
-            if (booking != null) {
-                bookingRepository.save(booking);
-            }
-
-            if (mechanic != null) {
-                mechanicRepository.save(mechanic);
-            }
-
+            workOrderService.completeWorkOrder(workOderId);
             UiKit.showSuccess(statusLabel, language.text("completeWorkOrder.success").get());
-        } catch (RuntimeException exception) {
-            UiKit.showError(statusLabel,
-                    language.text("completeWorkOrder.error").get());
-            exception.printStackTrace();
+            return true;
+        } catch (IllegalArgumentException e) {
+            UiKit.showError(statusLabel, language.text("completeWorkOrder.error").get());
+            return false;
         }
-        // Ordern är slutförd i minnet även om sparandet misslyckades, så korten byggs om
-        return true;
     }
 
     // ------------------------------------------------------------

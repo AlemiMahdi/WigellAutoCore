@@ -27,11 +27,14 @@
     -fx-text-secondary: #5E6A58;
     -fx-success: #4E7A3E;
     -fx-warning: #7A6120;                     /* mörk ockra, går att läsa på ljust */
+    -fx-scrollbar-thumb: #819774;                      /* terrakotta */
     -fx-danger: #A34E36;                      /* terrakotta */
+    -fx-zebra-stripes: #e3e0d8;                 /*Liten mörkare ton än Linne */
+
 
     /* JavaFX standardtema (modena) räknar ut sina färger från dessa,
        så kontroller vi inte stylat själva (scrollbars, popups m.m.) blir ljusa. */
-    -fx-base: #E4E9DC;
+    -fx-base: -fx-sidebar-bg;
     -fx-background: #F3F0E8;
     -fx-control-inner-background: #FBF9F4;
     -fx-control-inner-background-alt: #F6F3EC;
@@ -206,17 +209,42 @@
     -fx-padding: 0;
 }
 
-/* Scrollbars: diskreta, utan pilar */
+/* ================= Scrollbars ================= */
+
+/* Grundutseende */
 .scroll-bar {
     -fx-background-color: transparent;
 }
 
+/* Tydligare bredd på vertikala scrollbars */
+.scroll-bar:vertical {
+    -fx-pref-width: 14;
+}
+
+/* Tydligare höjd på horisontella scrollbars */
+.scroll-bar:horizontal {
+    -fx-pref-height: 14;
+}
+
+/* Scrollbarens bana */
+.scroll-bar .track {
+    -fx-background-color: -fx-sidebar-bg;
+    -fx-background-radius: 7;
+}
+
+/* Det rörliga handtaget */
 .scroll-bar .thumb {
-    -fx-background-color: -fx-border;
-    -fx-background-radius: 4;
+    -fx-background-color: -fx-scrollbar-thumb;
+    -fx-background-radius: 7;
     -fx-background-insets: 2;
 }
 
+/* Mörkare färg när musen hålls över */
+.scroll-bar .thumb:hover {
+    -fx-background-color: -fx-accent;
+}
+
+/* Ta bort onödiga pilknappar */
 .scroll-bar .increment-button,
 .scroll-bar .decrement-button {
     -fx-background-color: transparent;
@@ -456,6 +484,16 @@
 .list-cell:filled:selected {
     -fx-background-color: -fx-accent-soft;
     -fx-text-fill: -fx-accent-text;
+}
+
+.table-row-cell:even .table-cell {
+    -fx-background-color: -fx-border, derive(-fx-zebra-stripes, -3%);
+}
+
+.table-row-cell:hover .table-cell,
+.table-row-cell:selected .table-cell,
+.table-row-cell:empty .table-cell {
+    -fx-background-color: transparent !important;
 }
 
 /* ================= Kort (Dashboard) ================= */
@@ -1349,4 +1387,49 @@
 
 .primary-button.icon-button .edit-pencil {
     -fx-fill: -fx-text-fill;
+}
+
+/* Diskreta åtgärder i bokningstabellen */
+.button.booking-description-button,
+.button.booking-edit-button {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-text-fill: #4F7044;
+    -fx-font-size: 12px;
+    -fx-padding: 4 8;
+    -fx-min-height: 26;
+    -fx-pref-height: 26;
+    -fx-max-height: 26;
+    -fx-cursor: hand;
+}
+
+.button.booking-description-button {
+    -fx-border-color: transparent;
+}
+
+.button.booking-description-button:hover {
+    -fx-underline: true;
+}
+
+.button.booking-edit-button {
+    -fx-background-color: #4F7044;
+    -fx-text-fill: white;
+    -fx-border-color: #4F7044;
+    -fx-border-width: 1;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+}
+
+.button.booking-edit-button:hover {
+    -fx-background-color: #405C37;
+}
+
+.button.booking-edit-button .edit-pencil {
+    -fx-fill: white;
+}
+
+.button.booking-description-button:focused,
+.button.booking-edit-button:focused {
+    -fx-border-color: #4F7044;
+    -fx-border-radius: 5;
 }
