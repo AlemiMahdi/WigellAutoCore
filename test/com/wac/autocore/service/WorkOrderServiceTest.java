@@ -6,6 +6,8 @@ import com.wac.autocore.model.WorkOrderStatus;
 import com.wac.autocore.model.WorkOrderTypeEnum;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class WorkOrderServiceTest {
@@ -60,5 +62,30 @@ public class WorkOrderServiceTest {
 
         assertEquals(bookingBefore, Database.getBookings().size());
         assertNull(fakeRepository.saveDraft);
+    }
+
+    @Test
+    void findStartableWorkOrdersReturnsOnlyConfirmed() {
+        // Arrange
+        WorkOrder confirm = WorkOrder.createDraft(9001, 0, WorkOrderTypeEnum.PLANNED);
+        confirm.changeStatus(WorkOrderStatus.CONFIRMED);
+
+        WorkOrder draft = WorkOrder.createDraft(9002, 0, WorkOrderTypeEnum.PLANNED);
+
+        Database.getWorkOrders().add(confirm);
+        Database.getWorkOrders().add(draft);
+
+        try {
+            // Act
+            List<WorkOrder> result = workOrderService.findStartableWorkOrders();
+
+            // Assert
+            assertTrue(result.contains(confirm));
+            assertFalse(result.contains(draft));
+        } finally {
+            // Städa så att andra tester inte påverkas
+            Database.getWorkOrders().remove(confirm);
+            Database.getWorkOrders().remove(draft);
+        }
     }
 }
