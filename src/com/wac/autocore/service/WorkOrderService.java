@@ -15,20 +15,20 @@ import java.util.List;
 public class WorkOrderService {
     private final IWorkOrderRepository workOrderRepository;
     private final IBookingRepository bookingRepository;
-    private final WorkOrderTypeManager typeManager = new WorkOrderTypeManager();
     private final IServiceItemRepository serviceItemRepository;
+    private final WorkOrderTypeManager typeManager;
     private final IVehicleRepository vehicleRepository;
 
-    //Får ändra BookingRepo hämtning sen
     public WorkOrderService(IWorkOrderRepository workOrderRepository,  IBookingRepository bookingRepository,
                             IServiceItemRepository serviceItemRepository, IVehicleRepository vehicleRepository) {
         this.workOrderRepository = workOrderRepository;
         this.bookingRepository = bookingRepository;
         this.serviceItemRepository = serviceItemRepository;
         this.vehicleRepository = vehicleRepository;
+        this.typeManager = new WorkOrderTypeManager(serviceItemRepository);
     }
 
-    public WorkOrder createAndSaveWorkOrder(WorkOrderTypeEnum selectedType, WorkOrderDto dto, Booking originalBooking) {
+    public void createAndSaveWorkOrder(WorkOrderTypeEnum selectedType, WorkOrderDto dto, Booking originalBooking) {
         WorkOrder workOrder = typeManager.createWorkOrderType(selectedType, dto);
 
         if (workOrder == null) {
@@ -94,7 +94,6 @@ public class WorkOrderService {
             throw new RuntimeException("createWorkOrder.saveError", exception);
         }
 
-        return workOrder;
     }
 
     public void createFrozenComplaintPrice(WorkOrder workOrder, Booking complaintBooking){
@@ -127,11 +126,8 @@ public class WorkOrderService {
     }
 
     //byt till repository sökning
-    public static ServiceItem findServiceItem(int serviceId) {
-        return Database.getServiceItems().stream()
-                .filter(s -> s.getId() == serviceId)
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("createWorkOrder.empty"));
+    public ServiceItem findServiceItem(int serviceId) {
+        return serviceItemRepository.findById(serviceId);
     }
 
     public List<String> confirmWorkOrder(int workOrderId) {

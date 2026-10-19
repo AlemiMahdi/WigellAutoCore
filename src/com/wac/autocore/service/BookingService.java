@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
+
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.InvoiceLine;
@@ -24,8 +26,8 @@ public class BookingService {
         return bookingRepository.findAll();
     }
 
-    public Booking getBookingById( int id ) {
-        return bookingRepository.findById(id);
+    public Optional<Booking> getBookingById(int id ) {
+        return Optional.ofNullable(bookingRepository.findById(id));
     }
 
     public Booking createBooking(

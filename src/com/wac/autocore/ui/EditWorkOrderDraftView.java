@@ -1,5 +1,6 @@
 package com.wac.autocore.ui;
 
+import com.wac.autocore.service.BookingService;
 import com.wac.autocore.service.WorkOrderService;
 import com.wac.autocore.ui.views.ViewHelpMethod;
 import com.wac.autocore.model.WorkOrderTypeEnum;
@@ -28,9 +29,11 @@ public class EditWorkOrderDraftView {
     private final LanguageManager language =
             LanguageManager.getInstance();
     private final WorkOrderService workOrderService;
+    private final BookingService bookingService;
 
-    public EditWorkOrderDraftView(WorkOrderService workOrderService) {
+    public EditWorkOrderDraftView(WorkOrderService workOrderService, BookingService bookingService) {
         this.workOrderService = workOrderService;
+        this.bookingService = bookingService;
     }
 
     private void showFeedback(Label label, String key, boolean success) {
@@ -57,11 +60,7 @@ public class EditWorkOrderDraftView {
             return new VBox(10, errorLabel);
         }
 
-        Booking booking = Database.getBookings().stream()
-                .filter(existing -> existing.getId() == draft.getBookingId())
-                .findFirst()
-                .orElse(null);
-
+        Booking booking = bookingService.getBookingById(draft.getBookingId()).orElse(null);
         if (booking == null) {
             javafx.scene.control.Label errorLabel = UiKit.feedbackLabel();
             UiKit.showError(errorLabel, "");
@@ -135,7 +134,7 @@ public class EditWorkOrderDraftView {
             }
         });
 
-// Förväljer mekanikern om utkastet redan har en.
+// väljer mekanikern om utkastet redan har en.
         if (draft.getMechanicId() != 0) {
             for (Mechanic mechanic : mechanicCombo.getItems()) {
                 if (mechanic.getId() == draft.getMechanicId()) {
