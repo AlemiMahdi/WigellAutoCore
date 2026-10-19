@@ -26,6 +26,14 @@ public class EditWorkOrderDraftView {
             LanguageManager.getInstance();
     private final WorkOrderService workOrderService;
     private final BookingService bookingService;
+    private final ComboBox<WorkOrder> originalCombo = new ComboBox<>();
+    private final ComboBox<Mechanic> mechanicCombo = new ComboBox<>();
+    private final DatePicker plannedDateField = new DatePicker();
+    private final TextField estimatedMinutesField = new TextField();
+    private final TextField priceField = new TextField();
+    private final TextArea instructionsField = new TextArea();
+    private final TextArea commentsField = new TextArea();
+    private final Label totalPriceLabel = new Label();
 
     public EditWorkOrderDraftView(WorkOrderService workOrderService, BookingService bookingService) {
         this.workOrderService = workOrderService;
@@ -68,7 +76,6 @@ public class EditWorkOrderDraftView {
 
         boolean isComplaint = draft.getType() == WorkOrderTypeEnum.COMPLAINT;
 
-        ComboBox<WorkOrder> originalCombo = new ComboBox<>();
         originalCombo.setMaxWidth(Double.MAX_VALUE);
         originalCombo.promptTextProperty().bind(
                 language.text("createWorkOrder.selectOriginalWorkOrder")
@@ -79,16 +86,6 @@ public class EditWorkOrderDraftView {
                 .sorted(Comparator.comparing(WorkOrder::getId).reversed())
                 .collect(Collectors.toList());
         originalCombo.getItems().setAll(completedOrders);
-
-//        for (WorkOrder order : UiKit.newestFirst(
-//            Database.getWorkOrders(),
-//            WorkOrder::getId
-//        )) {
-//            if (order.getId() != draft.getId()
-//                    && order.getStatus() == WorkOrderStatus.COMPLETED) {
-//                originalCombo.getItems().add(order);
-//            }
-//        }
 
         originalCombo.setConverter(new StringConverter<WorkOrder>() {
             @Override
@@ -116,10 +113,8 @@ public class EditWorkOrderDraftView {
         originalField.setVisible(isComplaint);
         originalField.setManaged(isComplaint);
 
-        ComboBox<Mechanic> mechanicCombo = new ComboBox<>();
         mechanicCombo.getItems().setAll(Database.getMechanics());
         mechanicCombo.setMaxWidth(Double.MAX_VALUE);
-
         mechanicCombo.promptTextProperty().bind(
                 language.text("editWorkOrderDraft.mechanicPrompt")
         );
@@ -154,14 +149,8 @@ public class EditWorkOrderDraftView {
 
         VBox mechanicFields = new VBox(10, mechanicCombo, clearMechButton);
 
-        DatePicker plannedDateField = new DatePicker();
         plannedDateField.setValue(booking.getDate());
 
-        TextField estimatedMinutesField = new TextField();
-
-        Label totalPriceLabel = new Label();
-
-        TextField priceField = new TextField();
         if (booking.getDurationMinutes() > 0) {
             estimatedMinutesField.setText(
                     String.valueOf(booking.getDurationMinutes())
@@ -178,12 +167,10 @@ public class EditWorkOrderDraftView {
                 language.text("editWorkOrderDraft.minutesPrompt")
         );
 
-        TextArea instructionsField = new TextArea();
         instructionsField.setPrefRowCount(3);
         instructionsField.setWrapText(true);
         instructionsField.setText(draft.getCustomerInstructions() == null ? "" : draft.getCustomerInstructions());
 
-        TextArea commentsField = new TextArea();
         commentsField.setPrefRowCount(3);
         commentsField.setWrapText(true);
         commentsField.setText(

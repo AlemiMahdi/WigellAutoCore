@@ -77,7 +77,6 @@ public class WorkOrderService {
                     workOrderRepository.save(workOrder);
                     break;
             }
-
             // Gemensam synk för alla typer efter lyckad sparning
             if (!Database.getWorkOrders().contains(workOrder)) {
                 Database.getWorkOrders().add(workOrder);
@@ -216,6 +215,7 @@ public class WorkOrderService {
         booking.setDurationMinutes(minutes);
         booking.setMechanicId(mechanicId == 0 ? null : mechanicId);
 
+
         List<ServiceItem> updatedServices = new ArrayList<>();
         for (Integer serviceItem : selectedIds) {
             updatedServices.add(serviceItemRepository.findById(serviceItem));
@@ -263,7 +263,7 @@ public class WorkOrderService {
 
         // 2. Skapa utkastet och bokningen (id 0 = MySQL ger id till båda,
         //    saveWithBooking kopplar ihop dem när bokningen fått sitt id)
-        WorkOrder draft = WorkOrder.createDraft(0, 0, type);
+        WorkOrder draft = WorkOrder.createDraft(0, 0, type, description);
         if (type == WorkOrderTypeEnum.COMPLAINT && originalWorkOrderId != null) {
             draft.setOriginalWorkOrderId(originalWorkOrderId);
         }
@@ -273,9 +273,6 @@ public class WorkOrderService {
 
         // 3. Spara bokning och utkast i samma transaktion
         workOrderRepository.saveWithBooking(draft, booking);
-
-        Database.getBookings().add(booking);
-        Database.getWorkOrders().add(draft);
 
         return draft;
     }
