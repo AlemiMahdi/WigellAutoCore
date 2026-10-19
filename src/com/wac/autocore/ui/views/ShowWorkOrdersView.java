@@ -36,7 +36,11 @@ public class ShowWorkOrdersView {
         VBox completedColumn = UiKit.kanbanColumn(language.text("badge.COMPLETED"), "green");
 
         // Sorterar varje arbetsorder till rätt kolumn utifrån dess status
-        for (WorkOrder workOrder : Database.getWorkOrders()) {
+        // Visa senaste arbetsordern överst i varje statuskolumn
+        for (WorkOrder workOrder : UiKit.newestFirst(
+                Database.getWorkOrders(),
+                WorkOrder::getId
+        )) {
             WorkOrderStatus status = workOrder.getStatus();
 
             if (status == WorkOrderStatus.DRAFT) {

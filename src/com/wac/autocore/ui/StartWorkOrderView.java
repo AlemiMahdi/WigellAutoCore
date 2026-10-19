@@ -74,6 +74,9 @@ public class StartWorkOrderView extends VBox {
                 startable.add(workOrder);
             }
         }
+        startable.sort((first, second) ->
+            Integer.compare(second.getId(), first.getId())
+        );
 
         if (Database.getWorkOrders().isEmpty()) {
             showEmptyState("startWorkOrder.empty");

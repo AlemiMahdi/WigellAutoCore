@@ -284,10 +284,17 @@ public class CreateInvoiceView {
         }
     }
 
-    private static void loadCompletedWorkOrders(ComboBox<WorkOrder> workOrderBox, InvoiceService invoiceService) {
-        workOrderBox.getItems().setAll(
-                invoiceService.getInvoiceableWorkOrders()
-        );
+    private static void loadCompletedWorkOrders(ComboBox<WorkOrder> workOrderBox) {
+        for (WorkOrder workOrder : UiKit.newestFirst(
+            Database.getWorkOrders(),
+            WorkOrder::getId
+        )) {
+
+            boolean alreadyInvoiced = Database.getInvoices()
+                    .stream()
+                    .anyMatch(invoice ->
+                            invoice.getWorkOrderId() == workOrder.getId()
+                    );
 
         workOrderBox.promptTextProperty().unbind();
 

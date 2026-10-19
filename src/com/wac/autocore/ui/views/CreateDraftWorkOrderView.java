@@ -53,7 +53,10 @@ public class CreateDraftWorkOrderView {
         );
 
         // Fyll rullistan med alla avslutade (COMPLETED) arbetsordrar från minnet
-        for (WorkOrder order : Database.getWorkOrders()) {
+        for (WorkOrder order : UiKit.newestFirst(
+            Database.getWorkOrders(), 
+            WorkOrder::getId
+        )) {
             if (order.getStatus() == WorkOrderStatus.COMPLETED) {
                 originalWorkOrderCombo.getItems().add(order);
             }
