@@ -16,7 +16,6 @@ import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.Mechanic;
 import javafx.util.StringConverter;
 import com.wac.autocore.model.ServiceItem;
-import com.wac.autocore.repository.WorkOrderRepository;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -277,7 +276,7 @@ public class EditWorkOrderDraftView {
                 instructionsField.getText(),
                 commentsField.getText(),
                         isComplaint && originalCombo.getValue() != null
-                                ? Integer.valueOf(originalCombo.getValue().getId())
+                                ? originalCombo.getValue().getId()
                                 : null);
 
                 showFeedback(messageLabel, "editWorkOrderDraft.saved", true);

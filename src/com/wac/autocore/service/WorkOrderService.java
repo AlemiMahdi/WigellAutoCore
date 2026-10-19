@@ -3,10 +3,7 @@ package com.wac.autocore.service;
 import com.wac.autocore.DTO.WorkOrderDto;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
-import com.wac.autocore.repository.BookingRepository;
-import com.wac.autocore.repository.IServiceItemRepository;
-import com.wac.autocore.repository.IVehicleRepository;
-import com.wac.autocore.repository.IWorkOrderRepository;
+import com.wac.autocore.repository.*;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -17,13 +14,14 @@ import java.util.List;
 
 public class WorkOrderService {
     private final IWorkOrderRepository workOrderRepository;
-    private final BookingRepository bookingRepository;
+    private final IBookingRepository bookingRepository;
     private final WorkOrderTypeManager typeManager = new WorkOrderTypeManager();
     private final IServiceItemRepository serviceItemRepository;
     private final IVehicleRepository vehicleRepository;
 
     //Får ändra BookingRepo hämtning sen
-    public WorkOrderService(IWorkOrderRepository workOrderRepository,  BookingRepository bookingRepository, IServiceItemRepository serviceItemRepository, IVehicleRepository vehicleRepository) {
+    public WorkOrderService(IWorkOrderRepository workOrderRepository,  IBookingRepository bookingRepository,
+                            IServiceItemRepository serviceItemRepository, IVehicleRepository vehicleRepository) {
         this.workOrderRepository = workOrderRepository;
         this.bookingRepository = bookingRepository;
         this.serviceItemRepository = serviceItemRepository;
@@ -54,20 +52,7 @@ public class WorkOrderService {
                         );
                         complaintBooking.setStatus("WORK_ORDER_CREATED");
                         complaintBooking.setMechanicId(dto.getMechanicId());
-
-                        // Räkna ut tid och frys priser för reklamationen
-                        List<InvoiceLine> frozenLines = new ArrayList<>();
-                        int totalMinutes = 0;
-                        for (Integer serviceId : workOrder.getServiceItemIds()) {
-                            ServiceItem service = Database.getServiceItems().stream()
-                                    .filter(item -> item.getId() == serviceId).findFirst()
-                                    .orElseThrow(() -> new IllegalArgumentException("editWorkOrderDraft.serviceMissing"));
-
-                            totalMinutes += service.getEstimatedMinutes();
-                            frozenLines.add(new InvoiceLine(service.getId(), service.getName(), 0.0));
-                        }
-                        complaintBooking.setFrozenPrice(frozenLines);
-                        complaintBooking.setDurationMinutes(totalMinutes);
+                        createFrozenComplaintPrice(workOrder, complaintBooking);
 
                         // Spara via Hibernate
                         workOrderRepository.saveWithBooking(workOrder, complaintBooking);
@@ -110,6 +95,25 @@ public class WorkOrderService {
         }
 
         return workOrder;
+    }
+
+    public void createFrozenComplaintPrice(WorkOrder workOrder, Booking complaintBooking){
+        // Räkna ut tid och frys priser för reklamationen
+        List<InvoiceLine> frozenLines = new ArrayList<>();
+        int totalMinutes = 0;
+        List<Integer> serviceIds = workOrder.getServiceItemIds();
+        List<ServiceItem> services = serviceItemRepository.findAllByIds(serviceIds);
+        if (services.size() != workOrder.getServiceItemIds().size()) {
+            throw new IllegalArgumentException("editWorkOrderDraft.serviceMissing");
+        }
+
+        for (ServiceItem service : services) {
+            totalMinutes += service.getEstimatedMinutes();
+            frozenLines.add(new InvoiceLine(service.getId(), service.getName(), 0.0));
+        }
+
+        complaintBooking.setFrozenPrice(frozenLines);
+        complaintBooking.setDurationMinutes(totalMinutes);
     }
 
     private void saveAutoBooking(WorkOrder workOrder) {
@@ -178,7 +182,6 @@ public class WorkOrderService {
                                           String savedInstructions,
                                           String comments,
                                           Integer originalWorkOrderId) {
-        //1. Kontroller allt först
         if (draft == null || draft.getStatus() != WorkOrderStatus.DRAFT) {
             throw new IllegalArgumentException("editWorkOrderDraft.onlyDraft");
         }
@@ -244,7 +247,6 @@ public class WorkOrderService {
     }
 
     public WorkOrder createNewDraftWorkOrder(int vehicleId, String description, WorkOrderTypeEnum type, Integer originalWorkOrderId) {
-        // 1. Validera grunddata (fordon, beskrivning etc.)
         Vehicle vehicle = vehicleRepository.findById(vehicleId);
 
         if (vehicle == null) {
@@ -275,11 +277,9 @@ public class WorkOrderService {
         // 3. Spara bokning och utkast i samma transaktion
         workOrderRepository.saveWithBooking(draft, booking);
 
-        // 4. Lägg till i minnet, först när det är sparat
         Database.getBookings().add(booking);
         Database.getWorkOrders().add(draft);
 
-        // 5. Returnera utkastet
         return draft;
     }
 }
