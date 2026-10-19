@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class WorkOrderServiceTest {
     private final FakeWorkOrderRepository fakeRepository = new FakeWorkOrderRepository();
     private final FakeVehicleRepository fakeVehicleRepository = new FakeVehicleRepository();
-    private final WorkOrderService workOrderService = new WorkOrderService(fakeRepository, null, null,fakeVehicleRepository);
+    private final WorkOrderService workOrderService = new WorkOrderService(fakeRepository, null, null,fakeVehicleRepository, null);
 
     @Test
     void createDraftSavesDraftAndBooking() {

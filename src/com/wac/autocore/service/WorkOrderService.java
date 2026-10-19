@@ -3,10 +3,7 @@ package com.wac.autocore.service;
 import com.wac.autocore.DTO.WorkOrderDto;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
-import com.wac.autocore.repository.BookingRepository;
-import com.wac.autocore.repository.IServiceItemRepository;
-import com.wac.autocore.repository.IVehicleRepository;
-import com.wac.autocore.repository.IWorkOrderRepository;
+import com.wac.autocore.repository.*;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -21,13 +18,17 @@ public class WorkOrderService {
     private final WorkOrderTypeManager typeManager = new WorkOrderTypeManager();
     private final IServiceItemRepository serviceItemRepository;
     private final IVehicleRepository vehicleRepository;
+    private final IMechanicRepository mechanicRepository;
 
     //Får ändra BookingRepo hämtning sen
-    public WorkOrderService(IWorkOrderRepository workOrderRepository,  BookingRepository bookingRepository, IServiceItemRepository serviceItemRepository, IVehicleRepository vehicleRepository) {
+    public WorkOrderService(IWorkOrderRepository workOrderRepository, BookingRepository bookingRepository,
+                            IServiceItemRepository serviceItemRepository,
+                            IVehicleRepository vehicleRepository, IMechanicRepository mechanicRepository) {
         this.workOrderRepository = workOrderRepository;
         this.bookingRepository = bookingRepository;
         this.serviceItemRepository = serviceItemRepository;
         this.vehicleRepository = vehicleRepository;
+        this.mechanicRepository = mechanicRepository;
     }
 
     public WorkOrder createAndSaveWorkOrder(WorkOrderTypeEnum selectedType, WorkOrderDto dto, Booking originalBooking) {
@@ -169,15 +170,15 @@ public class WorkOrderService {
 
     // Skapar en arbetsorder som utkast med en automatisk bokning (WAC-63)
     public void updateDraftWorkOrder(WorkOrder draft,
-                                          Booking booking,
-                                          List<Integer> serviceIds,
-                                          int mechanicId,
-                                          LocalDate plannedDate,
-                                          int minutes,
-                                          BigDecimal price,
-                                          String savedInstructions,
-                                          String comments,
-                                          Integer originalWorkOrderId) {
+                                     Booking booking,
+                                     List<Integer> serviceIds,
+                                     int mechanicId,
+                                     LocalDate plannedDate,
+                                     int minutes,
+                                     BigDecimal price,
+                                     String savedInstructions,
+                                     String comments,
+                                     Integer originalWorkOrderId) {
         //1. Kontroller allt först
         if (draft == null || draft.getStatus() != WorkOrderStatus.DRAFT) {
             throw new IllegalArgumentException("editWorkOrderDraft.onlyDraft");
