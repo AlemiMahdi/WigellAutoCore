@@ -3,24 +3,20 @@ package com.wac.autocore.ui;
 import com.wac.autocore.service.BookingService;
 import com.wac.autocore.service.WorkOrderService;
 import com.wac.autocore.ui.views.ViewHelpMethod;
-import com.wac.autocore.model.WorkOrderTypeEnum;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
-import com.wac.autocore.model.WorkOrder;
-import com.wac.autocore.model.WorkOrderStatus;
+import com.wac.autocore.model.*;
 import com.wac.autocore.data.Database;
-import com.wac.autocore.model.Booking;
-import com.wac.autocore.model.Mechanic;
 import javafx.util.StringConverter;
-import com.wac.autocore.model.ServiceItem;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -77,16 +73,22 @@ public class EditWorkOrderDraftView {
         originalCombo.promptTextProperty().bind(
                 language.text("createWorkOrder.selectOriginalWorkOrder")
         );
+        List<WorkOrder> completedOrders = workOrderService.findAll().stream()
+                .filter(order -> order.getId() != draft.getId())
+                .filter(order -> order.getStatus() == WorkOrderStatus.COMPLETED)
+                .sorted(Comparator.comparing(WorkOrder::getId).reversed())
+                .collect(Collectors.toList());
+        originalCombo.getItems().setAll(completedOrders);
 
-        for (WorkOrder order : UiKit.newestFirst(
-            Database.getWorkOrders(), 
-            WorkOrder::getId
-        )) {
-            if (order.getId() != draft.getId()
-                    && order.getStatus() == WorkOrderStatus.COMPLETED) {
-                originalCombo.getItems().add(order);
-            }
-        }
+//        for (WorkOrder order : UiKit.newestFirst(
+//            Database.getWorkOrders(),
+//            WorkOrder::getId
+//        )) {
+//            if (order.getId() != draft.getId()
+//                    && order.getStatus() == WorkOrderStatus.COMPLETED) {
+//                originalCombo.getItems().add(order);
+//            }
+//        }
 
         originalCombo.setConverter(new StringConverter<WorkOrder>() {
             @Override

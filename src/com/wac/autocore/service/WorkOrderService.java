@@ -11,6 +11,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 
 public class WorkOrderService {
     private final IWorkOrderRepository workOrderRepository;
@@ -175,7 +176,7 @@ public class WorkOrderService {
                                           LocalDate plannedDate,
                                           int minutes,
                                           BigDecimal price,
-                                          String savedInstructions,
+                                          String instructions,
                                           String comments,
                                           Integer originalWorkOrderId) {
         if (draft == null || draft.getStatus() != WorkOrderStatus.DRAFT) {
@@ -191,10 +192,10 @@ public class WorkOrderService {
         }
         BigDecimal normalizedPrice = getBigDecimalPrice(price);
 
-        String instructions = savedInstructions == null ? "" : savedInstructions.trim();
-        String savedComments = comments == null ? "" : comments.trim();
+        String finalInstructions = instructions == null ? "" : instructions.trim();
+        String finalComments = comments == null ? "" : comments.trim();
 
-        if (instructions.length() > 4000 || savedComments.length() > 4000) {
+        if (finalInstructions.length() > 4000 || finalComments.length() > 4000) {
             throw new IllegalArgumentException("editWorkOrderDraft.textTooLong");
         }
 
@@ -202,13 +203,13 @@ public class WorkOrderService {
 
         workOrderRepository.updateDraft(
                 draft.getId(), booking.getId(), selectedIds, mechanicId, normalizedPrice,
-                savedInstructions, savedComments, originalWorkOrderId, plannedDate, minutes
+                finalInstructions, finalComments, originalWorkOrderId, plannedDate, minutes
         );
         draft.setServiceItemIds(new ArrayList<>(selectedIds));
         draft.setMechanicId(mechanicId);
         draft.setEstimatedPrice(normalizedPrice);
-        draft.setCustomerInstructions(savedInstructions);
-        draft.setDraftComments(savedComments);
+        draft.setCustomerInstructions(finalInstructions);
+        draft.setDraftComments(finalComments);
         draft.setOriginalWorkOrderId(originalWorkOrderId);
 
         booking.setDate(plannedDate);
@@ -278,5 +279,7 @@ public class WorkOrderService {
 
         return draft;
     }
+
+    public List<WorkOrder> findAll() { return workOrderRepository.findAll(); }
 }
 
