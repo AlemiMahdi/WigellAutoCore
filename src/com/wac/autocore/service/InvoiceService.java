@@ -4,7 +4,7 @@ import com.wac.autocore.model.*;
 import com.wac.autocore.repository.IInvoiceRepository;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.exception.InvoiceValidationException;
-import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
+import com.wac.autocore.model.WorkOrderTypeEnum;
 import java.util.function.Supplier;
 import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.repository.WorkOrderRepository;

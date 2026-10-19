@@ -5,6 +5,11 @@ import com.wac.autocore.service.PaymentService;
 import com.wac.autocore.ui.ShowInvoiceView;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
+import com.wac.autocore.exception.ApplicationException;
+import com.wac.autocore.exception.DataAccessException;
+import com.wac.autocore.ui.ErrorHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -16,6 +21,9 @@ import javafx.util.StringConverter;
 
 
 public class ProcessPaymentView {
+
+    private static final Logger LOGGER =
+            Logger.getLogger(ProcessPaymentView.class.getName());
 
     private final LanguageManager language = LanguageManager.getInstance();
     private final PaymentService paymentService;
@@ -113,14 +121,13 @@ public class ProcessPaymentView {
                 invoiceBox.setValue(null);
                 paymentTypeBox.setValue(null);
                 refreshInvoices(invoiceBox);
-            } catch (IllegalArgumentException exception) {
-                UiKit.showError(messageLabel, language.text(exception.getMessage()).get());
             } catch (RuntimeException exception) {
-                refreshInvoices(invoiceBox);
-                UiKit.showError(messageLabel, language.text("processPayment.saveError").get());
-                exception.printStackTrace();
+                ErrorHandler.show(
+                        messageLabel,
+                        exception,
+                        "processPayment.saveError"
+                );
             }
-
         });
 
 

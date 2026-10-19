@@ -4,7 +4,7 @@ package com.wac.autocore.ui;
 import com.wac.autocore.model.*;
 import com.wac.autocore.exception.InvoiceValidationException;
 import com.wac.autocore.ui.language.LanguageManager;
-import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
+import com.wac.autocore.model.WorkOrderTypeEnum;
 import com.wac.autocore.service.InvoiceService;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -275,7 +275,8 @@ public class CreateInvoiceView {
                                            TextField extraCostDescriptionField, LanguageManager language) {
         if (selected == null) {
             return;
-        }        if (selected.getEstimatedPrice() != null) {
+        }
+        if (selected.getEstimatedPrice() != null) {
             extraCostAmountField.setText(selected.getEstimatedPrice().toPlainString());
             extraCostDescriptionField.setText(language.text("createInvoice.getComplaintCost").get());
         } else {
@@ -284,44 +285,40 @@ public class CreateInvoiceView {
         }
     }
 
-    private static void loadCompletedWorkOrders(ComboBox<WorkOrder> workOrderBox) {
-        for (WorkOrder workOrder : UiKit.newestFirst(
-            Database.getWorkOrders(),
-            WorkOrder::getId
-        )) {
+    private static void loadCompletedWorkOrders(
+            ComboBox<WorkOrder> workOrderBox,
+            InvoiceService invoiceService) {
 
-            boolean alreadyInvoiced = Database.getInvoices()
-                    .stream()
-                    .anyMatch(invoice ->
-                            invoice.getWorkOrderId() == workOrder.getId()
-                    );
+        workOrderBox.getItems().setAll(
+                UiKit.newestFirst(
+                        invoiceService.getInvoiceableWorkOrders(),
+                        WorkOrder::getId
+                )
+        );
 
         workOrderBox.promptTextProperty().unbind();
 
-        if (workOrderBox.getItems().isEmpty()) {
-            workOrderBox.promptTextProperty().bind(
-                    LanguageManager.getInstance().text("createInvoice.noCompletedPrompt")
-            );
-        } else {
-            workOrderBox.promptTextProperty().bind(
-                    LanguageManager.getInstance().text("startWorkOrder.prompt")
-            );
-        }
-    }
+        String key = workOrderBox.getItems().isEmpty()
+                ? "createInvoice.noCompletedPrompt"
+                : "startWorkOrder.prompt";
 
-    // "WO-2 · Volkswagen Passat" – bilen gör det lättare att hitta rätt order
-    private static String describeWorkOrder(WorkOrder workOrder, InvoiceService invoiceService) {
-        String text = ShowInvoiceView.workOrderCode(workOrder.getId());
-        Vehicle vehicle = invoiceService.findVehicleForWorkOrder(
-                workOrder.getId()
+        workOrderBox.promptTextProperty().bind(
+                LanguageManager.getInstance().text(key)
         );
-
-        if (vehicle != null) {
-            text += " · " + vehicle.getBrand() + " " + vehicle.getModel();
-        }
-        return text;
     }
 
+        // "WO-2 · Volkswagen Passat" – bilen gör det lättare att hitta rätt order
+        private static String describeWorkOrder (WorkOrder workOrder, InvoiceService invoiceService){
+            String text = ShowInvoiceView.workOrderCode(workOrder.getId());
+            Vehicle vehicle = invoiceService.findVehicleForWorkOrder(
+                    workOrder.getId()
+            );
+
+            if (vehicle != null) {
+                text += " · " + vehicle.getBrand() + " " + vehicle.getModel();
+            }
+            return text;
+        }
 
 
-}
+    }

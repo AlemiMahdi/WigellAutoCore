@@ -10,7 +10,7 @@ import com.wac.autocore.model.Vehicle;
 import com.wac.autocore.model.WorkOrder;
 import com.wac.autocore.model.WorkOrderStatus;
 import com.wac.autocore.exception.InvoiceValidationException;
-import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
+import com.wac.autocore.model.WorkOrderTypeEnum;
 import com.wac.autocore.model.ServiceItem;
 
 import org.junit.jupiter.api.Test;
@@ -195,9 +195,10 @@ class InvoiceServiceTest {
                     new InvoiceLine(2, "Brake service", 500.0)
             );
 
-            WorkOrder order = new WorkOrder(
-                    1, booking.getId(), 1, WorkOrderTypeEnum.PLANNED
+            WorkOrder order = new WorkOrder(booking.getId(), 1, WorkOrderTypeEnum.PLANNED
             );
+            order.setId(1);
+
             order.addServiceItem(1);
             order.addServiceItem(2);
             order.changeStatus(WorkOrderStatus.IN_PROGRESS);
@@ -309,24 +310,26 @@ class InvoiceServiceTest {
             Database.getWorkOrders().clear();
 
             WorkOrder completed = new WorkOrder(
-                    1, 1, 1, WorkOrderTypeEnum.PLANNED
+                    1, 1, WorkOrderTypeEnum.PLANNED
             );
             completed.changeStatus(WorkOrderStatus.IN_PROGRESS);
             completed.changeStatus(WorkOrderStatus.COMPLETED);
 
-            WorkOrder alreadyInvoiced = new WorkOrder(
-                    2, 2, 1, WorkOrderTypeEnum.PLANNED
+            WorkOrder alreadyInvoiced = new WorkOrder(2, 1, WorkOrderTypeEnum.PLANNED
             );
             alreadyInvoiced.changeStatus(WorkOrderStatus.IN_PROGRESS);
             alreadyInvoiced.changeStatus(WorkOrderStatus.COMPLETED);
 
-            WorkOrder confirmed = new WorkOrder(
-                    3, 3, 1, WorkOrderTypeEnum.PLANNED
+            WorkOrder confirmed = new WorkOrder(3, 1, WorkOrderTypeEnum.PLANNED
             );
+
 
             WorkOrder draft = WorkOrder.createDraft(
                     4, 4, WorkOrderTypeEnum.PLANNED
             );
+            completed.setId(1);
+            alreadyInvoiced.setId(2);
+            confirmed.setId(3);
 
             Database.getWorkOrders().add(completed);
             Database.getWorkOrders().add(alreadyInvoiced);
@@ -371,9 +374,10 @@ class InvoiceServiceTest {
             Database.getWorkOrders().clear();
             Database.getBookings().clear();
 
-            WorkOrder order = new WorkOrder(
-                    1, 1, 1, WorkOrderTypeEnum.PLANNED
+            WorkOrder order = new WorkOrder(1, 1, WorkOrderTypeEnum.PLANNED
             );
+            order.setId(1);
+
             order.changeStatus(WorkOrderStatus.IN_PROGRESS);
             order.changeStatus(WorkOrderStatus.COMPLETED);
             Database.getWorkOrders().add(order);
@@ -426,9 +430,10 @@ class InvoiceServiceTest {
             );
             Database.getBookings().add(booking);
 
-            WorkOrder order = new WorkOrder(
-                    1, booking.getId(), 1, WorkOrderTypeEnum.PLANNED
+            WorkOrder order = new WorkOrder(booking.getId(), 1, WorkOrderTypeEnum.PLANNED
             );
+            order.setId(1);
+
             order.changeStatus(WorkOrderStatus.IN_PROGRESS);
             order.changeStatus(WorkOrderStatus.COMPLETED);
             Database.getWorkOrders().add(order);
@@ -491,9 +496,9 @@ class InvoiceServiceTest {
             );
             Database.getBookings().add(booking);
 
-            WorkOrder order = new WorkOrder(
-                    1, booking.getId(), 1, WorkOrderTypeEnum.COMPLAINT
+            WorkOrder order = new WorkOrder(booking.getId(), 1, WorkOrderTypeEnum.COMPLAINT
             );
+            order.setId(1);
             order.addServiceItem(serviceItem.getId());
             order.changeStatus(WorkOrderStatus.IN_PROGRESS);
             order.changeStatus(WorkOrderStatus.COMPLETED);

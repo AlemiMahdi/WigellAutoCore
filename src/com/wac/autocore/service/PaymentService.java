@@ -4,6 +4,9 @@ import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Invoice;
 import com.wac.autocore.model.Payment;
 import com.wac.autocore.repository.IPaymentRepository;
+import com.wac.autocore.exception.ValidationException;
+import com.wac.autocore.exception.BusinessRuleException;
+import com.wac.autocore.exception.DataAccessException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,16 +22,16 @@ public class PaymentService {
     public void processPayment(Invoice selectedInvoice, String paymentType) {
 
         if (selectedInvoice == null) {
-            throw new IllegalArgumentException("processPayment.selectInvoice");
+            throw new ValidationException("processPayment.selectInvoice");
         }
 
         //förhindra att faktura kan registreras igen
         if (selectedInvoice.isPaid()) {
-            throw new IllegalArgumentException("processPayment.alreadyPaid");
+            throw new BusinessRuleException("processPayment.alreadyPaid");
         }
 
         if (paymentType == null) {
-            throw new IllegalArgumentException("processPayment.selectType");
+            throw new ValidationException("processPayment.selectType");
         }
 
         boolean previousPaidStatus = selectedInvoice.isPaid();
@@ -44,7 +47,7 @@ public class PaymentService {
 
         // Om betalningen inte är godkänd, avbryt innan vi rör databasen
         if (!payment.isSuccessful()) {
-            throw new IllegalArgumentException("processPayment.failed");
+            throw new ValidationException("processPayment.failed");
         }
         try {
             selectedInvoice.setPaid(true);
@@ -55,7 +58,10 @@ public class PaymentService {
         } catch (RuntimeException exception) {
             selectedInvoice.setPaid(previousPaidStatus);
 
-            throw new RuntimeException("Kunde inte spara betalning för faktura " + selectedInvoice.getId(), exception);
+            throw new DataAccessException(
+                    "processPayment.saveError",
+                    exception
+            );
         }
     }
 
