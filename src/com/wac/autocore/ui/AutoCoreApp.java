@@ -14,6 +14,10 @@ import com.wac.autocore.ui.views.ProcessPaymentView;
 import com.wac.autocore.ui.views.ShowBookingsView;
 import com.wac.autocore.ui.views.ShowPaymentsView;
 import com.wac.autocore.ui.views.ShowWorkOrdersView;
+import com.wac.autocore.repository.IMechanicRepository;
+import com.wac.autocore.repository.IInvoiceRepository;
+import com.wac.autocore.service.InvoiceService;
+import com.wac.autocore.service.MechanicService;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -37,6 +41,7 @@ import javafx.stage.Stage;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
+
 import java.util.HashMap;
 
 import com.wac.autocore.ui.views.MechanicScheduleView;
@@ -59,6 +64,8 @@ public class AutoCoreApp extends Application {
     private final IWorkOrderRepository workOrderRepository;
     private final BookingRepository bookingRepository;
     private final VehicleRepository vehicleRepository;
+    private final InvoiceService invoiceService;
+    private final MechanicService mechanicService;
     private final IPaymentRepository paymentRepository;
     private final IServiceItemRepository serviceRepository;
     private final VehicleService vehicleService;
@@ -72,6 +79,8 @@ public class AutoCoreApp extends Application {
         this.garageSystem = new GarageSystem();
         this.workOrderRepository = new WorkOrderRepository();
         this.bookingRepository = new BookingRepository();
+        this.invoiceService = new InvoiceService(new InvoiceRepository());
+        this.mechanicService = new MechanicService(new MechanicRepository(), bookingRepository::findAll, workOrderRepository::findAll);
         this.vehicleRepository = new VehicleRepository();
         this.vehicleService = new VehicleService(vehicleRepository);
         this.servicePackageService = new ServicePackageService(new ServicePackageRepository());
@@ -80,6 +89,7 @@ public class AutoCoreApp extends Application {
         this.workOrderService = new WorkOrderService(workOrderRepository, bookingRepository, serviceRepository, vehicleRepository);
         this.customerService = new CustomerService(new CustomerRepository());
         this.bookingService = new BookingService(bookingRepository);
+
 
         // Sätt instansen i samma sekund som JavaFX startar appen
         synchronized (AutoCoreApp.class) {
@@ -327,29 +337,16 @@ public class AutoCoreApp extends Application {
     }
     private void loadMechanics() {
 
-        MechanicRepository repository =
-                new MechanicRepository();
-
         List<Mechanic> savedMechanics =
-                repository.findAllMechanics();
-
+                mechanicService.findAll();
         if (savedMechanics.isEmpty()) {
 
             // Första starten: sparar originalets exempeldata.
             for (Mechanic mechanic : Database.getMechanics()) {
-                repository.save(mechanic);
+                mechanicService.save(mechanic);
             }
 
             return;
-        }
-
-        // Kontrollerar ID-ordningen.
-        for (int i = 0; i < savedMechanics.size(); i++) {
-            if (savedMechanics.get(i).getId() != i + 1) {
-                throw new IllegalStateException(
-                        "Mechanic IDs must be consecutive, starting at 1."
-                );
-            }
         }
 
         // Ersätter minnesdatan med datan från databasen.
@@ -361,17 +358,14 @@ public class AutoCoreApp extends Application {
 
     private void loadInvoices() {
 
-        InvoiceRepository repository =
-                new InvoiceRepository();
-
         List<Invoice> savedInvoices =
-                repository.findAllInvoices();
+                invoiceService.findAll();
 
         if (savedInvoices.isEmpty()) {
 
             // Sparar eventuell befintlig data första gången.
             for (Invoice invoice : Database.getInvoices()) {
-                repository.save(invoice);
+                invoiceService.save(invoice);
             }
 
             return;
@@ -655,15 +649,23 @@ public class AutoCoreApp extends Application {
                 createNavItem("create-service-package", "menu.createServicePackage",
                         () -> showView(new CreateServicePackageView(servicePackageService).getView())),
                 createNavItem("manage-service-package", "menu.manageServicePackage", () -> showView(new ManageServicePackageView(servicePackageService).getView())),
-                createNavItem("show-mechanics", "menu.mechanics", () -> showView(new MechanicView())),
-                createNavItem("mechanic-schedule", "menu.schedule", () -> showView(new MechanicScheduleView().getView())));
+                createNavItem("show-mechanics", "menu.mechanics", () -> showView(new MechanicView(mechanicService))),
+                createNavItem("mechanic-schedule", "menu.schedule", () -> showView(new MechanicScheduleView(mechanicService).getView())));
 
         addNavSection(menuBox, "menu.section.invoicesPayments",
-                createNavItem("show-invoices", "menu.invoices", () -> showView(ShowInvoiceView.build())),
-                createNavItem("create-invoice", "menu.createInvoice", () -> showView(CreateInvoiceView.build())),
-                createNavItem("show-payments", "menu.payments", () -> showView(new ShowPaymentsView(new PaymentService(paymentRepository)).getView())),
-                createNavItem("process-payment", "menu.processPayment", () -> showView(new ProcessPaymentView(new PaymentService(paymentRepository)).getView())));
+                createNavItem("show-invoices", "menu.invoices",
+                        () -> showView(ShowInvoiceView.build(invoiceService))),
 
+                createNavItem("create-invoice", "menu.createInvoice",
+                        () -> showView(CreateInvoiceView.build(invoiceService))),
+
+                createNavItem("show-payments", "menu.payments",
+                        () -> showView(new ShowPaymentsView(
+                                new PaymentService(paymentRepository)).getView())),
+
+                createNavItem("process-payment", "menu.processPayment",
+                        () -> showView(new ProcessPaymentView(
+                                new PaymentService(paymentRepository)).getView())));
         // Tunn linje och sedan Exit längst ned, i rött
         Region divider = new Region();
         divider.getStyleClass().add("nav-divider");

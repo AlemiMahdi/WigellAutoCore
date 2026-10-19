@@ -9,6 +9,7 @@ import com.wac.autocore.model.WorkOrder;
 import com.wac.autocore.model.WorkOrderStatus;
 import com.wac.autocore.service.WorkOrderService;
 import com.wac.autocore.ui.language.LanguageManager;
+import com.wac.autocore.service.MechanicService;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;

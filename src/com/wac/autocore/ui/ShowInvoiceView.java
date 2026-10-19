@@ -1,6 +1,6 @@
 package com.wac.autocore.ui;
 
-import com.wac.autocore.data.Database;
+import com.wac.autocore.service.InvoiceService;
 import com.wac.autocore.model.Invoice;
 import com.wac.autocore.model.InvoiceLine;
 import com.wac.autocore.ui.language.LanguageManager;
@@ -25,7 +25,7 @@ import java.util.Collections;
 
 public class ShowInvoiceView {
 
-    public static VBox build() {
+    public static VBox build(InvoiceService invoiceService) {
         LanguageManager language = LanguageManager.getInstance();
 
         // "+ New invoice" byter sida via Navigator, så att menyn också
@@ -81,8 +81,8 @@ public class ShowInvoiceView {
         table.getColumns().addAll(workOrderCol, invoiceDateCol, amountCol, discountCol, totalAmountCol, paidCol);
 
         // Kopia av listan, vänd så att nyaste fakturan hamnar överst.
-        // (Själva listan i Database ändras inte.)
-        ObservableList<Invoice> data = FXCollections.observableArrayList(Database.getInvoices());
+        // ursprungliga listan ändras inte.
+        ObservableList<Invoice> data = FXCollections.observableArrayList(invoiceService.getLoadedInvoices());
         Collections.reverse(data);
         table.setItems(data);
 
@@ -221,8 +221,13 @@ public class ShowInvoiceView {
             }
         });
 
-        VBox view = new VBox(24, UiKit.pageHeader(language.text("invoices.title"), newInvoiceButton), table, selectHint, detailCard);
-        return view;
+        return new VBox(
+                24,
+                UiKit.pageHeader(language.text("invoices.title"), newInvoiceButton),
+                table,
+                selectHint,
+                detailCard
+        );
 
     }
 
