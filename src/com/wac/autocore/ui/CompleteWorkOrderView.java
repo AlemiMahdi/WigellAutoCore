@@ -9,6 +9,7 @@ import com.wac.autocore.model.WorkOrder;
 import com.wac.autocore.model.WorkOrderStatus;
 import com.wac.autocore.service.WorkOrderService;
 import com.wac.autocore.ui.language.LanguageManager;
+import com.wac.autocore.service.MechanicService;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
@@ -64,7 +65,9 @@ public class CompleteWorkOrderView {
     private void reloadCards() {
         cardList.getChildren().clear();
 
-        for (WorkOrder order : Database.getWorkOrders()) {
+        for (WorkOrder order : UiKit.newestFirst(
+            Database.getWorkOrders(), 
+            WorkOrder::getId)) {
             if (order.getStatus().canChangeTo(WorkOrderStatus.COMPLETED)) {
                 Button completeButton = UiKit.successButton("Complete work order");
                 completeButton.textProperty().bind(language.text("completeWorkOrder.button"));

@@ -1,15 +1,13 @@
 package com.wac.autocore.model;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 @Entity
 @Table(name = "mechanics")
 public class Mechanic {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
     @Column(name = "name")
@@ -28,12 +26,17 @@ public class Mechanic {
     public Mechanic() {
     }
 
-    public Mechanic(int id, String name, String phone, String specialization) {
-        this.id = id;
+    public Mechanic( String name, String phone, String specialization) {
         this.name = name;
         this.phone = phone;
         this.specialization = specialization;
         this.available = true;
+    }
+
+    // För exempeldata med fasta ID:n.
+    public Mechanic(int id, String name, String phone, String specialization) {
+        this(name, phone, specialization);
+        this.id = id;
     }
 
     public int getId() {

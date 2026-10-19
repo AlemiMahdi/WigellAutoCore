@@ -5,6 +5,9 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.Scanner;
 
+import com.wac.autocore.service.InvoiceService;
+import com.wac.autocore.repository.InvoiceRepository;
+
 public class Main {
 
     private static final Scanner scanner = new Scanner(System.in);
@@ -237,7 +240,10 @@ public class Main {
         System.out.print("Discount code (leave empty for none): ");
         String discountCode = scanner.nextLine();
 
-        garageSystem.createInvoice(
+        InvoiceService invoiceService =
+                new InvoiceService(new InvoiceRepository());
+
+        invoiceService.createInvoice(
                 workOrderId,
                 discountCode,
                 "",

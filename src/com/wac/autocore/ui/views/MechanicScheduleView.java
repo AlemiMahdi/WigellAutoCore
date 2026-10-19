@@ -1,15 +1,12 @@
 package com.wac.autocore.ui.views;
 
-import com.wac.autocore.data.Database;
+import com.wac.autocore.service.MechanicService;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.Mechanic;
-import com.wac.autocore.model.WorkOrder;
-import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 
 import javafx.collections.FXCollections;
-import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
@@ -20,31 +17,18 @@ import javafx.scene.layout.VBox;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 public class MechanicScheduleView {
 
     private final LanguageManager language = LanguageManager.getInstance();
-    private final Map<Integer, Integer> mechanicByBooking = new HashMap<>();
+    private final MechanicService mechanicService;
+
+    public MechanicScheduleView(MechanicService mechanicService) {
+        this.mechanicService = mechanicService;
+    }
 
     public VBox getView() {
-
-        if (!loadMechanicMap()) {
-            Label errorLabel = UiKit.feedbackLabel();
-            UiKit.showError(
-                    errorLabel,
-                    language.text("schedule.loadError").get()
-            );
-            errorLabel.setWrapText(true);
-
-            VBox errorView = new VBox(15, errorLabel);
-            errorView.setPadding(new Insets(15));
-            return errorView;
-        }
 
         // Titel
         Node title = UiKit.pageHeader(
@@ -54,7 +38,7 @@ public class MechanicScheduleView {
 
         // Rullista
         ComboBox<Mechanic> mechanicCombo = new ComboBox<>();
-        mechanicCombo.getItems().addAll(Database.getMechanics());
+        mechanicCombo.getItems().addAll(mechanicService.getLoadedMechanics());
         mechanicCombo.promptTextProperty().bind(
                 language.text("schedule.select")
         );
@@ -159,35 +143,31 @@ public class MechanicScheduleView {
                 return;
             }
 
-            Integer selectedId = selected.getId();
+            List<Booking> result;
 
-            List<Booking> result =
-                    Database.getBookings()
-                            .stream()
-                            .filter(
-                                    booking ->
-                                            selectedId.equals(
-                                                    mechanicByBooking.get(
-                                                            booking.getId()
-                                                    )
-                                            )
-                            )
-                            .sorted(
-                                    Comparator.comparing(Booking::getDate)
-                                            .thenComparing(
-                                                    booking ->
-                                                            booking.getStartTime() == null
-                                                                    ? LocalTime.MIN
-                                                                    : booking.getStartTime()
-                                            )
-                            )
-                            .collect(Collectors.toList());
+            try {
+                result = mechanicService.getSchedule(selected.getId());
+            } catch (RuntimeException exception) {
+                table.getItems().clear();
+                countLabel.setText("");
+
+                Label errorLabel = UiKit.feedbackLabel();
+                UiKit.showError(errorLabel, "");
+                errorLabel.textProperty().bind(
+                        language.text("schedule.loadError")
+                );
+                errorLabel.setWrapText(true);
+                table.setPlaceholder(errorLabel);
+
+                exception.printStackTrace();
+                return;
+            }
 
             table.setItems(
                     FXCollections.observableArrayList(result)
             );
 
-            if (result.isEmpty()) {
+            {
                 Label emptyLabel = UiKit.emptyText("");
                 emptyLabel.textProperty().bind(
                         language.text("schedule.empty")
@@ -209,37 +189,5 @@ public class MechanicScheduleView {
                 table,
                 countLabel
         );
-    }
-
-    private boolean loadMechanicMap() {
-
-        try {
-
-            for (Booking booking :
-                    new BookingRepository().findAll()) {
-
-                if (booking.getMechanicId() != null) {
-                    mechanicByBooking.put(
-                            booking.getId(),
-                            booking.getMechanicId()
-                    );
-                }
-            }
-
-            for (WorkOrder workOrder :
-                    Database.getWorkOrders()) {
-
-                mechanicByBooking.put(
-                        workOrder.getBookingId(),
-                        workOrder.getMechanicId()
-                );
-            }
-
-            return true;
-
-        } catch (RuntimeException e) {
-            e.printStackTrace();
-            return false;
-        }
     }
 }

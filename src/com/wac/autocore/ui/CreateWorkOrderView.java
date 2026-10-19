@@ -36,7 +36,7 @@ public class CreateWorkOrderView  extends VBox {
         // Centrerar formulärkolumnen i innehållsytan
         setAlignment(Pos.TOP_CENTER);
 
-        ComboBox<Booking> bookingComboBox = new ComboBox<>(FXCollections.observableArrayList(Database.getBookings()));
+        ComboBox<Booking> bookingComboBox = new ComboBox<>(UiKit.newestFirst(Database.getBookings(), Booking::getId));
         bookingComboBox.promptTextProperty().bind(language.text("createWorkOrder.selectBooking"));
         bookingComboBox.setConverter(bookingConverter());
         UiKit.keepPromptWhenCleared(bookingComboBox);
@@ -188,14 +188,15 @@ public class CreateWorkOrderView  extends VBox {
         UiKit.keepPromptWhenCleared(typeComboBox);
 
         ComboBox<WorkOrder> originalWorkOrderCombo = new ComboBox<>(
-                FXCollections.observableArrayList(
-                        Database.getWorkOrders()
-                                .stream()
-                                .filter(workOrder ->
-                                        workOrder.getStatus() == WorkOrderStatus.COMPLETED
-                                )
-                                .collect(java.util.stream.Collectors.toList())
-                )
+            UiKit.newestFirst(
+                Database.getWorkOrders()
+                    .stream()
+                    .filter(workOrder ->
+                        workOrder.getStatus() == WorkOrderStatus.COMPLETED
+                    )
+                    .collect(java.util.stream.Collectors.toList()),
+                WorkOrder::getId
+            )
         );
         originalWorkOrderCombo.promptTextProperty().bind(
                 language.text("createWorkOrder.selectOriginalWorkOrder")

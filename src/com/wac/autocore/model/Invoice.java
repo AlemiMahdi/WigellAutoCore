@@ -1,13 +1,6 @@
 package com.wac.autocore.model;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -21,6 +14,7 @@ import java.util.List;
 public class Invoice {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
     @Column(name = "work_order_id")
@@ -53,12 +47,10 @@ public class Invoice {
     }
 
     public Invoice(
-            int id,
             int workOrderId,
             LocalDate invoiceDate,
             double amount
     ) {
-        this.id = id;
         this.workOrderId = workOrderId;
         this.invoiceDate = invoiceDate;
         this.amount = amount;
@@ -123,7 +115,6 @@ public class Invoice {
 
     public void addLine(InvoiceLine invoiceLine) {
         lines.add(invoiceLine);
-        calculateAmountFromLines();
     }
 
     public List<InvoiceLine> getLines() {
@@ -134,6 +125,8 @@ public class Invoice {
         this.totalAmount = amount - discount;
     }
 
+// Refactored till InvoiceService
+/*
     private void calculateAmountFromLines() {
         double sum = 0.0;
 
@@ -145,7 +138,10 @@ public class Invoice {
         calculateTotalAmount();
     }
 
-    // Fördelar fakturans totala rabatt proportionellt mellan fakturaraderna.
+ */
+
+
+/*
     public void distributeDiscountToLines() {
         if (lines.isEmpty()) {
             return;
@@ -203,6 +199,7 @@ public class Invoice {
 
         calculateTotalAmount();
     }
+    */
 
     @Override
     public String toString() {
