@@ -86,27 +86,12 @@ public class CreateCustomerView extends VBox {
             phoneField.clear();
             emailField.clear();
 
-        } catch (IllegalArgumentException exception) {
-
-            String errorKey = exception.getMessage();
-
-            UiKit.showError(feedback, language.text(errorKey).get());
-
-            // Felmeddelandet uppdateras vid språkbyte
-            feedback.textProperty().bind(language.text(errorKey));
-
         } catch (RuntimeException exception) {
-
-            UiKit.showError(
+            ErrorHandler.show(
                     feedback,
-                    language.text("customer.create.error").get()
+                    exception,
+                    "customer.create.error"
             );
-
-            feedback.textProperty().bind(
-                    language.text("customer.create.error")
-            );
-
-            exception.printStackTrace();
         }
     }
 }

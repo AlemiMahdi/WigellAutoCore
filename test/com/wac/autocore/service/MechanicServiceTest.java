@@ -5,8 +5,7 @@ import com.wac.autocore.repository.IMechanicRepository;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.WorkOrder;
-import com.wac.autocore.workOrderType.WorkOrderTypeEnum;
-
+import com.wac.autocore.model.WorkOrderTypeEnum;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
@@ -123,8 +122,7 @@ class MechanicServiceTest {
         booking.setMechanicId(1);
         Database.getBookings().add(booking);
 
-        WorkOrder order = new WorkOrder(
-                1, booking.getId(), 2, WorkOrderTypeEnum.PLANNED
+        WorkOrder order = new WorkOrder(booking.getId(), 2, WorkOrderTypeEnum.PLANNED
         );
         Database.getWorkOrders().add(order);
 
