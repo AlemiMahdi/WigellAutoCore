@@ -2,30 +2,22 @@ package com.wac.autocore.ui;
 
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
-import com.wac.autocore.repository.BookingRepository;
-import com.wac.autocore.repository.WorkOrderRepository;
-import com.wac.autocore.service.GarageSystem;
+import com.wac.autocore.service.WorkOrderService;
 import com.wac.autocore.ui.language.LanguageManager;
-import com.wac.autocore.service.MechanicService;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import javafx.beans.binding.StringExpression;
 
-import java.util.ArrayList;
 import java.util.List;
 
 // Start work order: lista med arbetsordrar till vänster och detaljer om vald order till höger.
 public class StartWorkOrderView extends VBox {
 
     private final LanguageManager language = LanguageManager.getInstance();
-    private final GarageSystem garageSystem = new GarageSystem();
-    private final WorkOrderRepository workOrderRepository = new WorkOrderRepository();
-    private final BookingRepository bookingRepository = new BookingRepository();
-    private final MechanicService mechanicService;
+    private final WorkOrderService workOrderService;
 
     // Vänster spalt (korten) och höger spalt (detaljkortet)
     private final VBox listColumn = new VBox(12);
@@ -38,8 +30,8 @@ public class StartWorkOrderView extends VBox {
     private WorkOrder selectedWorkOrder;
     private VBox selectedCard;
 
-    public StartWorkOrderView(MechanicService mechanicService) {
-        this.mechanicService = mechanicService;
+    public StartWorkOrderView(WorkOrderService workOrderService) {
+        this.workOrderService = workOrderService;
 
         setSpacing(20);
 
@@ -61,21 +53,17 @@ public class StartWorkOrderView extends VBox {
         reloadList(true);
     }
 
-    // Bygger om vänsterlistan från Database och nollställer valet.
+    // Bygger om vänsterlistan via WorkOrderService och nollställer valet.
     private void reloadList(boolean selectFirst) {
         listColumn.getChildren().clear();
         selectedWorkOrder = null;
         selectedCard = null;
 
         // Bara ordrar som enligt statusreglerna får startas visas i listan.
-        List<WorkOrder> startable = new ArrayList<WorkOrder>();
-        for (WorkOrder workOrder : Database.getWorkOrders()) {
-            if (workOrder.getStatus().canChangeTo(WorkOrderStatus.IN_PROGRESS)) {
-                startable.add(workOrder);
-            }
-        }
+        List<WorkOrder> startable = workOrderService.findStartableWorkOrders();
+
         startable.sort((first, second) ->
-            Integer.compare(second.getId(), first.getId())
+                Integer.compare(second.getId(), first.getId())
         );
 
         if (Database.getWorkOrders().isEmpty()) {
@@ -181,72 +169,41 @@ public class StartWorkOrderView extends VBox {
         detailColumn.getChildren().setAll(detailCard);
     }
 
-    // Samma logik som tidigare: starta via GarageSystem och spara via repositories.
+    // Startar vald order via WorkOrderService. Vyn visar bara resultatet.
     private void startSelectedWorkOrder() {
-
+        // töm gammalt meddelande (unbind först, annars bindningsfel)
         feedbackLabel.textProperty().unbind();
         feedbackLabel.setText("");
 
-        WorkOrder workorder = selectedWorkOrder;
-        if (workorder == null) {
-            UiKit.showError(feedbackLabel, language.text("startWorkOrder.select").get());
+        // Ingen order vald -> be användaren välja
+        WorkOrder workOrder = selectedWorkOrder;
+        if (workOrder == null) {
+            UiKit.showError(feedbackLabel, "");
+            feedbackLabel.textProperty().bind(language.text("startWorkOrder.select"));
             return;
         }
+        try {
+            // Servicen kontrollerar reglerna, ändrar status och sparar
+            workOrderService.startWorkOrder(workOrder.getId());
 
-        List<String> errors =
-                garageSystem.validateWorkOrderForConfirmation(workorder.getId());
-
-        if (!errors.isEmpty()) {
-            StringExpression message = language.text(errors.get(0));
-
-            for (int i = 1; i < errors.size(); i++) {
-                message = message.concat("\n").concat(
-                        language.text(errors.get(i))
-                );
-            }
-
+            // Lyckat: bind så att texten följer språkbytet, id läggs till sist
+            UiKit.showSuccess(feedbackLabel, "");
+            feedbackLabel.textProperty().bind(
+                    language.text("startWorkOrder.success").concat(" " + workOrder.getId()));
+        } catch (IllegalArgumentException exception) {
+            // Regelfel: servicen skickar en språknyckel som vyn översätter.
+            // Måste fångas före RuntimeException (den är en underklass).
             feedbackLabel.setWrapText(true);
             UiKit.showError(feedbackLabel, "");
-            feedbackLabel.textProperty().bind(message);
-            return;
+            feedbackLabel.textProperty().bind(language.text(exception.getMessage()));
+        } catch (RuntimeException exception) {
+            // Lagringsfel: fast text till användaren, tekniska detaljer bara i loggen
+            UiKit.showError(feedbackLabel, "");
+            feedbackLabel.textProperty().bind(language.text("startWorkOrder.saveError"));
+            exception.printStackTrace();
         }
 
-        // Sparar den valda arbetsorderns status innan vi försöker starta den.
-        WorkOrderStatus previousStatus = workorder.getStatus();
-
-        garageSystem.startWorkOrder(workorder.getId());
-
-        if (previousStatus == WorkOrderStatus.CONFIRMED
-                && workorder.getStatus() == WorkOrderStatus.IN_PROGRESS) {
-            // Hämtar bokningen och mekanikern som startWorkOrder har ändrat.
-            Booking booking = findBooking(workorder);
-            Mechanic mechanic = findMechanic(workorder);
-
-            try {
-                // Sparar arbetsorderns, bokningens och mekanikerns nya status.
-                workOrderRepository.save(workorder);
-
-                if (booking != null) {
-                    bookingRepository.save(booking);
-                }
-
-                if (mechanic != null) {
-                    mechanicService.save(mechanic);
-                }
-
-                UiKit.showSuccess(feedbackLabel,
-                        language.text("startWorkOrder.success").get() + " " + workorder.getId());
-            } catch (RuntimeException exception) {
-                UiKit.showError(feedbackLabel,
-                        language.text("startWorkOrder.saveError").get());
-                exception.printStackTrace();
-            }
-
-        } else {
-            UiKit.showError(feedbackLabel, language.text("startWorkOrder.cannotStart").get());
-        }
-
-        // Återställer valet och laddar om listan (startad order försvinner ur den).
+        // Laddar om listan (startad order försvinner ur den).
         // Inget kort väljs automatiskt, så man startar inte nästa order av misstag.
         reloadList(false);
     }
