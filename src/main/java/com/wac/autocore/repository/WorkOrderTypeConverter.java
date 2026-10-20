@@ -2,8 +2,8 @@ package com.wac.autocore.repository;
 
 import com.wac.autocore.model.WorkOrderTypeEnum;
 
-import javax.persistence.AttributeConverter;
-import javax.persistence.Converter;
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
 
 @Converter(autoApply = true) // autoApply gör att Hibernate använder denna automatiskt
 public class WorkOrderTypeConverter implements AttributeConverter<WorkOrderTypeEnum, String> {

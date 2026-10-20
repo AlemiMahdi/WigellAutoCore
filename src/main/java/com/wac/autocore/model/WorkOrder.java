@@ -2,7 +2,7 @@ package com.wac.autocore.model;
 
 import com.wac.autocore.repository.WorkOrderTypeConverter;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 import java.util.ArrayList;
 import java.util.List;

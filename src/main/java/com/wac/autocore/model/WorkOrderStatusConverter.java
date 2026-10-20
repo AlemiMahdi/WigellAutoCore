@@ -1,7 +1,7 @@
 package com.wac.autocore.model;
 
-import javax.persistence.AttributeConverter;
-import javax.persistence.Converter;
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
 
 // Översätter arbetsorderns status mellan Java (enum) och databasen (text),
 // Skydda gammal data: arbetsordrar sparade före kan läsas utan krasch.
