@@ -6,7 +6,7 @@ import com.wac.autocore.model.Payment;
 import java.util.List;
 
 public interface IPaymentRepository {
-    void save(Payment payment);
+    Payment save(Payment payment);
     List<Payment> findAll();
     void savePaymentAndInvoice(Payment payment, Invoice invoice);
 }

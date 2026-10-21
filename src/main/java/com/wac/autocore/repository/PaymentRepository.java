@@ -1,96 +1,41 @@
 package com.wac.autocore.repository;
 
-import com.wac.autocore.data.HibernateUtil;
 import com.wac.autocore.model.Invoice;
 import com.wac.autocore.model.Payment;
 
-import org.hibernate.Session;
-import org.hibernate.Transaction;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+
+@Repository
+@Transactional
 public class PaymentRepository implements IPaymentRepository {
 
-    public void save(Payment payment) {
+    @PersistenceContext
+    private EntityManager entityManager;
 
-        try (Session session =
-                     HibernateUtil.getSessionFactory().openSession()) {
-
-            Transaction transaction = session.beginTransaction();
-
-            try {
-
-                session.saveOrUpdate(payment);
-
-                transaction.commit();
-
-            } catch (RuntimeException exception) {
-
-                if (transaction.isActive()) {
-                    transaction.rollback();
-                }
-
-                throw exception;
-            }
-        }
+    public Payment save(Payment payment) {
+        entityManager.persist(payment);
+        return payment;
     }
 
     public List<Payment> findAll() {
 
-        try (Session session =
-                     HibernateUtil.getSessionFactory().openSession()) {
-
-            Transaction transaction = session.beginTransaction();
-
-            try {
-
-                List<Payment> payments =
-                        session.createQuery(
+     return entityManager.createQuery(
                                 "from Payment order by id",
                                 Payment.class
                         ).getResultList();
-
-                transaction.commit();
-
-                return payments;
-
-            } catch (RuntimeException exception) {
-
-                if (transaction.isActive()) {
-                    transaction.rollback();
-                }
-
-                throw exception;
-            }
-        }
     }
 
     public void savePaymentAndInvoice(
             Payment payment,
             Invoice invoice
     ) {
-
-        try (Session session =
-                     HibernateUtil.getSessionFactory().openSession()) {
-
-            Transaction transaction = session.beginTransaction();
-
-            try {
-
-                session.saveOrUpdate(payment);
-                //gör en update på ändrade invoice fält
-                session.merge(invoice);
-
-                transaction.commit();
-
-            } catch (RuntimeException exception) {
-
-                if (transaction.isActive()) {
-                    transaction.rollback();
-                }
-
-                throw exception;
-            }
-        }
+        entityManager.persist(payment);
+        entityManager.merge(invoice);
     }
 }

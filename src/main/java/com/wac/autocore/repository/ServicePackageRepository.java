@@ -5,8 +5,11 @@ import java.util.List;
 import org.hibernate.*;
 import com.wac.autocore.data.HibernateUtil;
 import com.wac.autocore.model.ServicePackage;
+import org.hibernate.event.spi.PersistContext;
 
 public class ServicePackageRepository implements IServicePackageRepository{
+
+    @PersistContext
 
     @Override
     public ServicePackage save( ServicePackage servicePackage) {
@@ -31,8 +34,7 @@ public class ServicePackageRepository implements IServicePackageRepository{
 
     @Override
     public List<ServicePackage> findAll() {
-        try( Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session
+       entityManager
                     .createQuery("FROM ServicePackage", ServicePackage.class)
                     .getResultList();
         }

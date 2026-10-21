@@ -14,12 +14,13 @@ public class MechanicRepository implements IMechanicRepository {
     private EntityManager entityManager;
 
     @Override
-    public void save(Mechanic mechanic) {
+    public Mechanic save(Mechanic mechanic) {
         entityManager.persist(mechanic);
+        return mechanic;
     }
 
     @Override
-    public void findAll() {
+    public List<Mechanic> findAll() {
         entityManager.createQuery(
                 "from Mechanic order by id",
                 Mechanic.class

@@ -21,21 +21,23 @@ public class BookingRepository implements IBookingRepository{
     //transaction sköter commit och rollback nu
 
         @Override
-        public void save(Booking booking) {
-        entityManager.persist(booking);        }
+        public Booking save(Booking booking) {
+        entityManager.persist(booking);
+        return booking;}
 
         // Sparar bokningen tillsammans med vald mekaniker.
         @Override 
-        public void save(Booking booking, int mechanicId) {
+        public Booking save(Booking booking, int mechanicId) {
             Mechanic mechanic = entityManager.find(Mechanic.class, mechanicId);
             if(mechanic != null){
                 booking.setMechanicId(mechanicId);
             } else { throw new IllegalArgumentException("Mechanic not found"); }
                 entityManager.persist(booking);
+            return booking;
         }
 
         //Används den inte?
-        private void saveBooking(
+        private Booking saveBooking(
                 Booking booking,
                 Integer mechanicId,
                 boolean updateMechanic
@@ -107,6 +109,7 @@ public class BookingRepository implements IBookingRepository{
                             //Synkronisera ID från det sparade objektet
                             booking.setId(existingBooking.getId());
                         }
+                        return booking;
         }
 
         @Override 

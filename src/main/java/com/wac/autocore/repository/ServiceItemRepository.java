@@ -1,71 +1,33 @@
 package com.wac.autocore.repository;
 
-import com.wac.autocore.data.HibernateUtil;
 import com.wac.autocore.model.ServiceItem;
-import org.hibernate.Session;
-import org.hibernate.Transaction;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Repository
+@Transactional
 public class ServiceItemRepository implements IServiceItemRepository {
 
-    public void save(ServiceItem serviceItem) {
-        try (Session session =
-                     HibernateUtil.getSessionFactory().openSession()) {
+    @PersistenceContext
+    private EntityManager entityManager;
 
-            Transaction transaction = session.beginTransaction();
-
-            try {
-                session.saveOrUpdate(serviceItem);
-                transaction.commit();
-
-            } catch (RuntimeException exception) {
-
-                if (transaction.isActive()) {
-                    transaction.rollback();
-                }
-
-                throw exception;
-            }
-        }
+    public ServiceItem save(ServiceItem serviceItem) {
+        entityManager.persist(serviceItem);
+        return serviceItem;
     }
 
     public List<ServiceItem> findAll() {
-        try (Session session =
-                     HibernateUtil.getSessionFactory().openSession()) {
-
-            Transaction transaction = session.beginTransaction();
-
-            try {
-                List<ServiceItem> serviceItems =
-                        session.createQuery(
-                                "from ServiceItem order by id",
-                                ServiceItem.class
-                        ).getResultList();
-
-                transaction.commit();
-                return serviceItems;
-
-            } catch (RuntimeException exception) {
-
-                if (transaction.isActive()) {
-                    transaction.rollback();
-                }
-
-                throw exception;
-            }
-        }
+        return entityManager.createQuery(
+                "from ServiceItem order by id",
+                ServiceItem.class
+        ).getResultList();
     }
 
     public ServiceItem findById(int id) {
-        // Try-with-resources öppnar och stänger sessionen automatiskt
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-
-            // Hämtar raden live från tabellen service_items via dess primärnyckel
-            return session.get(ServiceItem.class, id);
-
-        } catch (Exception e) {
-            throw new RuntimeException("Kunde inte hämta tjänst från databasen med ID: " + id, e);
-        }
+        return entityManager.find(ServiceItem.class, id);
     }
 }

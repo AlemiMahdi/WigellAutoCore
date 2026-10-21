@@ -6,7 +6,7 @@ import com.wac.autocore.model.Customer;
 
 public interface ICustomerRepository {
     
-    void save(Customer customer);
+    Customer save(Customer customer);
     List<Customer> findAll();
     
 }

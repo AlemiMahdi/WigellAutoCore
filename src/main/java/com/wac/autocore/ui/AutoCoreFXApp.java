@@ -5,7 +5,6 @@ import java.net.URL;
 import com.wac.autocore.service.*;
 import com.wac.autocore.ui.language.LanguageManager;
 import com.wac.autocore.data.Database;
-import com.wac.autocore.data.HibernateUtil;
 import com.wac.autocore.model.*;
 import com.wac.autocore.repository.*;
 import com.wac.autocore.ui.views.*;
@@ -31,6 +30,8 @@ import javafx.scene.image.ImageView;
 
 import javafx.stage.Stage;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.context.ConfigurableApplicationContext;
+import com.wac.autocore.SpringBootMain;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -49,54 +50,49 @@ import java.util.Map;
 
 public class AutoCoreFXApp extends Application {
 
-
     private static AutoCoreFXApp instance;
 
-    private final GarageSystem garageSystem;
-    private final IWorkOrderRepository workOrderRepository;
-    private final BookingRepository bookingRepository;
-    private final VehicleRepository vehicleRepository;
-    private final InvoiceService invoiceService;
-    private final MechanicService mechanicService;
-    private final IPaymentRepository paymentRepository;
-    private final IServiceItemRepository serviceRepository;
-    private final VehicleService vehicleService;
-    private final ServicePackageService servicePackageService;
-    private final WorkOrderService workOrderService;
-    private final CustomerService customerService;
-    private final BookingService bookingService;
+    private InvoiceService invoiceService;
+    private MechanicService mechanicService;
+    private VehicleService vehicleService;
+    private ServicePackageService servicePackageService;
+    private WorkOrderService workOrderService;
+    private CustomerService customerService;
+    private BookingService bookingService;
+    private PaymentService paymentService;
+    private ServiceItemService serviceItemService;
 
-    // FIX 1: Konstruktorn MÅSTE vara publik i en JavaFX-applikation!
-    public AutoCoreFXApp() {
-        this.garageSystem = new GarageSystem();
-        this.workOrderRepository = new WorkOrderRepository();
-        this.bookingRepository = new BookingRepository();
-        this.invoiceService = new InvoiceService(new InvoiceRepository());
-        this.mechanicService = new MechanicService(new MechanicRepository(), bookingRepository::findAll, workOrderRepository::findAll);
-        this.vehicleRepository = new VehicleRepository();
-        this.vehicleService = new VehicleService(vehicleRepository);
-        this.servicePackageService = new ServicePackageService(new ServicePackageRepository());
-        this.paymentRepository = new PaymentRepository();
-        this.serviceRepository = new ServiceItemRepository();
-        this.workOrderService = new WorkOrderService(workOrderRepository, bookingRepository, serviceRepository, vehicleRepository);
-        this.customerService = new CustomerService(new CustomerRepository());
-        this.bookingService = new BookingService(bookingRepository);
+//    // FIX 1: Konstruktorn MÅSTE vara publik i en JavaFX-applikation!
+//    public AutoCoreFXApp() {
+//        this.garageSystem = new GarageSystem();
+//        this.workOrderRepository = new WorkOrderRepository();
+//        this.bookingRepository = new BookingRepository();
+//        this.invoiceService = new InvoiceService(new InvoiceRepository());
+//        this.mechanicService = new MechanicService(new MechanicRepository(), bookingRepository::findAll, workOrderRepository::findAll);
+//        this.vehicleRepository = new VehicleRepository();
+//        this.vehicleService = new VehicleService(vehicleRepository);
+//        this.servicePackageService = new ServicePackageService(new ServicePackageRepository());
+//        this.paymentRepository = new PaymentRepository();
+//        this.serviceRepository = new ServiceItemRepository();
+//        this.workOrderService = new WorkOrderService(workOrderRepository, bookingRepository, serviceRepository, vehicleRepository);
+//        this.customerService = new CustomerService(new CustomerRepository());
+//        this.bookingService = new BookingService(bookingRepository);
 
-
-        // Sätt instansen i samma sekund som JavaFX startar appen
-        synchronized (AutoCoreFXApp.class) {
-            instance = this;
-        }
-    }
-
-    // Global åtkomstpunkt för alla dina vyer
-    public static synchronized AutoCoreFXApp getInstance() {
-        // Om gränssnittet inte hunnit starta än skapar vi en tillfällig fallback
-        if (instance == null) {
-            instance = new AutoCoreFXApp();
-        }
-        return instance;
-    }
+//
+//        // Sätt instansen i samma sekund som JavaFX startar appen
+//        synchronized (AutoCoreFXApp.class) {
+//            instance = this;
+//        }
+//    }
+//
+//    // Global åtkomstpunkt för alla dina vyer
+//    public static synchronized AutoCoreFXApp getInstance() {
+//        // Om gränssnittet inte hunnit starta än skapar vi en tillfällig fallback
+//        if (instance == null) {
+//            instance = new AutoCoreFXApp();
+//        }
+//        return instance;
+//    }
 
     private static final Logger LOGGER =
             Logger.getLogger(AutoCoreFXApp.class.getName());
@@ -118,8 +114,27 @@ public class AutoCoreFXApp extends Application {
 
     private final LanguageManager language = LanguageManager.getInstance();
 
+    private ConfigurableApplicationContext springContext;
+    //Injecera repositoryes med @Autowired?
+
+
+
+    @Override
+    public void init() {
+        String[] args = getParameters().getRaw().toArray(new String[0]);
+        this.springContext = new SpringApplicationBuilder()
+                .sources(SpringBootMain.class)
+                .headless(false)
+                .run(args);
+
+        // Eftersom JavaFX skapar instansen av AutocoreApp manuellt, måste vi be
+        // Springs context att köra "autowire" på den här instansen så fälten blir tillgängliga
+        springContext.getAutowireCapableBeanFactory().autowireBean(this);
+    }
+
     @Override
     public void start(Stage primaryStage) {
+        getServicesFromSpring();
         loadDataFromDatabase();
 
         // Område där våra olika sidor ska visas
@@ -170,6 +185,25 @@ public class AutoCoreFXApp extends Application {
         primaryStage.setScene(scene);
         primaryStage.setMaximized(true);
         primaryStage.show();
+    }
+
+    @Override
+    public void stop() {
+        this.springContext.close();
+        Platform.exit();
+    }
+
+    //hjälpmetoden
+    private void getServicesFromSpring() {
+        workOrderService = springContext.getBean(WorkOrderService.class);
+        bookingService = springContext.getBean(BookingService.class);
+        customerService = springContext.getBean(CustomerService.class);
+        paymentService = springContext.getBean(PaymentService.class);
+        invoiceService = springContext.getBean(InvoiceService.class);
+        vehicleService = springContext.getBean(VehicleService.class);
+        servicePackageService = springContext.getBean(ServicePackageService.class);
+        serviceItemService = springContext.getBean(ServiceItemService.class);
+        mechanicService = springContext.getBean(MechanicService.class);
     }
 
     /**
@@ -513,11 +547,6 @@ public class AutoCoreFXApp extends Application {
 
     }
 
-    @Override
-    public void stop() {
-        HibernateUtil.shutDown();
-    }
-
     // ------------------------------------------------------------
     // Header och offline-banner
     // ------------------------------------------------------------
@@ -637,7 +666,7 @@ public class AutoCoreFXApp extends Application {
                 createNavItem("complete-work-order", "menu.completeWorkOrder", () -> showView(new CompleteWorkOrderView(workOrderService).getView())));
 
         addNavSection(menuBox, "menu.section.servicesMechanics",
-                createNavItem("show-services", "menu.services", () -> showView(new ServiceView(new ServiceItemService(serviceRepository)))),
+                createNavItem("show-services", "menu.services", () -> showView(new ServiceView(new ServiceItemService(serviceItemService)))),
                 createNavItem("create-service-package", "menu.createServicePackage",
                         () -> showView(new CreateServicePackageView(servicePackageService).getView())),
                 createNavItem("manage-service-package", "menu.manageServicePackage", () -> showView(new ManageServicePackageView(servicePackageService).getView())),
@@ -653,11 +682,11 @@ public class AutoCoreFXApp extends Application {
 
                 createNavItem("show-payments", "menu.payments",
                         () -> showView(new ShowPaymentsView(
-                                new PaymentService(paymentRepository)).getView())),
+                                new PaymentService(paymentService)).getView())),
 
                 createNavItem("process-payment", "menu.processPayment",
                         () -> showView(new ProcessPaymentView(
-                                new PaymentService(paymentRepository)).getView())));
+                                new PaymentService(paymentService)).getView())));
         // Tunn linje och sedan Exit längst ned, i rött
         Region divider = new Region();
         divider.getStyleClass().add("nav-divider");
@@ -777,33 +806,5 @@ public class AutoCoreFXApp extends Application {
         // Byggs om varje gång så att siffrorna alltid är aktuella.
         // (Scrollningen sköts av innehållsytans ScrollPane.)
         showView(new DashboardView());
-    }
-
-    public GarageSystem getGarageSystem() {
-        return garageSystem;
-    }
-
-    public static void main(String[] args) {launch(args);
-    }
-
-    @Override
-    public void init() {
-        String[] args = getParameters().getRaw()-toArray(new String[0]);
-        this.springContext = new SpringApplicationBuilder()
-                .sources(AutoCoreFXApp.class)
-                .headless(false)
-                .run(args);
-    }
-
-    @Override
-    public void start(Stage stage) {
-        ShowWorkOrdersView showWorkOrdersView = springContext.getBean(ShowWorkOrdersView.class);
-        Scene scene = new Scene(showWorkOrdersView.getView());
-    }
-
-    @Override
-    public void stop() {
-        this.springContext.close();
-        Platform.exit();
     }
 }

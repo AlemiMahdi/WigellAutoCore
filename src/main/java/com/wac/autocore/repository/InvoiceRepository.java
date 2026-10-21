@@ -14,12 +14,13 @@ public class InvoiceRepository implements IInvoiceRepository {
     private EntityManager entityManager;
 
     @Override
-    public void save(Invoice invoice) {
+    public Invoice save(Invoice invoice) {
         entityManager.persist(invoice);
+        return invoice;
     }
 
     @Override
-    public void findAll() {
+    public List<Invoice> findAll() {
 
             entityManager.createQuery(
                                 "select distinct i from Invoice i " +

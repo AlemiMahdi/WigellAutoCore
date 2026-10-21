@@ -17,8 +17,9 @@ public class CustomerRepository implements ICustomerRepository {
     private EntityManager entityManager;
 
     @Override
-    public void save(Customer customer) {
+    public Customer save(Customer customer) {
         entityManager.persist(customer);
+        return customer;
     }
 
     @Override

@@ -5,8 +5,8 @@ import java.util.List;
 
 public interface IMechanicRepository {
 
-    void save(Mechanic mechanic);
+    Mechanic save(Mechanic mechanic);
 
-    void findAll();
+    List<Mechanic> findAll();
 
 }
