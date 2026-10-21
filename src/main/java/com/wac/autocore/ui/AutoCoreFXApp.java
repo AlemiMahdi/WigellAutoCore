@@ -30,6 +30,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
 import javafx.stage.Stage;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -47,6 +48,7 @@ import java.util.Map;
  */
 
 public class AutoCoreFXApp extends Application {
+
 
     private static AutoCoreFXApp instance;
 
@@ -782,5 +784,26 @@ public class AutoCoreFXApp extends Application {
     }
 
     public static void main(String[] args) {launch(args);
+    }
+
+    @Override
+    public void init() {
+        String[] args = getParameters().getRaw()-toArray(new String[0]);
+        this.springContext = new SpringApplicationBuilder()
+                .sources(AutoCoreFXApp.class)
+                .headless(false)
+                .run(args);
+    }
+
+    @Override
+    public void start(Stage stage) {
+        ShowWorkOrdersView showWorkOrdersView = springContext.getBean(ShowWorkOrdersView.class);
+        Scene scene = new Scene(showWorkOrdersView.getView());
+    }
+
+    @Override
+    public void stop() {
+        this.springContext.close();
+        Platform.exit();
     }
 }
