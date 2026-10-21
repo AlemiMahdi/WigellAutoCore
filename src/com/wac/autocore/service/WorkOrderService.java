@@ -263,7 +263,7 @@ public class WorkOrderService {
 
         // 2. Skapa utkastet och bokningen (id 0 = MySQL ger id till båda,
         //    saveWithBooking kopplar ihop dem när bokningen fått sitt id)
-        WorkOrder draft = WorkOrder.createDraft(0, 0, type, description);
+        WorkOrder draft = WorkOrder.createDraft(0, 0, type);
         if (type == WorkOrderTypeEnum.COMPLAINT && originalWorkOrderId != null) {
             draft.setOriginalWorkOrderId(originalWorkOrderId);
         }
@@ -273,6 +273,10 @@ public class WorkOrderService {
 
         // 3. Spara bokning och utkast i samma transaktion
         workOrderRepository.saveWithBooking(draft, booking);
+
+        // 4. Lägg till i minnet, först när det är sparat (annars syns utkastet inte förrän omstart)
+        Database.getBookings().add(booking);
+        Database.getWorkOrders().add(draft);
 
         return draft;
     }

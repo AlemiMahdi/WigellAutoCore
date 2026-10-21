@@ -74,6 +74,11 @@ public class EditWorkOrderDraftView {
             return new VBox(10, errorLabel);
         }
 
+        // Problembeskrivning bor i boknien (en källa), här visas den bara
+        Label descriptionLabel = new Label(booking.getDescription());
+        descriptionLabel.getStyleClass().add("detail-text");
+        descriptionLabel.setWrapText(true);
+
         boolean isComplaint = draft.getType() == WorkOrderTypeEnum.COMPLAINT;
 
         originalCombo.setMaxWidth(Double.MAX_VALUE);
@@ -280,7 +285,9 @@ public class EditWorkOrderDraftView {
         });
 
         VBox form = UiKit.formContainer(
-                UiKit.pageHeader(language.text("editWorkOrderDraft.title"), null ),originalField,
+                UiKit.pageHeader(language.text("editWorkOrderDraft.title"), null ),
+                UiKit.formField(language.text("editWorkOrderDraft.description"), descriptionLabel),
+                originalField,
                 UiKit.formField(language.text("editWorkOrderDraft.mechanic"), mechanicFields),
                 UiKit.formField(language.text("editWorkOrderDraft.services"), serviceList
                 ),
