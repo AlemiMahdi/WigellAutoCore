@@ -156,17 +156,36 @@ public class WorkOrderService {
         return errors;
     }
 
+    // Slutför en påbörjad arbetsorder: sparar i databasen och uppdaterar sedan minnet.
     public void completeWorkOrder(int workOrderId) {
-
+        // Kontrollera mot databasen (den som avgör vad som faktiskt är sparat)
         WorkOrder workOrder = workOrderRepository.findWorkOrder(workOrderId);
         if (workOrder == null) {
-            throw new IllegalArgumentException("workOrder.notFound");
+            throw new IllegalArgumentException("completeWorkOrder.notFound");
+        }
+        if (!workOrder.getStatus().canChangeTo(WorkOrderStatus.COMPLETED)) {
+            throw new IllegalArgumentException("completeWorkOrder.invalidStatus");
         }
 
-        if (!workOrder.getStatus().canChangeTo(WorkOrderStatus.COMPLETED)) {
-            throw new IllegalArgumentException("workOrder.cannotCompleteStatus");
-        }
+        // Spara i databasen (order, mekaniker och bokning i en transaktion)
         workOrderRepository.completeWorkOrder(workOrderId);
+
+        // Uppdatera minnet först när databasen har sparats,
+        // annars ligger ordern kvar i listan tills appen startas om.
+        WorkOrder inMemory = findWorkOrderInMemory(workOrderId);
+        if (inMemory != null) {
+            inMemory.changeStatus(WorkOrderStatus.COMPLETED);
+
+            Mechanic mechanic = findMechanicInMemory(inMemory.getMechanicId());
+            if (mechanic != null) {
+                mechanic.setAvailable(true);
+            }
+
+            Booking booking = findBookingInMemory(inMemory.getBookingId());
+            if (booking != null && !sharesOriginalBooking(inMemory)) {
+                booking.setStatus("COMPLETED");
+            }
+        }
     }
 
     // Skapar en arbetsorder som utkast med en automatisk bokning (WAC-63)
