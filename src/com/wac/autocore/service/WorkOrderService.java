@@ -19,14 +19,16 @@ public class WorkOrderService {
     private final IServiceItemRepository serviceItemRepository;
     private final WorkOrderTypeManager typeManager;
     private final IVehicleRepository vehicleRepository;
+    private final IMechanicRepository mechanicRepository;
 
     public WorkOrderService(IWorkOrderRepository workOrderRepository,  IBookingRepository bookingRepository,
-                            IServiceItemRepository serviceItemRepository, IVehicleRepository vehicleRepository) {
+                            IServiceItemRepository serviceItemRepository, IVehicleRepository vehicleRepository, IMechanicRepository mechanicRepository) {
         this.workOrderRepository = workOrderRepository;
         this.bookingRepository = bookingRepository;
         this.serviceItemRepository = serviceItemRepository;
         this.vehicleRepository = vehicleRepository;
         this.typeManager = new WorkOrderTypeManager(serviceItemRepository);
+        this.mechanicRepository = mechanicRepository;
     }
 
     public void createAndSaveWorkOrder(WorkOrderTypeEnum selectedType, WorkOrderDto dto, Booking originalBooking) {
@@ -279,6 +281,167 @@ public class WorkOrderService {
         Database.getWorkOrders().add(draft);
 
         return draft;
+    }
+
+    // Hämtar arbetsordrar som enligt statusreglerna får startas (flyttad från StartWorkOrderView, WAC-97).
+    public List<WorkOrder> findStartableWorkOrders() {
+
+        List<WorkOrder> startable = new ArrayList<WorkOrder>();
+        // Läser från Database så att vyn får samma objekt som resten av appen använder.
+        for (WorkOrder workOrder : Database.getWorkOrders()) {
+            // Statusmodellen avgör (idag bara CONFIRMED → IN_PROGRESS).
+            if (workOrder.getStatus().canChangeTo(WorkOrderStatus.IN_PROGRESS)) {
+                startable.add(workOrder);
+            }
+        }
+        return startable;
+    }
+
+    // Startar en bekräftad arbetsorder (flyttad från GarageSystem/StartWorkOrderView, WAC-97).
+    public void startWorkOrder(int workOrderId) {
+        // 1. Hitta ordern
+        WorkOrder workOrder = findWorkOrderInMemory(workOrderId);
+        if (workOrder == null) {
+            throw new IllegalArgumentException("confirmWorkOrder.orderMissing");
+        }
+
+        // 2. Får den startas?
+        if (!workOrder.getStatus().canChangeTo(WorkOrderStatus.IN_PROGRESS)) {
+            throw new IllegalArgumentException("startWorkOrder.cannotStart");
+        }
+
+        // 3. Övriga kontroller (bokning, fordon, kund, mekaniker, tjänster)
+        validateBeforeStart(workOrder);
+
+        // 4. Är mekanikern ledig? (finns, det kontrollerades i steg 3)
+        Mechanic mechanic = findMechanicInMemory(workOrder.getMechanicId());
+        if (!mechanic.isAvailable()) {
+            throw new IllegalArgumentException("startWorkOrder.mechanicBusy");
+        }
+        Booking booking = findBookingInMemory(workOrder.getBookingId());
+
+        // 5. Spara undan gamla värden ifall databasen inte går att nå
+        String previousBookingStatus = booking.getStatus();
+
+        // 6. Ändra i minnet
+        // Reklamationer ska inte ändra originalbokningens status.
+        if (!sharesOriginalBooking(workOrder)) {
+            booking.setStatus("IN_PROGRESS");
+        }
+        mechanic.setAvailable(false);
+        workOrder.changeStatus(WorkOrderStatus.IN_PROGRESS);
+
+        // 7. Spara i databasen
+        try {
+            workOrderRepository.save(workOrder);
+            bookingRepository.save(booking);
+            mechanicRepository.save(mechanic);
+        } catch (RuntimeException exception) {
+            // Återställ det som går att återställa i minnet
+            booking.setStatus(previousBookingStatus);
+            mechanic.setAvailable(true);
+            throw new RuntimeException("startWorkOrder.saveError", exception);
+        }
+    }
+
+    // Samma kontroller som vid bekräftelse (från GarageSystem.validateWorkOrderForConfirmation).
+    // Första felet kastas som språknyckel.
+    private void validateBeforeStart(WorkOrder workOrder) {
+        // a. Typ måste finnas
+        if (workOrder.getType() == null) {
+            throw new IllegalArgumentException("confirmWorkOrder.typeMissing");
+        }
+
+        // b. Reklamation: originalet måste finnas, inte vara sig själv och vara slutfört
+        if (workOrder.getType() == WorkOrderTypeEnum.COMPLAINT) {
+            Integer originalId = workOrder.getOriginalWorkOrderId();
+            if (originalId == null) {
+                throw new IllegalArgumentException("confirmWorkOrder.originalRequired");
+            }
+            if (originalId == workOrder.getId()) {
+                throw new IllegalArgumentException("confirmWorkOrder.originalSelfReference");
+            }
+            WorkOrder original = findWorkOrderInMemory(originalId);
+            if (original == null) {
+                throw new IllegalArgumentException("confirmWorkOrder.originalMissing");
+            }
+            if (original.getStatus() != WorkOrderStatus.COMPLETED) {
+                throw new IllegalArgumentException("confirmWorkOrder.originalNotCompleted");
+            }
+        }
+
+        // c. Bokning → fordon → kund
+        Booking booking = findBookingInMemory(workOrder.getBookingId());
+        if (booking == null) {
+            throw new IllegalArgumentException("confirmWorkOrder.bookingMissing");
+        }
+
+        Vehicle vehicle = vehicleRepository.findById(booking.getVehicleId());
+        if (vehicle == null) {
+            throw new IllegalArgumentException("confirmWorkOrder.vehicleMissing");
+        }
+
+        boolean customerExists = Database.getCustomers().stream()
+                .anyMatch(customer -> customer.getId() == vehicle.getCustomerId());
+        if (!customerExists) {
+            throw new IllegalArgumentException("confirmWorkOrder.customerMissing");
+        }
+
+        // d. Mekanikern måste finnas
+        if (findMechanicInMemory(workOrder.getMechanicId()) == null) {
+            throw new IllegalArgumentException("confirmWorkOrder.mechanicMissing");
+        }
+
+        // e. Minst en tjänst, och alla måste finnas
+        List<Integer> serviceIds = workOrder.getServiceItemIds();
+        if (serviceIds == null || serviceIds.isEmpty()) {
+            throw new IllegalArgumentException("confirmWorkOrder.servicesMissing");
+        }
+        for (Integer serviceId : serviceIds) {
+            boolean exists = serviceId != null && Database.getServiceItems().stream()
+                    .anyMatch(service -> service.getId() == serviceId);
+            if (!exists) {
+                throw new IllegalArgumentException("confirmWorkOrder.serviceMissing");
+            }
+        }
+    }
+
+    private WorkOrder findWorkOrderInMemory(int id) {
+        for (WorkOrder workOrder : Database.getWorkOrders()) {
+            if (workOrder.getId() == id) {
+                return workOrder;
+            }
+        }
+        return null;
+    }
+
+    private Booking findBookingInMemory(int id) {
+        for (Booking booking : Database.getBookings()) {
+            if (booking.getId() == id) {
+                return booking;
+            }
+        }
+        return null;
+    }
+
+    private Mechanic findMechanicInMemory(int id) {
+        for (Mechanic mechanic : Database.getMechanics()) {
+            if (mechanic.getId() == id) {
+                return mechanic;
+            }
+        }
+        return null;
+    }
+
+    // En reklamation som delar bokning med sin originalorder ska
+    // inte ändra bokningens status.
+    private boolean sharesOriginalBooking(WorkOrder workOrder) {
+        if (workOrder.getType() != WorkOrderTypeEnum.COMPLAINT
+            || workOrder.getOriginalWorkOrderId() == null) {
+            return false;
+        }
+        WorkOrder original = findWorkOrderInMemory(workOrder.getOriginalWorkOrderId());
+        return original != null && original.getBookingId() == workOrder.getBookingId();
     }
 
     public List<WorkOrder> findAll() { return workOrderRepository.findAll(); }
