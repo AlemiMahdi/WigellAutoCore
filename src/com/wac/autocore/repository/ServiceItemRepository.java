@@ -5,6 +5,7 @@ import com.wac.autocore.model.ServiceItem;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ServiceItemRepository implements IServiceItemRepository {
@@ -66,6 +67,32 @@ public class ServiceItemRepository implements IServiceItemRepository {
 
         } catch (Exception e) {
             throw new RuntimeException("Kunde inte hämta tjänst från databasen med ID: " + id, e);
+        }
+    }
+
+    public List<ServiceItem> findAllByIds(List<Integer> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Transaction transaction = session.beginTransaction();
+            try {
+                List<ServiceItem> serviceItems = session.createQuery(
+                                "from ServiceItem where id in :ids order by id",
+                                ServiceItem.class
+                        )
+                        .setParameter("ids", ids)
+                        .getResultList();
+
+                transaction.commit();return serviceItems;
+
+            } catch (RuntimeException exception) {
+                if (transaction.isActive()) {
+                    transaction.rollback();
+                }
+                throw exception;
+            }
         }
     }
 }

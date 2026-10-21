@@ -639,7 +639,7 @@ public class AutoCoreApp extends Application {
                 createNavItem("create-booking", "menu.createBooking", () -> showView(new CreateBookingView(bookingService).getView())));
 
         addNavSection(menuBox, "menu.section.workOrders",
-                createNavItem("show-work-orders", "menu.workOrders", () -> showView(new ShowWorkOrdersView(workOrderService).getView())),
+                createNavItem("show-work-orders", "menu.workOrders", () -> showView(new ShowWorkOrdersView(workOrderService, bookingService).getView())),
                 createNavItem("create-work-order", "menu.createWorkOrder", () -> showView(new CreateWorkOrderView(workOrderService, bookingService))),
                 createNavItem("create-draft-work-order", "menu.createDraftWorkOrder",
                         () -> showView(new CreateDraftWorkOrderView(workOrderService).getView())),

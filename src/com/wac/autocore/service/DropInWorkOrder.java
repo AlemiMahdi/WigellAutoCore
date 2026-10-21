@@ -3,11 +3,18 @@ package com.wac.autocore.service;
 import com.wac.autocore.DTO.WorkOrderDto;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
+import com.wac.autocore.repository.IServiceItemRepository;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class DropInWorkOrder implements WorkOrderTypeInterface {
+
+    private final IServiceItemRepository serviceItemRepository;
+
+    public DropInWorkOrder(IServiceItemRepository serviceItemRepository) {
+        this.serviceItemRepository = serviceItemRepository;
+    }
 
     @Override
     public WorkOrder createWorkOrder(WorkOrderDto workOrderDto) {
@@ -32,7 +39,7 @@ public class DropInWorkOrder implements WorkOrderTypeInterface {
         if (workOrderDto.getServices() != null) {
             for (int serviceId : workOrderDto.getServices()) {
                 // Hämta den enskilda tjänsten baserat på ID
-                ServiceItem service = WorkOrderService.findServiceItem(serviceId);
+                ServiceItem service = serviceItemRepository.findById(serviceId);
                 if (service != null) {
                     InvoiceLine frozenLine = new InvoiceLine(
                             service.getId(),

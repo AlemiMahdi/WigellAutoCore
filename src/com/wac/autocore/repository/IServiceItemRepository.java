@@ -8,4 +8,5 @@ public interface IServiceItemRepository {
     void save(ServiceItem serviceItem);
     List<ServiceItem> findAll();
     ServiceItem findById(int id);
+    List<ServiceItem> findAllByIds(List<Integer> ids);
 }
