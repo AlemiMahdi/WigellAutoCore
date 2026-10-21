@@ -1,62 +1,31 @@
 package com.wac.autocore.repository;
 
-import com.wac.autocore.data.HibernateUtil;
 import com.wac.autocore.model.Customer;
-import org.hibernate.Session;
-import org.hibernate.Transaction;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 // Hanterar lagring och hämtning av kunder i databasen.
-public class CustomerRepository implements ICustomerRepository{
+@Repository
+@Transactional
+public class CustomerRepository implements ICustomerRepository {
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Override
     public void save(Customer customer) {
-        try (Session session =
-                    HibernateUtil.getSessionFactory().openSession()) {
-
-            Transaction transaction = session.beginTransaction();
-
-            try {
-                session.save(customer);
-                transaction.commit();
-
-            } catch (RuntimeException exception) {
-
-                if (transaction.isActive()) {
-                    transaction.rollback();
-                }
-
-                throw exception;
-            }
-        }
+        entityManager.persist(customer);
     }
 
     @Override
     public List<Customer> findAll() {
-        try (Session session =
-                    HibernateUtil.getSessionFactory().openSession()) {
-
-            Transaction transaction = session.beginTransaction();
-
-            try {
-                List<Customer> customers = session.createQuery(
-                        "from Customer order by id",
-                        Customer.class
-                ).getResultList();
-
-                transaction.commit();
-
-                return customers;
-
-            } catch (RuntimeException exception) {
-
-                if (transaction.isActive()) {
-                    transaction.rollback();
-                }
-
-                throw exception;
-            }
-        }
+        return entityManager.createQuery(
+                "from Customer order by id",
+                Customer.class
+        ).getResultList();
     }
 }

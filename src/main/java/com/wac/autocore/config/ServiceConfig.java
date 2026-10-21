@@ -2,8 +2,11 @@ package com.wac.autocore.config;
 
 import com.wac.autocore.repository.*;
 import com.wac.autocore.service.*;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Service;
 
-@ConfigurationService
+@Configuration
+@Service
 public class ServiceConfig {
 
 //    private final GarageSystem garageSystem;

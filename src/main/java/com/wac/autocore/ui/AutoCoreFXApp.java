@@ -8,12 +8,7 @@ import com.wac.autocore.data.Database;
 import com.wac.autocore.data.HibernateUtil;
 import com.wac.autocore.model.*;
 import com.wac.autocore.repository.*;
-import com.wac.autocore.ui.views.CreateBookingView;
-import com.wac.autocore.ui.views.CreateDraftWorkOrderView;
-import com.wac.autocore.ui.views.ProcessPaymentView;
-import com.wac.autocore.ui.views.ShowBookingsView;
-import com.wac.autocore.ui.views.ShowPaymentsView;
-import com.wac.autocore.ui.views.ShowWorkOrdersView;
+import com.wac.autocore.ui.views.*;
 import com.wac.autocore.service.InvoiceService;
 import com.wac.autocore.service.MechanicService;
 
@@ -41,9 +36,6 @@ import java.util.logging.Level;
 
 
 import java.util.HashMap;
-
-import com.wac.autocore.ui.views.MechanicScheduleView;
-import org.hibernate.jdbc.Work;
 
 import java.util.List;
 import java.util.Map;

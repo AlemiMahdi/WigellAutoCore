@@ -1,10 +1,12 @@
-package com.wac.autocore.ui;
+package com.wac.autocore.ui.views;
 
 import com.wac.autocore.DTO.WorkOrderDto;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
 import com.wac.autocore.service.BookingService;
 import com.wac.autocore.service.WorkOrderService;
+import com.wac.autocore.ui.Navigator;
+import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;

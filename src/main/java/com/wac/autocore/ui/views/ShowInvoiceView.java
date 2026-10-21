@@ -1,8 +1,10 @@
-package com.wac.autocore.ui;
+package com.wac.autocore.ui.views;
 
 import com.wac.autocore.service.InvoiceService;
 import com.wac.autocore.model.Invoice;
 import com.wac.autocore.model.InvoiceLine;
+import com.wac.autocore.ui.Navigator;
+import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;

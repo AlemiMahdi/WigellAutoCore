@@ -1,4 +1,4 @@
-package com.wac.autocore.ui;
+package com.wac.autocore.ui.views;
 
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;

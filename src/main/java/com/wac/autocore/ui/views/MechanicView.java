@@ -1,7 +1,8 @@
-package com.wac.autocore.ui;
+package com.wac.autocore.ui.views;
 
 import com.wac.autocore.service.MechanicService;
 import com.wac.autocore.model.Mechanic;
+import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;

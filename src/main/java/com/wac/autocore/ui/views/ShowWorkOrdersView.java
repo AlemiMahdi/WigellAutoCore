@@ -15,7 +15,6 @@ import javafx.scene.layout.FlowPane;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.wac.autocore.ui.EditWorkOrderDraftView;
 import javafx.scene.control.Button;
 
 // Visar arbetsordrarna som en kanban-tavla: CONFIRMED, IN_PROGRESS och COMPLETED.

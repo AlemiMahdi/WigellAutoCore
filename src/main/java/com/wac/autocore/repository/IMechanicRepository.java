@@ -7,8 +7,6 @@ public interface IMechanicRepository {
 
     void save(Mechanic mechanic);
 
-    List<Mechanic> findAll();
-
-    List<Mechanic> findAllMechanics();
+    void findAll();
 
 }

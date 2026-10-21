@@ -34,6 +34,7 @@ public class BookingRepository implements IBookingRepository{
                 entityManager.persist(booking);
         }
 
+        //Används den inte?
         private void saveBooking(
                 Booking booking,
                 Integer mechanicId,
@@ -83,21 +84,12 @@ public class BookingRepository implements IBookingRepository{
                              * ServiceItem senare ändras.
                              */
                             if (isNew) {
-
-                                List<InvoiceLine> frozenPrices = booking.getFrozenPrice();
-                                if (frozenPrices == null || frozenPrices.isEmpty()) {
-                                    frozenPrices = new ArrayList<>();
-                                    for (ServiceItem service : serviceItems) {
-                                        frozenPrices.add(new InvoiceLine(
-                                                        service.getId(),
-                                                        service.getName(),
-                                                        service.getPrice()
-                                                )
-                                        );
-                                    }
+                                List<InvoiceLine> incomingFrozen = booking.getFrozenPrice();
+                                if (incomingFrozen == null || incomingFrozen.isEmpty()) {
+                                    existingBooking.setFrozenPrice(createFrozenPrices(serviceItems));
+                                } else {
+                                    existingBooking.setFrozenPrice(new ArrayList<>(incomingFrozen));
                                 }
-                                existingBooking.setFrozenPrice(createFrozenPrices(frozenPrices));
-
                             }
 
                             // Ändrar mekanikern bara när ett nytt val skickas in.
@@ -293,21 +285,8 @@ public class BookingRepository implements IBookingRepository{
                  * Bokningens tjänster får ändras innan arbetet har börjat.
                  * Därför uppdateras även historical-price-snapshoten.
                  */
-                List<InvoiceLine> frozenPrices = new ArrayList<>();
-
-                for (ServiceItem service : services) {
-
-                    InvoiceLine frozenLine = new InvoiceLine(
-                            service.getId(),
-                            service.getName(),
-                            service.getPrice()
-                    );
-
-                    frozenPrices.add(frozenLine);
-                }
-
                 booking.getFrozenPrice().clear();
-                booking.getFrozenPrice().addAll(createFrozenPrices(frozenPrices));
+                booking.getFrozenPrice().addAll(createFrozenPrices(services));
 
                 for (WorkOrder order : workOrders) {
                     order.getServiceItemIds().clear();
@@ -317,6 +296,7 @@ public class BookingRepository implements IBookingRepository{
     }
 
 public List<InvoiceLine> createFrozenPrices(List<ServiceItem> serviceItems) {
+
     List<InvoiceLine> frozenPrices = new ArrayList<>();
     for (ServiceItem service : serviceItems) {
         InvoiceLine frozenLine = new InvoiceLine(

@@ -1,7 +1,7 @@
-package com.wac.autocore.ui;
+package com.wac.autocore.ui.views;
 
 import com.wac.autocore.service.WorkOrderService;
-import com.wac.autocore.ui.views.ViewHelpMethod;
+import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.model.WorkOrderTypeEnum;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.collections.FXCollections;
@@ -16,7 +16,6 @@ import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.Mechanic;
 import javafx.util.StringConverter;
 import com.wac.autocore.model.ServiceItem;
-import com.wac.autocore.repository.WorkOrderRepository;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;

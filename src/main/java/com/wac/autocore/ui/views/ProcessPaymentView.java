@@ -2,13 +2,10 @@ package com.wac.autocore.ui.views;
 
 import com.wac.autocore.model.Invoice;
 import com.wac.autocore.service.PaymentService;
-import com.wac.autocore.ui.ShowInvoiceView;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
-import com.wac.autocore.exception.ApplicationException;
-import com.wac.autocore.exception.DataAccessException;
 import com.wac.autocore.ui.ErrorHandler;
-import java.util.logging.Level;
+
 import java.util.logging.Logger;
 
 import javafx.geometry.Pos;

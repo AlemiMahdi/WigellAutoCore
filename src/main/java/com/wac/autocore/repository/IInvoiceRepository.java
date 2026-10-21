@@ -5,10 +5,7 @@ import java.util.List;
 
 public interface IInvoiceRepository {
 
-    Invoice save(Invoice invoice);
+    void save(Invoice invoice);
 
-    List<Invoice> findAll();
-
-    List<Invoice> findAllInvoices();
-
+    void findAll();
 }
