@@ -14,8 +14,6 @@ import com.wac.autocore.ui.views.ProcessPaymentView;
 import com.wac.autocore.ui.views.ShowBookingsView;
 import com.wac.autocore.ui.views.ShowPaymentsView;
 import com.wac.autocore.ui.views.ShowWorkOrdersView;
-import com.wac.autocore.repository.IMechanicRepository;
-import com.wac.autocore.repository.IInvoiceRepository;
 import com.wac.autocore.service.InvoiceService;
 import com.wac.autocore.service.MechanicService;
 
@@ -56,9 +54,9 @@ import java.util.Map;
  * direkt (som i designen i PDF:en). Appen startar alltid på Dashboard.
  */
 
-public class AutoCoreApp extends Application {
+public class AutoCoreFXApp extends Application {
 
-    private static AutoCoreApp instance;
+    private static AutoCoreFXApp instance;
 
     private final GarageSystem garageSystem;
     private final IWorkOrderRepository workOrderRepository;
@@ -75,7 +73,7 @@ public class AutoCoreApp extends Application {
     private final BookingService bookingService;
 
     // FIX 1: Konstruktorn MÅSTE vara publik i en JavaFX-applikation!
-    public AutoCoreApp() {
+    public AutoCoreFXApp() {
         this.garageSystem = new GarageSystem();
         this.workOrderRepository = new WorkOrderRepository();
         this.bookingRepository = new BookingRepository();
@@ -92,22 +90,22 @@ public class AutoCoreApp extends Application {
 
 
         // Sätt instansen i samma sekund som JavaFX startar appen
-        synchronized (AutoCoreApp.class) {
+        synchronized (AutoCoreFXApp.class) {
             instance = this;
         }
     }
 
     // Global åtkomstpunkt för alla dina vyer
-    public static synchronized AutoCoreApp getInstance() {
+    public static synchronized AutoCoreFXApp getInstance() {
         // Om gränssnittet inte hunnit starta än skapar vi en tillfällig fallback
         if (instance == null) {
-            instance = new AutoCoreApp();
+            instance = new AutoCoreFXApp();
         }
         return instance;
     }
 
     private static final Logger LOGGER =
-            Logger.getLogger(AutoCoreApp.class.getName());
+            Logger.getLogger(AutoCoreFXApp.class.getName());
 
     private StackPane contentPane;
 
@@ -158,7 +156,7 @@ public class AutoCoreApp extends Application {
         showDashboard();
 
         Scene scene = new Scene(root, 1280, 800);
-        URL stylesheet = AutoCoreApp.class.getResource("styles.css");
+        URL stylesheet = AutoCoreFXApp.class.getResource("styles.css");
 
         if (stylesheet == null) {
             throw new IllegalStateException("Kunde inte hitta styles.css");
@@ -571,7 +569,7 @@ public class AutoCoreApp extends Application {
 
     // Laddar en bild och skalar den till en viss höjd vid inläsning (skarpare).
     private Image loadImage(String path, double height) {
-        URL url = AutoCoreApp.class.getResource(path);
+        URL url = AutoCoreFXApp.class.getResource(path);
         if (url == null) {
             throw new IllegalStateException("Kunde inte hitta bilden " + path);
         }

@@ -1,29 +1,37 @@
 package com.wac.autocore.repository;
 
-import com.wac.autocore.data.HibernateUtil;
-import com.wac.autocore.model.Booking;
-import com.wac.autocore.model.InvoiceLine;
-import com.wac.autocore.model.ServiceItem;
-import com.wac.autocore.model.WorkOrder;
-import com.wac.autocore.model.WorkOrderStatus;
+import com.wac.autocore.model.*;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
-import org.hibernate.Session;
-import org.hibernate.Transaction;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+@Repository
+@Transactional
 public class BookingRepository implements IBookingRepository{
 
-        @Override 
+    @PersistenceContext
+    private EntityManager entityManager;
+    //använder entitymanager i andra metoder, ersätta SessionFactory med den
+    //all hibernate ska bort
+    //transaction sköter commit och rollback nu
+
+        @Override
         public void save(Booking booking) {
-                saveBooking(booking, null, false);
-        }
+        entityManager.persist(booking);        }
 
         // Sparar bokningen tillsammans med vald mekaniker.
         @Override 
         public void save(Booking booking, int mechanicId) {
-                saveBooking(booking, mechanicId, true);
+            Mechanic mechanic = entityManager.find(Mechanic.class, mechanicId);
+            if(mechanic != null){
+                booking.setMechanicId(mechanicId);
+            } else { throw new IllegalArgumentException("Mechanic not found"); }
+                entityManager.persist(booking);
         }
 
         private void saveBooking(
@@ -31,206 +39,105 @@ public class BookingRepository implements IBookingRepository{
                 Integer mechanicId,
                 boolean updateMechanic
         ) {
-
-                try (Session session =
-                        HibernateUtil.getSessionFactory().openSession()) {
-
-                Transaction transaction = session.beginTransaction();
-
-                try {
-
                         // Hämtar befintlig bokning så extra uppgifter bevaras.
                         Booking existingBooking = null;
 
+
                         //Hämta bara en befintlig booking om den har ett ID
                         if (booking.getId() > 0) {
-                                existingBooking = session.get(
-                                        Booking.class, 
-                                        booking.getId()
-                                );
-                        }
+                            existingBooking = entityManager.find(Booking.class, booking.getId());
+                            if (existingBooking == null) {
+                                throw new IllegalArgumentException("Booking not found");
+                            }
 
-                        // En bokning med ett befintligt ID måste finnas i databasen.
-                        if (booking.getId() > 0 && existingBooking == null) {
-                        throw new IllegalArgumentException(
-                                "Booking not found: " + booking.getId()
-                        );
-                        }
+                            boolean isNew = (existingBooking == null);
 
-                        boolean isNew = existingBooking == null;
+                            if (isNew) {
+                                existingBooking = new Booking();
+                            }
 
-                        if (isNew) {
-                        existingBooking = new Booking();
-                        }
+                            existingBooking.setVehicleId(booking.getVehicleId());
+                            existingBooking.setDate(booking.getDate());
+                            existingBooking.setDescription(booking.getDescription());
+                            existingBooking.setStatus(booking.getStatus());
+                            existingBooking.setStartTime(booking.getStartTime());
+                            existingBooking.setDurationMinutes(
+                                    booking.getDurationMinutes()
+                            );
 
-                        existingBooking.setVehicleId(booking.getVehicleId());
-                        existingBooking.setDate(booking.getDate());
-                        existingBooking.setDescription(booking.getDescription());
-                        existingBooking.setStatus(booking.getStatus());
-                        existingBooking.setStartTime(booking.getStartTime());
-                        existingBooking.setDurationMinutes(
-                                booking.getDurationMinutes()
-                        );
 
-                        // Hämtar ServiceItem från samma Hibernate-session.
-                        List<ServiceItem> serviceItems = new ArrayList<>();
+                            List<ServiceItem> serviceItems = new ArrayList<>();
+                            for (ServiceItem service : booking.getServices()) {
+                                ServiceItem serviceItem =
+                                        entityManager.find(ServiceItem.class, service.getId());
+                                if (serviceItem != null) {
+                                    serviceItems.add(serviceItem);
+                                }
+                            }
+                            existingBooking.setServices(serviceItems);
 
-                        for (ServiceItem service : booking.getServices()) {
+                            /*
+                             * WAC-39:
+                             * När bokningen skapas sparas en snapshot av tjänsternas
+                             * namn och pris. Snapshoten ska inte ändras när priset i
+                             * ServiceItem senare ändras.
+                             */
+                            if (isNew) {
 
-                        ServiceItem serviceItem =
-                                session.get(
-                                        ServiceItem.class,
-                                        service.getId()
-                                );
-
-                        if (serviceItem != null) {
-                                serviceItems.add(serviceItem);
-                        }
-                        }
-
-                        existingBooking.setServices(serviceItems);
-
-                        /*
-                        * WAC-39:
-                        * När bokningen skapas sparas en snapshot av tjänsternas
-                        * namn och pris. Snapshoten ska inte ändras när priset i
-                        * ServiceItem senare ändras.
-                        */
-                        if (isNew) {
-                        
-                        List<InvoiceLine> frozenPrices = booking.getFrozenPrice();
+                                List<InvoiceLine> frozenPrices = booking.getFrozenPrice();
                                 if (frozenPrices == null || frozenPrices.isEmpty()) {
-                                        frozenPrices = new ArrayList<>();
-                                        for(ServiceItem service : serviceItems) {
-                                                frozenPrices.add( new InvoiceLine(
+                                    frozenPrices = new ArrayList<>();
+                                    for (ServiceItem service : serviceItems) {
+                                        frozenPrices.add(new InvoiceLine(
                                                         service.getId(),
                                                         service.getName(),
                                                         service.getPrice()
-                                                        )
-                                                );
-                                        }
+                                                )
+                                        );
+                                    }
                                 }
-                                existingBooking.setFrozenPrice(new ArrayList<>(frozenPrices));
-                        
+                                existingBooking.setFrozenPrice(createFrozenPrices(frozenPrices));
+
+                            }
+
+                            // Ändrar mekanikern bara när ett nytt val skickas in.
+                            // Uppdatera mekanikern när ett nytt val skickas in.
+                            if (updateMechanic) {
+                                existingBooking.setMechanicId(mechanicId);
+                            } else if (isNew) {
+                                existingBooking.setMechanicId(booking.getMechanicId());
+                            }
+
+                            if (isNew) {
+                                entityManager.persist(existingBooking);
+                            }
+
+                            //Synkronisera ID från det sparade objektet
+                            booking.setId(existingBooking.getId());
                         }
-
-                        // Ändrar mekanikern bara när ett nytt val skickas in.
-                        // Uppdatera mekanikern när ett nytt val skickas in.
-                        if (updateMechanic) {
-                        existingBooking.setMechanicId(mechanicId);
-                        }
-                        // Om bokningen är ny, kopiera dess befintliga mechanicId.
-                        else if (isNew) {
-                        existingBooking.setMechanicId(booking.getMechanicId());
-                        }
-
-                        if (isNew) {
-                        session.save(existingBooking);
-                        }
-
-                        // Befintliga objekt uppdateras automatiskt av Hibernate.
-                        transaction.commit();
-
-                        //Synkronisera ID från det sparade objektet
-                        booking.setId(existingBooking.getId());
-
-                } catch (RuntimeException exception) {
-
-                        if (transaction.isActive()) {
-                        transaction.rollback();
-                        }
-
-                        throw exception;
-                }
-                }
         }
 
         @Override 
         public List<Booking> findAll() {
 
-                try (Session session =
-                        HibernateUtil.getSessionFactory().openSession()) {
-
-                Transaction transaction = session.beginTransaction();
-
-                try {
-
-                        List<Booking> bookings =
-                                session.createQuery(
+              return entityManager.createQuery(
                                         "select distinct b from Booking b " +
                                                 "left join fetch b.services " +
                                                 "order by b.id",
                                         Booking.class
                                 ).getResultList();
-
-                        // frozenPrice är EAGER och läses tillsammans med Booking.
-                        for (Booking booking : bookings) {
-                        booking.getFrozenPrice().size();
-                        }
-
-                        transaction.commit();
-
-                        return bookings;
-
-                } catch (RuntimeException exception) {
-
-                        if (transaction.isActive()) {
-                        transaction.rollback();
-                        }
-
-                        throw exception;
-                }
-                }
         }
 
         @Override
         public Booking findById(int id) {
-
-                try (Session session =
-                        HibernateUtil.getSessionFactory().openSession()) {
-
-                Transaction transaction = session.beginTransaction();
-
-                try {
-
-                        Booking booking =
-                                session.get(Booking.class, id);
-
-                        if (booking != null) {
-                        booking.getServices().size();
-                        booking.getFrozenPrice().size();
-                        }
-
-                        transaction.commit();
-
-                        return booking;
-
-                } catch (RuntimeException exception) {
-
-                        if (transaction.isActive()) {
-                        transaction.rollback();
-                        }
-
-                        throw exception;
-                }
-                }
+            return entityManager.find(Booking.class, id);
         }
 
         public int updateBookingServices(
             int bookingId,
             List<Integer> serviceIds
     ) {
-
-        try (Session session =
-                     HibernateUtil.getSessionFactory().openSession()) {
-
-            Transaction transaction = session.beginTransaction();
-
-            try {
-
-                Booking booking =
-                        session.get(Booking.class, bookingId);
-
+                Booking booking = entityManager.find(Booking.class, bookingId);
                 if (booking == null) {
                     throw new IllegalArgumentException(
                             "editBookingServices.notFound"
@@ -249,7 +156,7 @@ public class BookingRepository implements IBookingRepository{
                 }
 
                 List<WorkOrder> workOrders =
-                        session.createQuery(
+                        entityManager.createQuery(
                                 "from WorkOrder " +
                                         "where bookingId = :bookingId",
                                 WorkOrder.class
@@ -289,12 +196,7 @@ public class BookingRepository implements IBookingRepository{
                         continue;
                     }
 
-                    ServiceItem service =
-                            session.get(
-                                    ServiceItem.class,
-                                    serviceId
-                            );
-
+                    ServiceItem service = entityManager.find(ServiceItem.class, serviceId);
                     if (service == null) {
                         throw new IllegalArgumentException(
                                 "editBookingServices.serviceMissing"
@@ -328,7 +230,7 @@ public class BookingRepository implements IBookingRepository{
                 if (booking.getMechanicId() != null) {
 
                     List<Booking> otherBookings =
-                            session.createQuery(
+                            entityManager.createQuery(
                                     "from Booking " +
                                             "where mechanicId = :mechanicId " +
                                             "and id <> :bookingId",
@@ -405,25 +307,25 @@ public class BookingRepository implements IBookingRepository{
                 }
 
                 booking.getFrozenPrice().clear();
-                booking.getFrozenPrice().addAll(frozenPrices);
+                booking.getFrozenPrice().addAll(createFrozenPrices(frozenPrices));
 
                 for (WorkOrder order : workOrders) {
                     order.getServiceItemIds().clear();
                     order.getServiceItemIds().addAll(uniqueIds);
                 }
-
-                transaction.commit();
-
                 return totalMinutes;
-
-            } catch (RuntimeException exception) {
-
-                if (transaction.isActive()) {
-                    transaction.rollback();
-                }
-
-                throw exception;
-            }
-        }
     }
+
+public List<InvoiceLine> createFrozenPrices(List<ServiceItem> serviceItems) {
+    List<InvoiceLine> frozenPrices = new ArrayList<>();
+    for (ServiceItem service : serviceItems) {
+        InvoiceLine frozenLine = new InvoiceLine(
+                service.getId(),
+                service.getName(),
+                service.getPrice() // Sparar priset inför faktureringen
+        );
+        frozenPrices.add(frozenLine);
+    }
+    return frozenPrices;
+}
 }
