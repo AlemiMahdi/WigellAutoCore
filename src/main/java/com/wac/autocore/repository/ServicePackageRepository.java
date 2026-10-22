@@ -2,41 +2,28 @@ package com.wac.autocore.repository;
 
 import java.util.List;
 
-import org.hibernate.*;
-import com.wac.autocore.data.HibernateUtil;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import com.wac.autocore.model.ServicePackage;
-import org.hibernate.event.spi.PersistContext;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
+@Transactional
+@Repository
 public class ServicePackageRepository implements IServicePackageRepository{
 
-    @PersistContext
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Override
     public ServicePackage save( ServicePackage servicePackage) {
-        try ( Session session =
-                HibernateUtil.getSessionFactory().openSession()) {
-
-            Transaction transaction = session.beginTransaction();
-
-            try {
-                ServicePackage save = (ServicePackage) session.merge(servicePackage);
-                transaction.commit();
-                return save;
-            } catch (RuntimeException exception) {
-                if (transaction.isActive()) {
-                    transaction.rollback();
-                }
-                throw exception;
-            }
-
-        }
+       entityManager.merge(servicePackage);
+        return servicePackage;
     }
 
     @Override
     public List<ServicePackage> findAll() {
-       entityManager
-                    .createQuery("FROM ServicePackage", ServicePackage.class)
+       return entityManager.createQuery("FROM ServicePackage", ServicePackage.class)
                     .getResultList();
-        }
     }
 }
