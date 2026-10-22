@@ -151,7 +151,7 @@ public class ProcessPaymentView {
     private void refreshInvoices(ComboBox<Invoice> invoiceBox) {
         invoiceBox.getItems().setAll(
             UiKit.newestFirst(
-                paymentService.findUnpaidInvoices(), 
+                PaymentService.findUnpaidInvoices(),
                     Invoice::getId
             )
         );

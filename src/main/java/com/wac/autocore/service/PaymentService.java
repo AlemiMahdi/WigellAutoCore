@@ -65,7 +65,7 @@ public class PaymentService {
         }
     }
 
-    public List<Invoice> findUnpaidInvoices() {
+    public static List<Invoice> findUnpaidInvoices() {
         List<Invoice> unpaid = new ArrayList<>();
 
         for (Invoice invoice : Database.getInvoices()) {

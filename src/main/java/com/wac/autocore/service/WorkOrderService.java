@@ -3,10 +3,7 @@ package com.wac.autocore.service;
 import com.wac.autocore.DTO.WorkOrderDto;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
-import com.wac.autocore.repository.BookingRepository;
-import com.wac.autocore.repository.IServiceItemRepository;
-import com.wac.autocore.repository.IVehicleRepository;
-import com.wac.autocore.repository.IWorkOrderRepository;
+import com.wac.autocore.repository.*;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -17,13 +14,13 @@ import java.util.List;
 
 public class WorkOrderService {
     private final IWorkOrderRepository workOrderRepository;
-    private final BookingRepository bookingRepository;
+    private final IBookingRepository bookingRepository;
     private final WorkOrderTypeManager typeManager = new WorkOrderTypeManager();
     private final IServiceItemRepository serviceItemRepository;
     private final IVehicleRepository vehicleRepository;
 
     //Får ändra BookingRepo hämtning sen
-    public WorkOrderService(IWorkOrderRepository workOrderRepository,  BookingRepository bookingRepository, IServiceItemRepository serviceItemRepository, IVehicleRepository vehicleRepository) {
+    public WorkOrderService(IWorkOrderRepository workOrderRepository,  IBookingRepository bookingRepository, IServiceItemRepository serviceItemRepository, IVehicleRepository vehicleRepository) {
         this.workOrderRepository = workOrderRepository;
         this.bookingRepository = bookingRepository;
         this.serviceItemRepository = serviceItemRepository;
