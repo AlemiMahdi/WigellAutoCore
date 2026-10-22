@@ -63,7 +63,7 @@ public class ServiceConfig {
     @Bean
     public WorkOrderService workOrderService(IWorkOrderRepository workOrderRepository, IBookingRepository bookingRepository,
                                              IVehicleRepository vehicleRepository,
-                                             IServiceItemRepository serviceItemRepository) {
-        return new WorkOrderService(workOrderRepository, bookingRepository, serviceItemRepository, vehicleRepository);
+                                             IServiceItemRepository serviceItemRepository, IMechanicRepository mechanicRepository) {
+        return new WorkOrderService(workOrderRepository, bookingRepository, serviceItemRepository, vehicleRepository, mechanicRepository);
     }
 }

@@ -3,8 +3,13 @@ package com.wac.autocore.service;
 import com.wac.autocore.DTO.WorkOrderDto;
 import com.wac.autocore.model.WorkOrder;
 import com.wac.autocore.model.WorkOrderTypeEnum;
+import com.wac.autocore.repository.IServiceItemRepository;
 
 public class WorkOrderTypeManager {
+    private final IServiceItemRepository serviceItemRepo;
+    public WorkOrderTypeManager(IServiceItemRepository serviceItemRepo) {
+        this.serviceItemRepo = serviceItemRepo;
+    }
     //Manager spindeln i nätet
     //som att välja vilken typ av operation som
     //systemet ska utföra vid visst läge = vilken strategi ska vi ha?
@@ -21,7 +26,7 @@ public class WorkOrderTypeManager {
                 strategy = new ComplaintWorkOrder();
                 break;
             case DROP_IN:
-                strategy = new DropInWorkOrder();
+                strategy = new DropInWorkOrder(serviceItemRepo);
                 break;
             default:
                 throw new IllegalArgumentException("createWorkOrder.unknownType");

@@ -2,11 +2,8 @@ package com.wac.autocore.service;
 
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
-import com.wac.autocore.model.WorkOrderTypeEnum;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 
 public class GarageSystem {
 
@@ -201,74 +198,74 @@ public class GarageSystem {
 //        return workOrder;
 //    }
 
-    public List<String> validateWorkOrderForConfirmation(int workOrderId) {
-        List<String> errors = new ArrayList<>();
-        WorkOrder workOrder = findWorkOrder(workOrderId);
-
-        if (workOrder == null) {
-            errors.add("confirmWorkOrder.orderMissing");
-            return errors;
-        }
-
-        if (workOrder.getType() == null) {
-            errors.add("confirmWorkOrder.typeMissing");
-        }
-
-        if (workOrder.getType() == WorkOrderTypeEnum.COMPLAINT) {
-            Integer originalId = workOrder.getOriginalWorkOrderId();
-
-            if (originalId == null) {
-                errors.add("confirmWorkOrder.originalRequired");
-            } else if (originalId == workOrder.getId()) {
-                errors.add("confirmWorkOrder.originalSelfReference");
-            } else {
-                WorkOrder original = findWorkOrder(originalId);
-
-                if (original == null) {
-                    errors.add("confirmWorkOrder.originalMissing");
-                } else if (original.getStatus() != WorkOrderStatus.COMPLETED) {
-                    errors.add("confirmWorkOrder.originalNotCompleted");
-                }
-            }
-        }
-
-        Booking booking = findBooking(workOrder.getBookingId());
-
-        if (booking == null) {
-            errors.add("confirmWorkOrder.bookingMissing");
-        } else {
-            Vehicle vehicle = findVehicle(booking.getVehicleId());
-
-            if (vehicle == null) {
-                errors.add("confirmWorkOrder.vehicleMissing");
-            } else if (findCustomer(vehicle.getCustomerId()) == null) {
-                errors.add("confirmWorkOrder.customerMissing");
-            }
-        }
-
-        if (findMechanic(workOrder.getMechanicId()) == null) {
-            errors.add("confirmWorkOrder.mechanicMissing");
-        }
-
-        List<Integer> serviceIds = workOrder.getServiceItemIds();
-
-        if (serviceIds == null || serviceIds.isEmpty()) {
-            errors.add("confirmWorkOrder.servicesMissing");
-        } else {
-            for (Integer serviceId : serviceIds) {
-                boolean exists = serviceId != null
-                        && Database.getServiceItems().stream()
-                        .anyMatch(service -> service.getId() == serviceId);
-
-                if (!exists) {
-                    errors.add("confirmWorkOrder.serviceMissing");
-                    break;
-                }
-            }
-        }
-
-        return errors;
-    }
+//    public List<String> validateWorkOrderForConfirmation(int workOrderId) {
+//        List<String> errors = new ArrayList<>();
+//        WorkOrder workOrder = findWorkOrder(workOrderId);
+//
+//        if (workOrder == null) {
+//            errors.add("confirmWorkOrder.orderMissing");
+//            return errors;
+//        }
+//
+//        if (workOrder.getType() == null) {
+//            errors.add("confirmWorkOrder.typeMissing");
+//        }
+//
+//        if (workOrder.getType() == WorkOrderTypeEnum.COMPLAINT) {
+//            Integer originalId = workOrder.getOriginalWorkOrderId();
+//
+//            if (originalId == null) {
+//                errors.add("confirmWorkOrder.originalRequired");
+//            } else if (originalId == workOrder.getId()) {
+//                errors.add("confirmWorkOrder.originalSelfReference");
+//            } else {
+//                WorkOrder original = findWorkOrder(originalId);
+//
+//                if (original == null) {
+//                    errors.add("confirmWorkOrder.originalMissing");
+//                } else if (original.getStatus() != WorkOrderStatus.COMPLETED) {
+//                    errors.add("confirmWorkOrder.originalNotCompleted");
+//                }
+//            }
+//        }
+//
+//        Booking booking = findBooking(workOrder.getBookingId());
+//
+//        if (booking == null) {
+//            errors.add("confirmWorkOrder.bookingMissing");
+//        } else {
+//            Vehicle vehicle = findVehicle(booking.getVehicleId());
+//
+//            if (vehicle == null) {
+//                errors.add("confirmWorkOrder.vehicleMissing");
+//            } else if (findCustomer(vehicle.getCustomerId()) == null) {
+//                errors.add("confirmWorkOrder.customerMissing");
+//            }
+//        }
+//
+//        if (findMechanic(workOrder.getMechanicId()) == null) {
+//            errors.add("confirmWorkOrder.mechanicMissing");
+//        }
+//
+//        List<Integer> serviceIds = workOrder.getServiceItemIds();
+//
+//        if (serviceIds == null || serviceIds.isEmpty()) {
+//            errors.add("confirmWorkOrder.servicesMissing");
+//        } else {
+//            for (Integer serviceId : serviceIds) {
+//                boolean exists = serviceId != null
+//                        && Database.getServiceItems().stream()
+//                        .anyMatch(service -> service.getId() == serviceId);
+//
+//                if (!exists) {
+//                    errors.add("confirmWorkOrder.serviceMissing");
+//                    break;
+//                }
+//            }
+//        }
+//
+//        return errors;
+//    }
 
 //    // Samma logik som tidigare: starta via GarageSystem och spara via repositories.
 //    private void startSelectedWorkOrder() {
@@ -340,52 +337,52 @@ public class GarageSystem {
 //        reloadList(false);
 //    }
 
-    public void startWorkOrder(int workOrderId) {
-        WorkOrder workOrder = findWorkOrder(workOrderId);
-
-        if (workOrder == null) {
-            System.out.println("Work order with ID " + workOrderId + " does not exist.");
-            return;
-        }
-
-        if (!workOrder.getStatus().canChangeTo(WorkOrderStatus.IN_PROGRESS)) {
-            System.out.println("Work order cannot be started.");
-            return;
-        }
-
-        List<String> errors = validateWorkOrderForConfirmation(workOrderId);
-
-        if (!errors.isEmpty()) {
-            System.out.println(
-                    "Work order cannot be started: " + String.join(", ", errors)
-            );
-            return;
-        }
-
-        Mechanic mechanic = findMechanic(workOrder.getMechanicId());
-        Booking booking = findBooking(workOrder.getBookingId());
-
-        if (mechanic == null || !mechanic.isAvailable()) {
-            System.out.println("Cannot start work order: mechanic is missing or unavailable.");
-            return;
-        }
-
-        if (booking == null) {
-            System.out.println("Cannot start work order: booking is missing.");
-            return;
-        }
-
-        // Reklamationer ska inte ändra originalbokningens status.
-        if (!sharesOriginalBooking(workOrder)) {
-            booking.setStatus("IN_PROGRESS");
-        }
-
-        mechanic.setAvailable(false);
-
-        workOrder.changeStatus(WorkOrderStatus.IN_PROGRESS);
-
-        System.out.println("Work order " + workOrderId + " has been started.");
-    }
+//    public void startWorkOrder(int workOrderId) {
+//        WorkOrder workOrder = findWorkOrder(workOrderId);
+//
+//        if (workOrder == null) {
+//            System.out.println("Work order with ID " + workOrderId + " does not exist.");
+//            return;
+//        }
+//
+//        if (!workOrder.getStatus().canChangeTo(WorkOrderStatus.IN_PROGRESS)) {
+//            System.out.println("Work order cannot be started.");
+//            return;
+//        }
+//
+//        List<String> errors = validateWorkOrderForConfirmation(workOrderId);
+//
+//        if (!errors.isEmpty()) {
+//            System.out.println(
+//                    "Work order cannot be started: " + String.join(", ", errors)
+//            );
+//            return;
+//        }
+//
+//        Mechanic mechanic = findMechanic(workOrder.getMechanicId());
+//        Booking booking = findBooking(workOrder.getBookingId());
+//
+//        if (mechanic == null || !mechanic.isAvailable()) {
+//            System.out.println("Cannot start work order: mechanic is missing or unavailable.");
+//            return;
+//        }
+//
+//        if (booking == null) {
+//            System.out.println("Cannot start work order: booking is missing.");
+//            return;
+//        }
+//
+//        // Reklamationer ska inte ändra originalbokningens status.
+//        if (!sharesOriginalBooking(workOrder)) {
+//            booking.setStatus("IN_PROGRESS");
+//        }
+//
+//        mechanic.setAvailable(false);
+//
+//        workOrder.changeStatus(WorkOrderStatus.IN_PROGRESS);
+//
+//        System.out.println("Work order " + workOrderId + " has been started.");
+//    }
 
 
 
@@ -547,19 +544,19 @@ public class GarageSystem {
     }
     */
 
-    private boolean sharesOriginalBooking(WorkOrder workOrder) {
-        if (workOrder.getType() != WorkOrderTypeEnum.COMPLAINT
-                || workOrder.getOriginalWorkOrderId() == null) {
-            return false;
-        }
-
-        WorkOrder original = findWorkOrder(
-                workOrder.getOriginalWorkOrderId()
-        );
-
-        return original != null
-                && original.getBookingId() == workOrder.getBookingId();
-    }
+//    private boolean sharesOriginalBooking(WorkOrder workOrder) {
+//        if (workOrder.getType() != WorkOrderTypeEnum.COMPLAINT
+//                || workOrder.getOriginalWorkOrderId() == null) {
+//            return false;
+//        }
+//
+//        WorkOrder original = findWorkOrder(
+//                workOrder.getOriginalWorkOrderId()
+//        );
+//
+//        return original != null
+//                && original.getBookingId() == workOrder.getBookingId();
+//    }
 
     private Customer findCustomer(int id) {
         for (Customer customer : Database.getCustomers()) {
@@ -581,43 +578,43 @@ public class GarageSystem {
         return null;
     }
 
-    private Booking findBooking(int id) {
-        for (Booking booking : Database.getBookings()) {
-            if (booking.getId() == id) {
-                return booking;
-            }
-        }
+//    private Booking findBooking(int id) {
+//        for (Booking booking : Database.getBookings()) {
+//            if (booking.getId() == id) {
+//                return booking;
+//            }
+//        }
+//
+//        return null;
+//    }
 
-        return null;
-    }
+//    private Mechanic findMechanic(int id) {
+//        for (Mechanic mechanic : Database.getMechanics()) {
+//            if (mechanic.getId() == id) {
+//                return mechanic;
+//            }
+//        }
+//
+//        return null;
+//    }
 
-    private Mechanic findMechanic(int id) {
-        for (Mechanic mechanic : Database.getMechanics()) {
-            if (mechanic.getId() == id) {
-                return mechanic;
-            }
-        }
+//    static Invoice findInvoice(int id) {
+//        for (Invoice invoice : Database.getInvoices()) {
+//            if (invoice.getId() == id) {
+//                return invoice;
+//            }
+//        }
+//
+//        return null;
+//    }
 
-        return null;
-    }
-
-    static Invoice findInvoice(int id) {
-        for (Invoice invoice : Database.getInvoices()) {
-            if (invoice.getId() == id) {
-                return invoice;
-            }
-        }
-
-        return null;
-    }
-
-    private WorkOrder findWorkOrder(int id) {
-        for (WorkOrder workOrder : Database.getWorkOrders()) {
-            if (workOrder.getId() == id) {
-                return workOrder;
-            }
-        }
-
-        return null;
-    }
+//    private WorkOrder findWorkOrder(int id) {
+//        for (WorkOrder workOrder : Database.getWorkOrders()) {
+//            if (workOrder.getId() == id) {
+//                return workOrder;
+//            }
+//        }
+//
+//        return null;
+//    }
 }
