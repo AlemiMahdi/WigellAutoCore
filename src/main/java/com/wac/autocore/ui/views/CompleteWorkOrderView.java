@@ -1,12 +1,7 @@
 package com.wac.autocore.ui.views;
 
 import com.wac.autocore.data.Database;
-import com.wac.autocore.model.Booking;
-import com.wac.autocore.model.Mechanic;
-import com.wac.autocore.model.ServiceItem;
-import com.wac.autocore.model.Vehicle;
-import com.wac.autocore.model.WorkOrder;
-import com.wac.autocore.model.WorkOrderStatus;
+import com.wac.autocore.model.*;
 import com.wac.autocore.service.WorkOrderService;
 import com.wac.autocore.ui.Navigator;
 import com.wac.autocore.ui.UiKit;
@@ -148,16 +143,25 @@ public class CompleteWorkOrderView {
         return card;
     }
 
-    // Samma kontroller och anrop som tidigare: hitta ordern, kolla status,
-    // slutför via GarageSystem och spara via repositories. Returnerar true om det lyckades.
-    private boolean completeWorkOrder(int workOderId) {
+    // Slutför ordern via WorkOrderService. Returnerar true om det lyckades.
+    private boolean completeWorkOrder(int workOrderId) {
+        statusLabel.textProperty().unbind();
 
         try {
-            workOrderService.completeWorkOrder(workOderId);
-            UiKit.showSuccess(statusLabel, language.text("completeWorkOrder.success").get());
+            workOrderService.completeWorkOrder(workOrderId);
+            UiKit.showSuccess(statusLabel, "");
+            statusLabel.textProperty().bind(language.text("completeWorkOrder.success"));
             return true;
-        } catch (IllegalArgumentException e) {
-            UiKit.showError(statusLabel, language.text("completeWorkOrder.error").get());
+        } catch (IllegalArgumentException exception) {
+            // Regelfel: servicen skickar en språknyckel (t.ex. fel status)
+            UiKit.showError(statusLabel, "");
+            statusLabel.textProperty().bind(language.text(exception.getMessage()));
+            return false;
+        } catch (RuntimeException exception) {
+            // Lagringsfel: fast text till användaren, tekniska detaljer i loggen
+            UiKit.showError(statusLabel, "");
+            statusLabel.textProperty().bind(language.text("completeWorkOrder.error"));
+            exception.printStackTrace();
             return false;
         }
     }

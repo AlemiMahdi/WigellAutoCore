@@ -2,6 +2,7 @@ package com.wac.autocore.repository;
 
 import com.wac.autocore.model.Invoice;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,6 +12,7 @@ import java.util.List;
 @Transactional
 public class InvoiceRepository implements IInvoiceRepository {
 
+    @PersistenceContext
     private EntityManager entityManager;
 
     @Override
@@ -22,7 +24,7 @@ public class InvoiceRepository implements IInvoiceRepository {
     @Override
     public List<Invoice> findAll() {
 
-            entityManager.createQuery(
+            return entityManager.createQuery(
                                 "select distinct i from Invoice i " +
                                         "left join fetch i.lines " +
                                         "order by i.id",

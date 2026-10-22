@@ -19,16 +19,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 
 public class ShowPaymentsView {
-    private final PaymentService paymentService;
-    public ShowPaymentsView(PaymentService paymentService) {
-        this.paymentService = paymentService;
-    }
 
     // Datum och klockslag utan sekunder, t.ex. "2026-09-18 14:02"
     private static final DateTimeFormatter DATE_TIME_FORMAT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
-    public VBox getView() {
+    public VBox getView(PaymentService paymentService) {
         LanguageManager language = LanguageManager.getInstance();
 
         TableView<Payment> table = new TableView<>();

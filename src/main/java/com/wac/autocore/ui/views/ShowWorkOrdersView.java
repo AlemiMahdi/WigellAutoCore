@@ -2,6 +2,7 @@ package com.wac.autocore.ui.views;
 
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
+import com.wac.autocore.service.BookingService;
 import com.wac.autocore.service.WorkOrderService;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
@@ -22,8 +23,10 @@ public class ShowWorkOrdersView {
 
     private final LanguageManager language = LanguageManager.getInstance();
     private final WorkOrderService workOrderService;
+    private final BookingService bookingService;
 
-    public ShowWorkOrdersView(WorkOrderService workOrderService) { this.workOrderService = workOrderService; }
+    public ShowWorkOrdersView(WorkOrderService workOrderService, BookingService bookingService) { this.workOrderService = workOrderService;
+    this.bookingService = bookingService;}
 
     public VBox getView() {
 
@@ -143,7 +146,7 @@ public class ShowWorkOrdersView {
                 );
 
                 VBox editView =
-                        new EditWorkOrderDraftView(workOrderService).getView(workOrder);
+                        new EditWorkOrderDraftView(workOrderService, bookingService).getView(workOrder);
 
                 root.getChildren().setAll(backButton, editView);
             });

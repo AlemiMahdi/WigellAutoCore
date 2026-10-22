@@ -11,7 +11,7 @@ import java.util.List;
 
 public interface IWorkOrderRepository {
 
-    void save(WorkOrder workOrder);
+    WorkOrder save(WorkOrder workOrder);
     void saveWithBooking(WorkOrder workOrder, Booking booking);
     WorkOrder findWorkOrder(int id);
     List<WorkOrder> findAll();

@@ -165,7 +165,7 @@ public class AutoCoreFXApp extends Application {
         showDashboard();
 
         Scene scene = new Scene(root, 1280, 800);
-        URL stylesheet = AutoCoreFXApp.class.getResource("styles.css");
+        URL stylesheet = AutoCoreFXApp.class.getResource("/style/styles.css");
 
         if (stylesheet == null) {
             throw new IllegalStateException("Kunde inte hitta styles.css");
@@ -230,7 +230,7 @@ public class AutoCoreFXApp extends Application {
     }
 
     private void loadCustomers() {
-        CustomerRepository repository = new CustomerRepository();
+        CustomerRepository repository = springContext.getBean(CustomerRepository.class);
         List<Customer> savedCustomers = repository.findAll();
 
         if (savedCustomers.isEmpty()) {
@@ -273,7 +273,7 @@ public class AutoCoreFXApp extends Application {
     // Läser in fordon efter att kunderna har laddats.
 
     private void loadVehicles() {
-        VehicleRepository repository = new VehicleRepository();
+        VehicleRepository repository = springContext.getBean(VehicleRepository.class);
         List<Vehicle> savedVehicles = repository.findAll();
 
         boolean firstRun = savedVehicles.isEmpty();
@@ -330,33 +330,23 @@ public class AutoCoreFXApp extends Application {
             }
 
     private void loadServiceItems() {
-
-        ServiceItemRepository repository =
-                new ServiceItemRepository();
-
-        List<ServiceItem> savedServiceItems =
-                repository.findAll();
+        ServiceItemRepository repository = springContext.getBean(ServiceItemRepository.class);
+        List<ServiceItem> savedServiceItems = repository.findAll();
 
         if (savedServiceItems.isEmpty()) {
-
-
             // Första starten: sparar originalets exempeldata.
             for (ServiceItem serviceItem : Database.getServiceItems()) {
                 repository.save(serviceItem);
             }
-
             return;
-
         }
-
         // Ersätter minnesdatan med datan från databasen.
         Database.getServiceItems().clear();
         Database.getServiceItems().addAll(savedServiceItems);
-
     }
 
     private void loadServicePackages() {
-        ServicePackageRepository repository = new ServicePackageRepository();
+        ServicePackageRepository repository = springContext.getBean(ServicePackageRepository.class);
         List<ServicePackage> savedPackages = repository.findAll();
         Database.getServicePackages().clear();
         Database.getServicePackages().addAll(savedPackages);
@@ -384,19 +374,14 @@ public class AutoCoreFXApp extends Application {
 
     private void loadInvoices() {
 
-        List<Invoice> savedInvoices =
-                invoiceService.findAll();
-
+        List<Invoice> savedInvoices = invoiceService.findAll();
         if (savedInvoices.isEmpty()) {
-
             // Sparar eventuell befintlig data första gången.
             for (Invoice invoice : Database.getInvoices()) {
                 invoiceService.save(invoice);
             }
-
             return;
         }
-
         // Originalsystemet använder listans storlek + 1 för nästa ID.
         for (int i = 0; i < savedInvoices.size(); i++) {
             if (savedInvoices.get(i).getId() != i + 1) {
@@ -405,45 +390,34 @@ public class AutoCoreFXApp extends Application {
                 );
             }
         }
-
         Database.getInvoices().clear();
         Database.getInvoices().addAll(savedInvoices);
     }
 
     private void loadPayments() {
-
-        PaymentRepository repository =
-                new PaymentRepository();
-
-        List<Payment> savedPayments =
-                repository.findAll();
+        PaymentRepository repository = springContext.getBean(PaymentRepository.class);
+        List<Payment> savedPayments = repository.findAll();
 
         if (savedPayments.isEmpty()) {
-
             // Sparar eventuell befintlig data första gången.
             for (Payment payment : Database.getPayments()) {
                 repository.save(payment);
             }
-
             return;
         }
-
         // Originalsystemet använder listans storlek + 1 för nästa ID.
         for ( Payment payment : savedPayments) {
-
             // En betalning måste höra till en befintlig faktura.
             boolean invoiceExists =
                     Database.getInvoices().stream()
                             .anyMatch(invoice ->
                                     invoice.getId() == payment.getInvoiceId());
-
             if (!invoiceExists) {
                 throw new IllegalStateException(
                         "Invoice missing for payment " + payment.getId()
                 );
             }
         }
-
         Database.getPayments().clear();
         Database.getPayments().addAll(savedPayments);
     }
@@ -452,31 +426,25 @@ public class AutoCoreFXApp extends Application {
     // Läser in bokningar efter att fordonen har laddats,
     // eftersom varje bokning måste peka på ett befintligt fordon.
     private void loadBookings() {
-        BookingRepository repository = new BookingRepository();
+        BookingRepository repository = springContext.getBean(BookingRepository.class);
         List<Booking> savedBookings = repository.findAll();
-
         // Tom tabell betyder att appen startas för första gången.
         boolean firstRun = savedBookings.isEmpty();
-
         // Första gången kontrolleras originalets exempeldata,
         // annars de bokningar som hämtats från databasen.
         List<Booking> bookings = firstRun ? Database.getBookings() : savedBookings;
-
         for (int i = 0; i < bookings.size(); i++) {
             Booking booking = bookings.get(i);
-
             // Kontrollerar att bokningens fordon finns.
             boolean vehicleExists = Database.getVehicles().stream()
                     .anyMatch(vehicle ->
                             vehicle.getId() == booking.getVehicleId());
-
             if (!vehicleExists) {
                 throw new IllegalStateException(
                         "Vehicle missing for booking " + booking.getId()
                 );
             }
         }
-
         if (firstRun) {
             // Sparar originalets exempelbokningar när tabellen är tom.
             for (Booking booking : bookings) {
@@ -493,58 +461,15 @@ public class AutoCoreFXApp extends Application {
     // Läser in arbetsordrar sist, eftersom de pekar på
     // bokningar, mekaniker och tjänster som måste vara laddade först.
     private void loadWorkOrders() {
-
-        WorkOrderRepository repository = new WorkOrderRepository();
+        WorkOrderRepository repository = springContext.getBean(WorkOrderRepository.class);
         List<WorkOrder> savedWorkOrders = repository.findAll();
-
         // Originalet har inga exempelarbetsordrar,
         // så en tom tabell betyder att det inte finns något att läsa in.
         if (savedWorkOrders.isEmpty()) {
             return;
         }
-
-//        for (int i = 0; i < savedWorkOrders.size(); i++) {
-//            WorkOrder workOrder = savedWorkOrders.get(i);
-//
-//            // Kontrollerar att arbetsorderns bokning finns.
-//            boolean bookingExists = Database.getBookings().stream()
-//                    .anyMatch(booking ->
-//                            booking.getId() == workOrder.getBookingId());
-//
-//            if (!bookingExists) {
-//                throw new IllegalStateException(
-//                        "Booking missing for work order " + workOrder.getId()
-//                );
-//            }
-//            // Kontrollerar att arbetsorderns mekaniker finns.
-//            // 0 betyder att ingen mekaniker är vald än (utkast, WAC-63)
-//            if (workOrder.getMechanicId() != 0) {
-//                boolean mechanicsExist = Database.getMechanics().stream()
-//                        .anyMatch(mechanic -> mechanic.getId() == workOrder.getMechanicId());
-//
-//                if (!mechanicsExist) {
-//                    throw new IllegalStateException(
-//                            "Mechanic missing for work order " + workOrder.getId()
-//                    );
-//                }
-//            }
-//            // Kontrollerar att alla arbetsorderns tjänster finns.
-//            for (int serviceItemId : workOrder.getServiceItemIds()) {
-//                boolean serviceItemExists = Database.getServiceItems().stream().
-//                        anyMatch(serviceItem ->
-//                                serviceItem.getId() == serviceItemId);
-//
-//                if (!serviceItemExists) {
-//                    throw new IllegalStateException(
-//                            "Service item missing for work order " + workOrder.getId()
-//                    );
-//                }
-//            }
-//        }
-        // Ersätter arbetsordrarna i minnet med de sparade arbetsordrarna.
         Database.getWorkOrders().clear();
         Database.getWorkOrders().addAll(savedWorkOrders);
-
     }
 
     // ------------------------------------------------------------
@@ -658,15 +583,15 @@ public class AutoCoreFXApp extends Application {
                 createNavItem("create-booking", "menu.createBooking", () -> showView(new CreateBookingView(bookingService).getView())));
 
         addNavSection(menuBox, "menu.section.workOrders",
-                createNavItem("show-work-orders", "menu.workOrders", () -> showView(new ShowWorkOrdersView(workOrderService).getView())),
+                createNavItem("show-work-orders", "menu.workOrders", () -> showView(new ShowWorkOrdersView(workOrderService, bookingService).getView())),
                 createNavItem("create-work-order", "menu.createWorkOrder", () -> showView(new CreateWorkOrderView(workOrderService, bookingService))),
                 createNavItem("create-draft-work-order", "menu.createDraftWorkOrder",
                         () -> showView(new CreateDraftWorkOrderView(workOrderService).getView())),
-                createNavItem("start-work-order", "menu.startWorkOrder", () -> showView(new StartWorkOrderView(mechanicService))),
+                createNavItem("start-work-order", "menu.startWorkOrder", () -> showView(new StartWorkOrderView(workOrderService))),
                 createNavItem("complete-work-order", "menu.completeWorkOrder", () -> showView(new CompleteWorkOrderView(workOrderService).getView())));
 
         addNavSection(menuBox, "menu.section.servicesMechanics",
-                createNavItem("show-services", "menu.services", () -> showView(new ServiceView(new ServiceItemService(serviceItemService)))),
+                createNavItem("show-services", "menu.services", () -> showView(new ServiceView(serviceItemService))),
                 createNavItem("create-service-package", "menu.createServicePackage",
                         () -> showView(new CreateServicePackageView(servicePackageService).getView())),
                 createNavItem("manage-service-package", "menu.manageServicePackage", () -> showView(new ManageServicePackageView(servicePackageService).getView())),
@@ -681,12 +606,10 @@ public class AutoCoreFXApp extends Application {
                         () -> showView(CreateInvoiceView.build(invoiceService))),
 
                 createNavItem("show-payments", "menu.payments",
-                        () -> showView(new ShowPaymentsView(
-                                new PaymentService(paymentService)).getView())),
+                        () -> showView(new ShowPaymentsView().getView(paymentService))),
 
                 createNavItem("process-payment", "menu.processPayment",
-                        () -> showView(new ProcessPaymentView(
-                                new PaymentService(paymentService)).getView())));
+                        () -> showView(new ProcessPaymentView().getView(paymentService))));
         // Tunn linje och sedan Exit längst ned, i rött
         Region divider = new Region();
         divider.getStyleClass().add("nav-divider");

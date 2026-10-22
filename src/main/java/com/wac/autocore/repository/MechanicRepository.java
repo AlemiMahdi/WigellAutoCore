@@ -6,6 +6,8 @@ import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Repository
 @Transactional
 public class MechanicRepository implements IMechanicRepository {
@@ -21,7 +23,7 @@ public class MechanicRepository implements IMechanicRepository {
 
     @Override
     public List<Mechanic> findAll() {
-        entityManager.createQuery(
+        return entityManager.createQuery(
                 "from Mechanic order by id",
                 Mechanic.class
         ).getResultList();

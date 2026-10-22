@@ -1,87 +1,37 @@
 package com.wac.autocore.repository;
 
-import com.wac.autocore.data.HibernateUtil;
 import com.wac.autocore.model.Vehicle;
-import org.hibernate.Session;
-import org.hibernate.Transaction;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 // Hanterar lagring och hämtning av fordon i databasen.
+@Repository
+@Transactional
 public class VehicleRepository implements IVehicleRepository {
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     @Override
-    public void save(Vehicle vehicle) {
-        try (Session session =
-                     HibernateUtil.getSessionFactory().openSession()) {
-
-            Transaction transaction = session.beginTransaction();
-
-            try {
-                session.saveOrUpdate(vehicle);
-                transaction.commit();
-
-            } catch (RuntimeException exception) {
-
-                if (transaction.isActive()) {
-                    transaction.rollback();
-                }
-
-                throw exception;
-            }
-        }
+    public Vehicle save(Vehicle vehicle) {
+    entityManager.persist(vehicle);
+    return vehicle;
     }
 
     @Override
     public List<Vehicle> findAll() {
-        try (Session session =
-                     HibernateUtil.getSessionFactory().openSession()) {
-
-            Transaction transaction = session.beginTransaction();
-
-            try {
-                List<Vehicle> vehicles = session.createQuery(
+                return entityManager.createQuery(
                         "from Vehicle order by id",
                         Vehicle.class
                 ).getResultList();
-
-                transaction.commit();
-
-                return vehicles;
-
-            } catch (RuntimeException exception) {
-
-                if (transaction.isActive()) {
-                    transaction.rollback();
-                }
-
-                throw exception;
-            }
-        }
     }
 
     @Override
     public Vehicle findById(int id) {
-        try (Session session =
-                HibernateUtil.getSessionFactory().openSession()) {
-
-            Transaction transaction = session.beginTransaction();
-
-            try {
-                Vehicle vehicle = session.get(Vehicle.class, id);
-
-                transaction.commit();
-
-                return vehicle;
-            } catch (RuntimeException exception) {
-
-                if (transaction.isActive()) {
-                    transaction.rollback();
-                }
-
-                throw exception;
-            }
-        }
+        return entityManager.find(Vehicle.class, id);
     }
-
 }
