@@ -22,7 +22,7 @@ public class InvoiceRepository implements IInvoiceRepository {
     @Override
     public List<Invoice> findAll() {
 
-            entityManager.createQuery(
+            return entityManager.createQuery(
                                 "select distinct i from Invoice i " +
                                         "left join fetch i.lines " +
                                         "order by i.id",
