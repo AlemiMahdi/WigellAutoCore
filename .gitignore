@@ -32,3 +32,6 @@ bin/
 
 # Kraschrapporter från Java
 hs_err_pid*.log
+
+# Maven build output
+/target/
