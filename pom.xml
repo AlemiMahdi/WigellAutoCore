@@ -63,6 +63,11 @@
             <artifactId>javafx-controls</artifactId>
             <version>21.0.5</version>
         </dependency>
+		<!-- Spring Security: autentisering och behörigheter -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
 
 	</dependencies>
 
