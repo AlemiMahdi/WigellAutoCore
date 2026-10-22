@@ -28,7 +28,7 @@ public class InvoiceService {
     private final Supplier<List<Customer>> customerSource;
     private final Supplier<List<ServiceItem>> serviceItemSource;
 
-
+//Korta konstruktorn ställer till det för Spring eventuellt, ska inte skapa NEW instanser
     public InvoiceService(IInvoiceRepository invoiceRepository) {
         this(
                 invoiceRepository,
@@ -55,6 +55,22 @@ public class InvoiceService {
         this.customerSource = Objects.requireNonNull(customerSource);
         this.serviceItemSource = Objects.requireNonNull(serviceItemSource);
     }
+
+//    public InvoiceService(
+//            IInvoiceRepository invoiceRepository,
+//            WorkOrderRepository workOrderRepository,
+//            BookingRepository bookingRepository,
+//            VehicleRepository vehicleRepository,
+//            CustomerRepository customerRepository,
+//            ServiceItemRepository serviceItemRepository
+//    ){
+//        this.invoiceRepository = Objects.requireNonNull(invoiceRepository);
+//        this.workOrderSource = workOrderRepository::findAll;
+//        this.bookingSource = bookingRepository::findAll;
+//        this.vehicleSource = vehicleRepository::findAll;
+//        this.customerSource = customerRepository::findAll;
+//        this.serviceItemSource = serviceItemRepository::findAll;
+//    }
 
     public Invoice createInvoice(
 

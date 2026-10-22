@@ -5,11 +5,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b495a4ad-04c2-47e5-870f-a93bac70f06d" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/resources/images/logga-utan-underrubrik.png" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/images/logga-utan-underrubrik.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/resources/images/logo-gron-16.png" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/images/logo-gron-16.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/resources/images/logo-gron-256.png" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/images/logo-gron-256.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/resources/images/logo-gron-32.png" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/images/logo-gron-32.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/resources/images/logo-gron-48.png" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/images/logo-gron-48.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/config/ServiceConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/config/ServiceConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/repository/InvoiceRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/repository/InvoiceRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/service/InvoiceService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/service/InvoiceService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/ui/AutoCoreFXApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/ui/AutoCoreFXApp.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/ui/style/styles.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/style/styles.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/wac/autocore/config/ServiceConfig.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/wac/autocore/config/ServiceConfig.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/wac/autocore/repository/InvoiceRepository.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/wac/autocore/repository/InvoiceRepository.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/wac/autocore/service/InvoiceService.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/wac/autocore/service/InvoiceService.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/wac/autocore/ui/AutoCoreFXApp.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/wac/autocore/ui/AutoCoreFXApp.class" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -68,6 +74,15 @@
       <recent name="C:\Users\Vivi\IdeaProjects\WigellAutoCore\src\main\java\com\wac\autocore\ui\style" />
     </key>
   </component>
+  <component name="RunManager">
+    <configuration name="SpringBootMain" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="WigellAutoCore" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.wac.autocore.SpringBootMain" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -83,7 +98,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1792570009183</updated>
-      <workItem from="1792570010643" duration="30380000" />
+      <workItem from="1792570010643" duration="34728000" />
     </task>
     <servers />
   </component>

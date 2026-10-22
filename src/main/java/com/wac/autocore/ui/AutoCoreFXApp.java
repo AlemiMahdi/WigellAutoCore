@@ -165,7 +165,7 @@ public class AutoCoreFXApp extends Application {
         showDashboard();
 
         Scene scene = new Scene(root, 1280, 800);
-        URL stylesheet = AutoCoreFXApp.class.getResource("styles.css");
+        URL stylesheet = AutoCoreFXApp.class.getResource("/style/styles.css");
 
         if (stylesheet == null) {
             throw new IllegalStateException("Kunde inte hitta styles.css");
