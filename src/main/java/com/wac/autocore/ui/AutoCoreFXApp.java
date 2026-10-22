@@ -666,7 +666,7 @@ public class AutoCoreFXApp extends Application {
                 createNavItem("complete-work-order", "menu.completeWorkOrder", () -> showView(new CompleteWorkOrderView(workOrderService).getView())));
 
         addNavSection(menuBox, "menu.section.servicesMechanics",
-                createNavItem("show-services", "menu.services", () -> showView(new ServiceView(new ServiceItemService(serviceItemService)))),
+                createNavItem("show-services", "menu.services", () -> showView(new ServiceView(serviceItemService))),
                 createNavItem("create-service-package", "menu.createServicePackage",
                         () -> showView(new CreateServicePackageView(servicePackageService).getView())),
                 createNavItem("manage-service-package", "menu.manageServicePackage", () -> showView(new ManageServicePackageView(servicePackageService).getView())),
@@ -681,12 +681,10 @@ public class AutoCoreFXApp extends Application {
                         () -> showView(CreateInvoiceView.build(invoiceService))),
 
                 createNavItem("show-payments", "menu.payments",
-                        () -> showView(new ShowPaymentsView(
-                                new PaymentService(paymentService)).getView())),
+                        () -> showView(new ShowPaymentsView().getView(paymentService))),
 
                 createNavItem("process-payment", "menu.processPayment",
-                        () -> showView(new ProcessPaymentView(
-                                new PaymentService(paymentService)).getView())));
+                        () -> showView(new ProcessPaymentView().getView(paymentService))));
         // Tunn linje och sedan Exit längst ned, i rött
         Region divider = new Region();
         divider.getStyleClass().add("nav-divider");

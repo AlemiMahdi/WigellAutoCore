@@ -23,13 +23,8 @@ public class ProcessPaymentView {
             Logger.getLogger(ProcessPaymentView.class.getName());
 
     private final LanguageManager language = LanguageManager.getInstance();
-    private final PaymentService paymentService;
 
-    public ProcessPaymentView(PaymentService paymentService) {
-        this.paymentService = paymentService;
-    }
-
-    public VBox getView() {
+    public VBox getView(PaymentService paymentService) {
 
         // --- Faktura ---
         // Visar alla fakturor (som konsolversionen), med belopp och om den är betald
