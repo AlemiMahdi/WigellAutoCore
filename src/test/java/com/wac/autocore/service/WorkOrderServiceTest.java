@@ -61,7 +61,7 @@ public class WorkOrderServiceTest {
             assertEquals(WorkOrderStatus.DRAFT, draft.getStatus());
             assertNull(draft.getOriginalWorkOrderId());
 
-            // Systemet skapar en egen bokning utan datum, ingen tidigare bokning behövs
+            // Systemet skapar en egen bokning utan datum
             Booking booking = fakeRepository.saveBooking;
             assertNotNull(booking);
             assertNull(booking.getDate());
@@ -71,6 +71,81 @@ public class WorkOrderServiceTest {
             Database.getWorkOrders().remove(draft);
             Database.getBookings().remove(fakeRepository.saveBooking);
         }
+    }
+
+    @Test
+    void complaintCannotStartWithoutOriginalWorkOrder() {
+        WorkOrder complaint = confirmedComplaint(9001, null);
+        Database.getWorkOrders().add(complaint);
+
+        try {
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                    () -> workOrderService.startWorkOrder(9001));
+            assertEquals("confirmWorkOrder.originalRequired", exception.getMessage());
+            assertEquals(WorkOrderStatus.CONFIRMED, complaint.getStatus());
+        } finally {
+            Database.getWorkOrders().remove(complaint);
+        }
+    }
+
+    @Test
+    void complaintCannotReferenceItself() {
+        WorkOrder complaint = confirmedComplaint(9001, 9001);
+        Database.getWorkOrders().add(complaint);
+
+        try {
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                    () -> workOrderService.startWorkOrder(9001));
+            assertEquals("confirmWorkOrder.originalSelfReference", exception.getMessage());
+            assertEquals(WorkOrderStatus.CONFIRMED, complaint.getStatus());
+        } finally {
+            Database.getWorkOrders().remove(complaint);
+        }
+    }
+
+    @Test
+    void complaintCannotStartWhenOriginalWorkOrderIsMissing() {
+        // 9999 finns inte i Database
+        WorkOrder complaint = confirmedComplaint(9001, 9999);
+        Database.getWorkOrders().add(complaint);
+
+        try {
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                    () -> workOrderService.startWorkOrder(9001));
+            assertEquals("confirmWorkOrder.originalMissing", exception.getMessage());
+            assertEquals(WorkOrderStatus.CONFIRMED, complaint.getStatus());
+        } finally {
+            Database.getWorkOrders().remove(complaint);
+        }
+    }
+
+    @Test
+    void complaintCannotStartWhenOriginalWorkOrderIsNotCompleted() {
+        // Originalet är bara bekräftat, inte slutfört
+        WorkOrder original = new WorkOrder(1, 1, WorkOrderTypeEnum.PLANNED);
+        original.setId(9002);
+        WorkOrder complaint = confirmedComplaint(9001, 9002);
+        Database.getWorkOrders().add(original);
+        Database.getWorkOrders().add(complaint);
+
+        try {
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                    () -> workOrderService.startWorkOrder(9001));
+            assertEquals("confirmWorkOrder.originalNotCompleted", exception.getMessage());
+            assertEquals(WorkOrderStatus.CONFIRMED, complaint.getStatus());
+        } finally {
+            Database.getWorkOrders().remove(complaint);
+            Database.getWorkOrders().remove(original);
+        }
+    }
+
+    // Bekräftad reklamation (konstruktorn sätter CONFIRMED).
+    // originalId sätts före id, annars stoppar setOriginalWorkOrderId självreferensen redan i modellen.
+    private WorkOrder confirmedComplaint(int id, Integer originalId) {
+        WorkOrder complaint = new WorkOrder(1, 1, WorkOrderTypeEnum.COMPLAINT);
+        complaint.setOriginalWorkOrderId(originalId);
+        complaint.setId(id);
+        return complaint;
     }
 
     @Test
