@@ -93,7 +93,7 @@ class PaymentServiceTest {
         }
 
         @Override
-        public void save(Payment payment) {
+        public Payment save(Payment payment) {
             throw new UnsupportedOperationException();
         }
 
