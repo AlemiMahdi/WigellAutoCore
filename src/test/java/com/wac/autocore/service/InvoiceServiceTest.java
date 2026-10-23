@@ -539,6 +539,56 @@ class InvoiceServiceTest {
         }
     }
 
+    @Test
+    void vipDiscountAndDiscountCodeAreCombined() {
+        Customer vipCustomer = new Customer(
+                1, "VIP-kund", "0701234567", "vip@example.com"
+        );
+        vipCustomer.setVip(true);
+
+        Vehicle vehicle = new Vehicle(
+                1, "VIP123", "Volvo", "XC60", 2020, vipCustomer.getId()
+        );
+
+        Booking booking = new Booking(
+                1, vehicle.getId(), LocalDate.of(2026, 10, 23), "Service"
+        );
+        booking.addFrozenPrice(new InvoiceLine(1, "Oljebyte", 1000.0));
+        booking.addFrozenPrice(new InvoiceLine(2, "Bromsservice", 500.0));
+
+        WorkOrder order = new WorkOrder(
+                booking.getId(), 1, WorkOrderTypeEnum.PLANNED
+        );
+        order.setId(1);
+        order.changeStatus(WorkOrderStatus.IN_PROGRESS);
+        order.changeStatus(WorkOrderStatus.COMPLETED);
+
+        // Egna listor i stället för Database, så att inget delat ändras
+        InvoiceService service = new InvoiceService(
+                new FakeInvoiceRepository(),
+                () -> List.of(order),
+                () -> List.of(booking),
+                () -> List.of(vehicle),
+                () -> List.of(vipCustomer),
+                ArrayList::new
+        );
+
+        Invoice invoice = service.previewInvoice(
+                order.getId(), "WELCOME10", "", 0.0
+        );
+
+        // 1500 kr, 10 % VIP + 10 % WELCOME10 = 300 kr rabatt
+        assertEquals(1500.0, invoice.getAmount(), 0.001);
+        assertEquals(300.0, invoice.getDiscount(), 0.001);
+        assertEquals(1200.0, invoice.getTotalAmount(), 0.001);
+
+        // Rabatten är fördelad på raderna, så att raderna summerar till totalen
+        double lineTotal = invoice.getLines().stream()
+                .mapToDouble(InvoiceLine::getFinalPrice)
+                .sum();
+        assertEquals(invoice.getTotalAmount(), lineTotal, 0.001);
+    }
+
     private InvoiceService createService(IInvoiceRepository repository) {
         return new InvoiceService(
                 repository,
