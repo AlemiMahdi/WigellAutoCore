@@ -185,7 +185,7 @@ class InvoiceServiceTest {
             );
 
             Booking booking = new Booking(
-                    1, vehicle.getId(), LocalDate.of(2026, 10, 17),
+                    vehicle.getId(), LocalDate.of(2026, 10, 17),
                     "Testbokning"
             );
             booking.addFrozenPrice(
@@ -426,7 +426,7 @@ class InvoiceServiceTest {
             Database.getBookings().clear();
 
             Booking booking = new Booking(
-                    1, 1, LocalDate.now(), "Bokning utan sparade priser"
+                     1, LocalDate.now(), "Bokning utan sparade priser"
             );
             Database.getBookings().add(booking);
 
@@ -492,7 +492,7 @@ class InvoiceServiceTest {
             Database.getServiceItems().add(serviceItem);
 
             Booking booking = new Booking(
-                    1, 1, LocalDate.now(), "Reklamation"
+                    1, LocalDate.now(), "Reklamation"
             );
             Database.getBookings().add(booking);
 
