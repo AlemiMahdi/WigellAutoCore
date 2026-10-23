@@ -9,8 +9,8 @@ import java.util.List;
 
 public class FakeVehicleRepository implements IVehicleRepository {
     @Override
-    public void save(Vehicle vehicle) {
-
+    public Vehicle save(Vehicle vehicle) {
+        return vehicle;
     }
 
     @Override

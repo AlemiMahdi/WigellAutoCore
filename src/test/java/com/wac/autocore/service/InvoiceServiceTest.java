@@ -577,10 +577,6 @@ class InvoiceServiceTest {
             return new ArrayList<>(invoices);
         }
 
-        @Override
-        public List<Invoice> findAllInvoices() {
-            return findAll();
-        }
     }
 
     private static class StubInvoiceService extends InvoiceService {
