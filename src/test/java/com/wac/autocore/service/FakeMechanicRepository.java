@@ -17,19 +17,15 @@ public class FakeMechanicRepository implements IMechanicRepository {
     Mechanic saved;
 
     @Override
-    public void save(Mechanic mechanic) {
+    public Mechanic save(Mechanic mechanic) {
         // Ingen databas: vi sparar bara undan objektet så testet kan kontrollera det
         saved = mechanic;
+        return mechanic;
     }
 
     @Override
     public List<Mechanic> findAll() {
         // Används inte i testerna, returnerar en tom lista
         return new ArrayList<Mechanic>();
-    }
-
-    @Override
-    public List<Mechanic> findAllMechanics() {
-        return new ArrayList<>();
     }
 }

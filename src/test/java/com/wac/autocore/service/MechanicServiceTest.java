@@ -174,7 +174,7 @@ class MechanicServiceTest {
         private RuntimeException readFailure;
 
         @Override
-        public void save(Mechanic mechanic) {
+        public Mechanic save(Mechanic mechanic) {
             throw new UnsupportedOperationException(
                     "Saving is not used in these tests"
             );
@@ -189,9 +189,5 @@ class MechanicServiceTest {
             return new ArrayList<>();
         }
 
-        @Override
-        public List<Mechanic> findAllMechanics() {
-            return findAll();
-        }
     }
 }
