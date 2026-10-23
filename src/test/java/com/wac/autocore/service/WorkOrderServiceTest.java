@@ -31,6 +31,24 @@ public class WorkOrderServiceTest {
     }
 
     @Test
+    void complaintWorkOrderIsLinkedToOriginalWorkOrder() {
+        int originalWorkOrderId = 42;
+
+        // Kunden kommer tillbaka
+        WorkOrder complaint = workOrderService.createNewDraftWorkOrder(
+                1, "Bromsarna låter fortfarande", WorkOrderTypeEnum.COMPLAINT, originalWorkOrderId);
+
+        try {
+            assertEquals(WorkOrderTypeEnum.COMPLAINT, complaint.getType());
+            assertEquals(originalWorkOrderId, complaint.getOriginalWorkOrderId());
+            assertSame(complaint, fakeRepository.saveDraft);
+        } finally {
+            Database.getWorkOrders().remove(complaint);
+            Database.getBookings().remove(fakeRepository.saveBooking);
+        }
+    }
+
+    @Test
     void dropInWorkOrderCanBeCreatedWithoutPreviousBooking() {
         int bookingsBefore = Database.getBookings().size();
 
