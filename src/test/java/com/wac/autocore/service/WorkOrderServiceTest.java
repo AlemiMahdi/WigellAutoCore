@@ -31,6 +31,31 @@ public class WorkOrderServiceTest {
     }
 
     @Test
+    void dropInWorkOrderCanBeCreatedWithoutPreviousBooking() {
+        int bookingsBefore = Database.getBookings().size();
+
+        // Kunden kommer in utan bokning
+        WorkOrder draft = workOrderService.createNewDraftWorkOrder(
+                1, "Konstigt ljud från bromsarna", WorkOrderTypeEnum.DROP_IN, null);
+
+        try {
+            assertEquals(WorkOrderTypeEnum.DROP_IN, draft.getType());
+            assertEquals(WorkOrderStatus.DRAFT, draft.getStatus());
+            assertNull(draft.getOriginalWorkOrderId());
+
+            // Systemet skapar en egen bokning utan datum, ingen tidigare bokning behövs
+            Booking booking = fakeRepository.saveBooking;
+            assertNotNull(booking);
+            assertNull(booking.getDate());
+            assertEquals("WORK_ORDER_CREATED", booking.getStatus());
+            assertEquals(bookingsBefore + 1, Database.getBookings().size());
+        } finally {
+            Database.getWorkOrders().remove(draft);
+            Database.getBookings().remove(fakeRepository.saveBooking);
+        }
+    }
+
+    @Test
     void createDraftWithUnknownVehicleThrow() {
         int bookingsBefore = Database.getBookings().size();
         int workOrdersBefore = Database.getWorkOrders().size();
