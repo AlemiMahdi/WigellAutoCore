@@ -81,7 +81,6 @@ public class BookingService {
 
         // 5. Skapa bokningen
         Booking booking = new Booking(
-                0,
                 vehicleId,
                 date,
                 startTime,
