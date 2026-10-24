@@ -17,8 +17,8 @@ public class FakeWorkOrderRepository implements IWorkOrderRepository {
     public Booking saveBooking;
 
     @Override
-    public void save(WorkOrder workOrder) {
-
+    public WorkOrder save(WorkOrder workOrder) {
+        return workOrder;
     }
 
     @Override
