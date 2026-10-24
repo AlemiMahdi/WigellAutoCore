@@ -21,7 +21,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-// Regressionstest för prishistorik (krav från WAC 3.0).
+// Regressionstest för prishistorik
 // Körs utan databas och Spring: repositories ersätts med enkla fakes.
 public class PriceHistoryTest {
 
@@ -137,5 +137,8 @@ public class PriceHistoryTest {
         // Fakturan använder 500 + 300, inte dagens pris 800 + 300
         assertEquals(800.0, invoice.getAmount(), 0.001);
         assertEquals(500.0, invoice.getLines().get(0).getPrice(), 0.001);
+
+        assertEquals(2, invoice.getLines().size());
+        assertEquals(300.0, invoice.getLines().get(1).getPrice(), 0.001);
     }
 }
