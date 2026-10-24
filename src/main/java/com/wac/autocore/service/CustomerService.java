@@ -1,5 +1,7 @@
 package com.wac.autocore.service;
 
+import java.util.List;
+
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Customer;
 import com.wac.autocore.repository.ICustomerRepository;
@@ -44,6 +46,10 @@ public class CustomerService {
 
         Database.getCustomers().add(customer);
         return customer;
+    }
+
+    public List<Customer> findAll(){
+        return customerRepository.findAll();
     }
 
 }
