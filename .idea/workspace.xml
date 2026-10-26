@@ -5,12 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b495a4ad-04c2-47e5-870f-a93bac70f06d" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/data/Database.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/data/Database.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/model/Booking.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/model/Booking.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/service/BookingService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/service/BookingService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/service/GarageSystem.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/service/GarageSystem.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/service/WorkOrderService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/service/WorkOrderService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/wac/autocore/service/InvoiceServiceTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/wac/autocore/service/InvoiceServiceTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/wac/autocore/service/MechanicServiceTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/wac/autocore/service/MechanicServiceTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/wac/autocore/service/WorkOrderServiceTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/wac/autocore/service/WorkOrderServiceTest.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -42,6 +40,9 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "Application.AutoCoreFXApp.executor": "Run",
+    "JUnit.InvoiceServiceTest.executor": "Run",
+    "JUnit.MechanicServiceTest.executor": "Run",
+    "JUnit.PaymentServiceTest.executor": "Run",
     "JUnit.WorkOrderServiceTest.executor": "Run",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RequestMappingsPanelOrder0": "0",
@@ -141,9 +142,9 @@
     <recent_temporary>
       <list>
         <item itemvalue="JUnit.WorkOrderServiceTest" />
-        <item itemvalue="JUnit.PaymentServiceTest" />
-        <item itemvalue="JUnit.InvoiceServiceTest" />
         <item itemvalue="JUnit.MechanicServiceTest" />
+        <item itemvalue="JUnit.InvoiceServiceTest" />
+        <item itemvalue="JUnit.PaymentServiceTest" />
       </list>
     </recent_temporary>
   </component>

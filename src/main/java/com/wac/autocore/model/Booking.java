@@ -71,6 +71,14 @@ public class Booking {
         this.description = description;
         this.status = "BOOKED";
     }
+            //För tester
+    public Booking(int id, int vehicleId, LocalDate date, String description) {
+        this.id = id;
+        this.vehicleId = vehicleId;
+        this.date = date;
+        this.description = description;
+        this.status = "BOOKED";
+    }
 
     public Booking(
             int vehicleId,
@@ -87,6 +95,23 @@ public class Booking {
         this.status = "BOOKED";
     }
 
+    //För tester
+    public Booking(int id,
+            int vehicleId,
+            LocalDate date,
+            LocalTime startTime,
+            int durationMinutes,
+            String description
+    ) {
+        this.id = id;
+        this.vehicleId = vehicleId;
+        this.date = date;
+        this.startTime = startTime;
+        this.durationMinutes = durationMinutes;
+        this.description = description;
+        this.status = "BOOKED";
+    }
+
     public Booking(
             int vehicleId,
             LocalDate date,
@@ -95,6 +120,27 @@ public class Booking {
             String description,
             List<InvoiceLine> frozenPrice
     ) {
+        this.vehicleId = vehicleId;
+        this.date = date;
+        this.startTime = startTime;
+        this.durationMinutes = durationMinutes;
+        this.description = description;
+        this.status = "BOOKED";
+        this.frozenPrice = frozenPrice != null
+                ? frozenPrice
+                : new ArrayList<>();
+    }
+
+    //för tester
+    public Booking(int id,
+            int vehicleId,
+            LocalDate date,
+            LocalTime startTime,
+            int durationMinutes,
+            String description,
+            List<InvoiceLine> frozenPrice
+    ) {
+        this.id = id;
         this.vehicleId = vehicleId;
         this.date = date;
         this.startTime = startTime;
