@@ -15,8 +15,14 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 public class CreateVehicleView {
+
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(CreateVehicleView.class);
 
     /**
      * Bygger upp formuläret för att skapa ett nytt fordon.
@@ -80,7 +86,7 @@ public class CreateVehicleView {
                 return;
             } catch (RuntimeException exception) {
                 UiKit.showError(statusLabel, language.text("vehicle.create.error").get());
-                exception.printStackTrace();
+                LOGGER.error("Kunde inte skapa fordon", exception);
                 return;
             }
 
