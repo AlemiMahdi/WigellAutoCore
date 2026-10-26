@@ -5,20 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b495a4ad-04c2-47e5-870f-a93bac70f06d" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/test/java/com/wac/autocore/service/FakeServiceItemRepository.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/config/ServiceConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/config/ServiceConfig.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/repository/BookingRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/repository/BookingRepository.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/repository/IBookingRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/repository/IBookingRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/repository/IWorkOrderRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/repository/IWorkOrderRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/repository/WorkOrderRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/repository/WorkOrderRepository.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/service/BookingService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/service/BookingService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/ui/AutoCoreFXApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/ui/AutoCoreFXApp.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/ui/views/EditBookingServicesView.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/ui/views/EditBookingServicesView.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/ui/views/ShowBookingsView.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/ui/views/ShowBookingsView.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/test/java/com/wac/autocore/service/BookingServiceTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/wac/autocore/service/BookingServiceTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/com/wac/autocore/service/FakeMechanicRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/wac/autocore/service/FakeMechanicRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/com/wac/autocore/service/FakeWorkOrderRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/wac/autocore/service/FakeWorkOrderRepository.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/test/java/com/wac/autocore/service/PriceHistoryTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/wac/autocore/service/PriceHistoryTest.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/test/java/com/wac/autocore/service/ServicePackageServiceTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/wac/autocore/service/ServicePackageServiceTest.java" afterDir="false" />
     </list>
@@ -173,8 +164,8 @@
       <list>
         <item itemvalue="JUnit.WorkOrderServiceTest" />
         <item itemvalue="JUnit.BookingServiceTest" />
-        <item itemvalue="JUnit.ServicePackageServiceTest" />
         <item itemvalue="JUnit.PriceHistoryTest" />
+        <item itemvalue="JUnit.ServicePackageServiceTest" />
       </list>
     </recent_temporary>
   </component>

@@ -156,7 +156,7 @@ public class BookingService {
             int bookingId,
             List<Integer> serviceIds
     ) {
-        Booking booking = bookingRepository.findById(bookingId);
+        Booking booking = bookingRepository.findByIdAndServices(bookingId);
         if (booking == null) {
             throw new IllegalArgumentException(
                     "editBookingServices.notFound"
@@ -287,7 +287,7 @@ public class BookingService {
             order.getServiceItemIds().clear();
             order.getServiceItemIds().addAll(uniqueIds);
         }
-        bookingRepository.save(booking);
+        bookingRepository.update(booking);
         for(WorkOrder order : workOrders) {
             workOrderRepository.save(order);
         }

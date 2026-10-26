@@ -49,6 +49,15 @@ public class BookingServiceTest {
         public List<Booking> findOtherBookingsByMechanic(int mechanicId, int bookingId) {
             return List.of();
         }
+
+        @Override
+        public Booking findByIdAndServices(int id) {
+            return null;
+        }
+
+        @Override
+        public void update(Booking booking) {
+        }
     };
 
     private final BookingService bookingService = new BookingService(fakeBookingRepository, fakeWorkOrderRepository, fakeServiceItemRepository);

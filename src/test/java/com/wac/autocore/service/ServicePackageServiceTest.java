@@ -63,6 +63,16 @@ public class ServicePackageServiceTest {
         public List<Booking> findOtherBookingsByMechanic(int mechanicId, int bookingId) {
             return List.of();
         }
+
+        @Override
+        public Booking findByIdAndServices(int id) {
+            return null;
+        }
+
+        @Override
+        public void update(Booking booking) {
+
+        }
     };
 
     private final ServicePackageService servicePackageService =

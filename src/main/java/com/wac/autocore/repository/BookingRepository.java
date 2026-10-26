@@ -25,6 +25,10 @@ public class BookingRepository implements IBookingRepository{
         entityManager.persist(booking);
         return booking;}
 
+        @Override
+        public void update(Booking booking){
+            entityManager.merge(booking);
+        }
         // Sparar bokningen tillsammans med vald mekaniker.
         @Override 
         public Booking save(Booking booking, int mechanicId) {
@@ -130,7 +134,11 @@ public class BookingRepository implements IBookingRepository{
 
         @Override
         public Booking findByIdAndServices(int id){
-            return entityManager.createQuery()
+            return entityManager.createQuery(
+                    "SELECT b FROM Booking b LEFT JOIN FETCH b.services WHERE b.id = :id",
+                    Booking.class)
+                    .setParameter("id", id)
+                    .getSingleResult();
         }
 
         @Override

@@ -11,4 +11,6 @@ public interface IBookingRepository {
     List<Booking> findAll();
     Booking findById(int id);
     List<Booking> findOtherBookingsByMechanic(int mechanicId, int bookingId);
+    Booking findByIdAndServices(int id);
+    void update(Booking booking);
 }
