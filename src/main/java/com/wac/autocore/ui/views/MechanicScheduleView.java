@@ -132,7 +132,7 @@ public class MechanicScheduleView {
 
         table.setPlaceholder(selectLabel);
         table.setColumnResizePolicy(
-                TableView.CONSTRAINED_RESIZE_POLICY
+                TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN
         );
 
         mechanicCombo.setOnAction(actionEvent -> {
