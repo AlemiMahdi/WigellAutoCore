@@ -4,6 +4,8 @@ import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.repository.IBookingRepository;
+import com.wac.autocore.repository.IServiceItemRepository;
+import com.wac.autocore.repository.IWorkOrderRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -17,6 +19,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class BookingServiceTest {
 
+    private final IWorkOrderRepository fakeWorkOrderRepository = new FakeWorkOrderRepository();
+    private final IServiceItemRepository fakeServiceItemRepository = new FakeServiceItemRepository();
     private final IBookingRepository fakeBookingRepository = new IBookingRepository() {
         private int nextId = 1000;
 
@@ -40,9 +44,14 @@ public class BookingServiceTest {
         public Booking findById(int id) {
             return null;
         }
+
+        @Override
+        public List<Booking> findOtherBookingsByMechanic(int mechanicId, int bookingId) {
+            return List.of();
+        }
     };
 
-    private final BookingService bookingService = new BookingService(fakeBookingRepository);
+    private final BookingService bookingService = new BookingService(fakeBookingRepository, fakeWorkOrderRepository, fakeServiceItemRepository);
 
     // Bokningar som testet lägger i den delade listan och måste städa bort
     private final List<Booking> createdBookings = new ArrayList<>();

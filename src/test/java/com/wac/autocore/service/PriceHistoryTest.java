@@ -10,6 +10,7 @@ import com.wac.autocore.model.WorkOrderTypeEnum;
 import com.wac.autocore.repository.IBookingRepository;
 import com.wac.autocore.repository.IInvoiceRepository;
 import com.wac.autocore.repository.IServiceItemRepository;
+import com.wac.autocore.repository.IWorkOrderRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -25,6 +26,8 @@ import static org.junit.jupiter.api.Assertions.*;
 // Körs utan databas och Spring: repositories ersätts med enkla fakes.
 public class PriceHistoryTest {
 
+    private final IWorkOrderRepository fakeWorkOrderRepository = new FakeWorkOrderRepository();
+    private final IServiceItemRepository fakeServiceItemRepository = new FakeServiceItemRepository();
     // Fake: ger varje sparad bokning ett nytt ID, som databasen gör
     private final IBookingRepository fakeBookingRepository = new IBookingRepository() {
         private int nextId = 1000;
@@ -49,23 +52,10 @@ public class PriceHistoryTest {
         public Booking findById(int id) {
             return null;
         }
-    };
-
-    // Fake: sparar ingenting, prisändringen stannar i objektet
-    private final IServiceItemRepository fakeServiceItemRepository = new IServiceItemRepository() {
-        @Override
-        public ServiceItem save(ServiceItem serviceItem) {
-            return serviceItem;
-        }
 
         @Override
-        public List<ServiceItem> findAll() {
-            return new ArrayList<>();
-        }
-
-        @Override
-        public ServiceItem findById(int id) {
-            return null;
+        public List<Booking> findOtherBookingsByMechanic(int mechanicId, int bookingId) {
+            return List.of();
         }
     };
 
@@ -82,7 +72,7 @@ public class PriceHistoryTest {
         }
     };
 
-    private final BookingService bookingService = new BookingService(fakeBookingRepository);
+    private final BookingService bookingService = new BookingService(fakeBookingRepository, fakeWorkOrderRepository, fakeServiceItemRepository);
     private final ServiceItemService serviceItemService = new ServiceItemService(fakeServiceItemRepository);
 
     // Bokning som testet lägger i den delade listan och måste städa bort

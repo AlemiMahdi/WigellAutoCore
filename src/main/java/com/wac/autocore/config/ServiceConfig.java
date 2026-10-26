@@ -16,8 +16,9 @@ public class ServiceConfig {
     }
 
     @Bean
-    public BookingService bookingService(IBookingRepository bookingRepository) {
-        return new BookingService(bookingRepository);
+    public BookingService bookingService(IBookingRepository bookingRepository, IWorkOrderRepository workOrderRepository,
+                                         IServiceItemRepository serviceItemRepository) {
+        return new BookingService(bookingRepository, workOrderRepository, serviceItemRepository);
     }
     @Bean
     public InvoiceService invoiceService(IInvoiceRepository invoiceRepository, IWorkOrderRepository workOrderRepository,

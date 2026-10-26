@@ -5,47 +5,53 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b495a4ad-04c2-47e5-870f-a93bac70f06d" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/com/wac/autocore/repository/ServiceItemRepository.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test/com/wac/autocore/service/FakeMechanicRepository.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/com/wac/autocore/service/FakeServiceItemRepository.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/config/ServiceConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/config/ServiceConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/repository/BookingRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/repository/BookingRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/repository/IBookingRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/repository/IBookingRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/repository/IWorkOrderRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/repository/IWorkOrderRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/repository/WorkOrderRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/repository/WorkOrderRepository.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/service/BookingService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/service/BookingService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/service/DropInWorkOrder.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/service/DropInWorkOrder.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/service/GarageSystem.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/service/GarageSystem.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/service/WorkOrderService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/service/WorkOrderService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/service/WorkOrderTypeManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/service/WorkOrderTypeManager.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/ui/AutoCoreFXApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/ui/AutoCoreFXApp.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/ui/views/CompleteWorkOrderView.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/ui/views/CompleteWorkOrderView.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/ui/views/EditWorkOrderDraftView.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/ui/views/EditWorkOrderDraftView.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/ui/views/ShowWorkOrdersView.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/ui/views/ShowWorkOrdersView.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/ui/views/StartWorkOrderView.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/ui/views/StartWorkOrderView.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/messages_en.properties" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/messages_en.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/messages_sv.properties" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/messages_sv.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/com/wac/autocore/service/WorkOrderServiceTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/test/com/wac/autocore/service/WorkOrderServiceTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/ui/views/EditBookingServicesView.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/ui/views/EditBookingServicesView.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/wac/autocore/ui/views/ShowBookingsView.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wac/autocore/ui/views/ShowBookingsView.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/wac/autocore/service/BookingServiceTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/wac/autocore/service/BookingServiceTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/wac/autocore/service/FakeMechanicRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/wac/autocore/service/FakeMechanicRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/wac/autocore/service/FakeWorkOrderRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/wac/autocore/service/FakeWorkOrderRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/wac/autocore/service/PriceHistoryTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/wac/autocore/service/PriceHistoryTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/wac/autocore/service/ServicePackageServiceTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/wac/autocore/service/ServicePackageServiceTest.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "vivieri555"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;vivieri555&quot;
   }
-}]]></component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/AlemiMahdi/WigellAutoCore.git",
-    "accountId": "de8f6d31-7818-47d5-9e60-069ae2ea054a"
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/AlemiMahdi/WigellAutoCore.git&quot;,
+    &quot;accountId&quot;: &quot;de8f6d31-7818-47d5-9e60-069ae2ea054a&quot;
   }
-}]]></component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 1
-}]]></component>
+}</component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 1
+}</component>
   <component name="ProjectId" id="3Kzoy632os9ns4vxnEryTcFfoKZ" />
   <component name="ProjectViewState">
     <option name="showLibraryContents" value="true" />
@@ -53,6 +59,10 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "Application.AutoCoreFXApp.executor": "Run",
+    "JUnit.BookingServiceTest.executor": "Run",
+    "JUnit.PriceHistoryTest.executor": "Run",
+    "JUnit.ServicePackageServiceTest.executor": "Run",
+    "JUnit.WorkOrderServiceTest.executor": "Run",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RequestMappingsPanelOrder0": "0",
     "RequestMappingsPanelOrder1": "1",
@@ -62,7 +72,7 @@
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
     "Spring Boot.SpringBootMain.executor": "Run",
-    "git-widget-placeholder": "Merging WAC-101-spring",
+    "git-widget-placeholder": "WAC-115",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/Users/Vivi/IdeaProjects/WigellAutoCore/pom.xml",
     "node.js.detected.package.eslint": "true",
@@ -80,7 +90,78 @@
       <recent name="C:\Users\Vivi\IdeaProjects\WigellAutoCore\src\main\java\com\wac\autocore\ui\style" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Spring Boot.SpringBootMain">
+    <configuration name="BookingServiceTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="WigellAutoCore" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.wac.autocore.service.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.wac.autocore.service" />
+      <option name="MAIN_CLASS_NAME" value="com.wac.autocore.service.BookingServiceTest" />
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="PriceHistoryTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="WigellAutoCore" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.wac.autocore.service.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.wac.autocore.service" />
+      <option name="MAIN_CLASS_NAME" value="com.wac.autocore.service.PriceHistoryTest" />
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="ServicePackageServiceTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="WigellAutoCore" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.wac.autocore.service.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.wac.autocore.service" />
+      <option name="MAIN_CLASS_NAME" value="com.wac.autocore.service.ServicePackageServiceTest" />
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="WorkOrderServiceTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="WigellAutoCore" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.wac.autocore.service.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.wac.autocore.service" />
+      <option name="MAIN_CLASS_NAME" value="com.wac.autocore.service.WorkOrderServiceTest" />
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="JetRunConfigurationType">
+      <module name="WigellAutoCore" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType">
+      <module name="WigellAutoCore" />
+      <option name="filePath" />
+      <method v="2" />
+    </configuration>
     <configuration name="SpringBootMain" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
       <module name="WigellAutoCore" />
       <option name="SPRING_BOOT_MAIN_CLASS" value="com.wac.autocore.SpringBootMain" />
@@ -88,6 +169,14 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="JUnit.WorkOrderServiceTest" />
+        <item itemvalue="JUnit.BookingServiceTest" />
+        <item itemvalue="JUnit.ServicePackageServiceTest" />
+        <item itemvalue="JUnit.PriceHistoryTest" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>

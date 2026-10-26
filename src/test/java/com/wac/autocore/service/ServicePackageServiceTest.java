@@ -5,7 +5,9 @@ import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.model.ServicePackage;
 import com.wac.autocore.repository.IBookingRepository;
+import com.wac.autocore.repository.IServiceItemRepository;
 import com.wac.autocore.repository.IServicePackageRepository;
+import com.wac.autocore.repository.IWorkOrderRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -20,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.*;
 // Körs utan databas, Hibernate och Spring: repositories ersätts med enkla fakes.
 public class ServicePackageServiceTest {
 
+    private final IWorkOrderRepository fakeWorkOrderRepository = new  FakeWorkOrderRepository();
+    private final IServiceItemRepository fakeServiceItemRepository = new  FakeServiceItemRepository();
     // Fake: kommer ihåg sparade paket, ingen databas
     private final IServicePackageRepository fakePackageRepository = new IServicePackageRepository() {
         @Override
@@ -54,12 +58,17 @@ public class ServicePackageServiceTest {
         public Booking findById(int id) {
             return null;
         }
+
+        @Override
+        public List<Booking> findOtherBookingsByMechanic(int mechanicId, int bookingId) {
+            return List.of();
+        }
     };
 
     private final ServicePackageService servicePackageService =
             new ServicePackageService(fakePackageRepository);
     private final BookingService bookingService =
-            new BookingService(fakeBookingRepository);
+            new BookingService(fakeBookingRepository, fakeWorkOrderRepository, fakeServiceItemRepository);
 
     // Objekt som testet lägger i de delade listorna och måste städa bort
     private ServicePackage createdPackage;

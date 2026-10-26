@@ -31,5 +31,5 @@ public interface IWorkOrderRepository {
     void saveDropInOrder(WorkOrder workOrder, Booking booking);
     List<InvoiceLine> createFrozenPrices(List<ServiceItem> serviceItems);
     void completeWorkOrder(int workOrderId);
-
+List<WorkOrder> findByBookingId(int bookingId);
 }

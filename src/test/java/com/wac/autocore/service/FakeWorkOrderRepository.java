@@ -62,4 +62,9 @@ public class FakeWorkOrderRepository implements IWorkOrderRepository {
     public void completeWorkOrder(int workOrderId) {
 
     }
+
+    @Override
+    public List<WorkOrder> findByBookingId(int bookingId) {
+        return List.of();
+    }
 }
