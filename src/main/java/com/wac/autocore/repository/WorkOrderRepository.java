@@ -164,7 +164,7 @@ public class WorkOrderRepository implements IWorkOrderRepository {
     private void validateWorkOrder(WorkOrder workOrder, List<String> errors) {
         if (workOrder == null) {
             errors.add("confirmWorkOrder.orderMissing");
-        } else if (workOrder.getStatus() != WorkOrderStatus.DRAFT) {
+        } else if (!workOrder.getStatus().canChangeTo(WorkOrderStatus.CONFIRMED)) {
             errors.add("confirmWorkOrder.onlyDraft");
         }
     }

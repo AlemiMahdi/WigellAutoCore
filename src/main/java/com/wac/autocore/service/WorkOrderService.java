@@ -140,7 +140,7 @@ public class WorkOrderService {
             return errors;
         }
 
-        if (workOrder.getStatus() != WorkOrderStatus.DRAFT) {
+        if (!workOrder.getStatus().canChangeTo(WorkOrderStatus.CONFIRMED)) {
             errors.add("confirmWorkOrder.onlyDraft");
             return errors;
         }

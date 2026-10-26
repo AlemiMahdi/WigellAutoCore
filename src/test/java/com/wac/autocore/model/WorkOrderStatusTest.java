@@ -3,7 +3,7 @@ package com.wac.autocore.model;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static  org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class WorkOrderStatusTest {
 
@@ -60,5 +60,25 @@ public class WorkOrderStatusTest {
     @Test
     void canceledCannotChangeToDraft() {
         assertFalse(WorkOrderStatus.CANCELLED.canChangeTo(WorkOrderStatus.DRAFT));
+    }
+
+    @Test
+    void completedCannotChangeToInProgress() {
+        assertFalse(WorkOrderStatus.COMPLETED.canChangeTo(WorkOrderStatus.IN_PROGRESS));
+    }
+
+    @Test
+    void canceledCannotChangeToConfirmed() {
+        assertFalse(WorkOrderStatus.CANCELLED.canChangeTo(WorkOrderStatus.CONFIRMED));
+    }
+
+    @Test
+    void draftCannotChangeToDraft() {
+        assertFalse(WorkOrderStatus.DRAFT.canChangeTo(WorkOrderStatus.DRAFT));
+    }
+
+    @Test
+    void confirmedCannotChangeToCompleted() {
+        assertFalse(WorkOrderStatus.CONFIRMED.canChangeTo(WorkOrderStatus.COMPLETED));
     }
 }
