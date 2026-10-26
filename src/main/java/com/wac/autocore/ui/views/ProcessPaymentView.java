@@ -6,9 +6,6 @@ import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 import com.wac.autocore.ui.ErrorHandler;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -19,9 +16,6 @@ import javafx.util.StringConverter;
 
 
 public class ProcessPaymentView {
-
-    private static final Logger LOGGER =
-            LoggerFactory.getLogger(ProcessPaymentView.class);
 
     private final LanguageManager language = LanguageManager.getInstance();
 
