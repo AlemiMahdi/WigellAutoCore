@@ -472,7 +472,7 @@ public final class UiKit {
      */
     public static void styleTable(TableView<?> table) {
         table.getStyleClass().add("data-table");
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         table.setFixedCellSize(TABLE_ROW_HEIGHT);
 
         Node placeholder = table.getPlaceholder();
