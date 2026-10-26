@@ -5,13 +5,13 @@ import com.wac.autocore.exception.DataAccessException;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.scene.control.Label;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class ErrorHandler {
 
     private static final Logger LOGGER =
-            Logger.getLogger(ErrorHandler.class.getName());
+            LoggerFactory.getLogger(ErrorHandler.class);
 
     private ErrorHandler() {
     }
@@ -30,7 +30,7 @@ public final class ErrorHandler {
 
         if (exception instanceof DataAccessException
                 || !(exception instanceof ApplicationException)) {
-            LOGGER.log(Level.SEVERE, "Operation failed", exception);
+            LOGGER.error("Operation failed", exception);
         }
 
         label.textProperty().unbind();
