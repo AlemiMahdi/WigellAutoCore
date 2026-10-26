@@ -243,7 +243,7 @@ public class WorkOrderRepository implements IWorkOrderRepository {
     //Hjälpmetoder UpdateDraft
     private void validateSavedDraft(WorkOrder savedDraft) {
         if (savedDraft == null
-                || savedDraft.getStatus() != WorkOrderStatus.DRAFT) {
+                || !savedDraft.getStatus().isEditable()) {
             throw new IllegalArgumentException(
                     "editWorkOrderDraft.onlyDraft"
             );

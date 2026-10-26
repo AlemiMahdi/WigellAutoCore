@@ -81,4 +81,19 @@ public class WorkOrderStatusTest {
     void confirmedCannotChangeToCompleted() {
         assertFalse(WorkOrderStatus.CONFIRMED.canChangeTo(WorkOrderStatus.COMPLETED));
     }
+
+    @Test
+    void draftIsEditable() {
+        assertTrue(WorkOrderStatus.DRAFT.isEditable());
+    }
+
+    @Test
+    void confirmedIsNotEditable() {
+        assertFalse(WorkOrderStatus.CONFIRMED.isEditable());
+    }
+
+    @Test
+    void completedIsNotEditable() {
+        assertFalse(WorkOrderStatus.COMPLETED.isEditable());
+    }
 }
