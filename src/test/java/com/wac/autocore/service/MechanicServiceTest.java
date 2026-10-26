@@ -75,16 +75,21 @@ class MechanicServiceTest {
         LocalDate date = LocalDate.of(2026, 10, 20);
 
         Booking morning = new Booking(
-                1, 1, date, LocalTime.of(9, 0), 60, "Morning"
+                1, date, LocalTime.of(9, 0), 60, "Morning"
         );
+        morning.setId(1);
         Booking afternoon = new Booking(
-                  2, 1, date, LocalTime.of(14, 0), 60, "Afternoon"
+                   1, date, LocalTime.of(14, 0), 60, "Afternoon"
         );
+        afternoon.setId(2);
         Booking nextDay = new Booking(
-                 3, 1, date.plusDays(1), LocalTime.of(8, 0), 60, "Next day"
+                  1, date.plusDays(1), LocalTime.of(8, 0), 60, "Next day"
         );
-        Booking withoutDate = new Booking(4, 1, null, "Unscheduled");
-        Booking otherMechanic = new Booking(5, 1, date, "Other mechanic");
+        nextDay.setId(3);
+        Booking withoutDate = new Booking(1, null, "Unscheduled");
+        Booking otherMechanic = new Booking(1, date, "Other mechanic");
+        withoutDate.setId(4);
+        otherMechanic.setId(5);
 
         morning.setMechanicId(1);
         afternoon.setMechanicId(1);
@@ -117,8 +122,9 @@ class MechanicServiceTest {
     @Test
     void workOrderMechanicTakesPriorityOverBookingMechanic() {
         Booking booking = new Booking(
-                1, 1, LocalDate.of(2026, 10, 20), "Test"
+                1, LocalDate.of(2026, 10, 20), "Test"
         );
+        booking.setId(1);
         booking.setMechanicId(1);
         Database.getBookings().add(booking);
 
@@ -142,8 +148,9 @@ class MechanicServiceTest {
     @Test
     void schedulePropagatesBookingLoadFailure() {
         Booking booking = new Booking(
-                1, 1, LocalDate.of(2026, 10, 20), "Existing"
+                1, LocalDate.of(2026, 10, 20), "Existing"
         );
+        booking.setId(1);
         Database.getBookings().add(booking);
         List<Booking> before = new ArrayList<>(Database.getBookings());
 

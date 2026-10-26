@@ -185,9 +185,10 @@ class InvoiceServiceTest {
             );
 
             Booking booking = new Booking(
-                    1, vehicle.getId(), LocalDate.of(2026, 10, 17),
+                    vehicle.getId(), LocalDate.of(2026, 10, 17),
                     "Testbokning"
             );
+            booking.setId(1);
             booking.addFrozenPrice(
                     new InvoiceLine(1, "Oil change", 1000.0)
             );
@@ -553,8 +554,9 @@ class InvoiceServiceTest {
         );
 
         Booking booking = new Booking(
-                1, vehicle.getId(), LocalDate.of(2026, 10, 23), "Service"
+                vehicle.getId(), LocalDate.of(2026, 10, 23), "Service"
         );
+        booking.setId(1);
         booking.addFrozenPrice(new InvoiceLine(1, "Oljebyte", 1000.0));
         booking.addFrozenPrice(new InvoiceLine(2, "Bromsservice", 500.0));
 
