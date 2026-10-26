@@ -24,6 +24,10 @@ public class WorkOrderRepository implements IWorkOrderRepository {
         return workOrder;
     }
 
+    public void update(WorkOrder workOrder) {
+        entityManager.merge(workOrder);
+    }
+
     // Sparar bokningen och utkastet i samma transaktion (WAC-63)
     // Antingen sparas båda, eller ingen av dem.
     public void saveWithBooking(WorkOrder workOrder, Booking booking) {

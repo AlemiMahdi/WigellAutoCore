@@ -40,6 +40,11 @@ public class BookingServiceTest {
         public Booking findById(int id) {
             return null;
         }
+
+        @Override
+        public void update(Booking booking) {
+
+        }
     };
 
     private final BookingService bookingService = new BookingService(fakeBookingRepository);

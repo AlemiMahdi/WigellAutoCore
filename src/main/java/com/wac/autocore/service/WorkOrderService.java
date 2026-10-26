@@ -74,7 +74,7 @@ public class WorkOrderService {
                 case PLANNED:
                     if (originalBooking != null) {
                         originalBooking.setStatus("WORK_ORDER_CREATED");
-                        bookingRepository.save(originalBooking);
+                        bookingRepository.update(originalBooking);
                     }
                     workOrderRepository.save(workOrder);
                     break;
@@ -351,8 +351,8 @@ public class WorkOrderService {
 
         // 7. Spara i databasen
         try {
-            workOrderRepository.save(workOrder);
-            bookingRepository.save(booking);
+            workOrderRepository.update(workOrder);
+            bookingRepository.update(booking);
             mechanicRepository.save(mechanic);
         } catch (RuntimeException exception) {
             // Återställ det som går att återställa i minnet
