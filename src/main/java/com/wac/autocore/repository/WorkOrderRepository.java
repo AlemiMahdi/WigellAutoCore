@@ -166,6 +166,13 @@ public class WorkOrderRepository implements IWorkOrderRepository {
                 .getSingleResult();
                 return count > 0;
     }
+    public List<WorkOrder> findByBookingId(int bookingId) {
+        return entityManager.createQuery(
+                "FROM WorkOrder WHERE bookingId = :bookingId",
+                WorkOrder.class)
+                .setParameter("bookingId", bookingId)
+                .getResultList();
+    }
 
     //Hjälpmetoder ConfirmDraft först
     private void validateWorkOrder(WorkOrder workOrder, List<String> errors) {

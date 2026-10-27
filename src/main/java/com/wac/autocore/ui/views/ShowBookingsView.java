@@ -511,7 +511,7 @@ public class ShowBookingsView {
     private void openBookingEditor(VBox root, Booking booking) {
         showBookingForm(
                 root,
-                new EditBookingServicesView().getView(booking)
+                new EditBookingServicesView(bookingService).getView(booking)
         );
     }
 

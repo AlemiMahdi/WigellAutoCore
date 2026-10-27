@@ -4,7 +4,6 @@ import com.wac.autocore.model.Mechanic;
 import com.wac.autocore.repository.IMechanicRepository;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 // Låtsas-repository för tester (test double / fake).
