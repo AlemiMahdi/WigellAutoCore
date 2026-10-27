@@ -57,7 +57,7 @@ public class EditWorkOrderDraftView {
 
     public VBox getView(WorkOrder draft) {
 
-        if (draft == null || draft.getStatus() != WorkOrderStatus.DRAFT) {
+        if (draft == null || !draft.getStatus().isEditable()) {
             javafx.scene.control.Label errorLabel = UiKit.feedbackLabel();
             UiKit.showError(errorLabel, "");
             errorLabel.textProperty().bind(

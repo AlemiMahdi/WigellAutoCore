@@ -22,6 +22,11 @@ public class FakeWorkOrderRepository implements IWorkOrderRepository {
     }
 
     @Override
+    public void update(WorkOrder workOrder) {
+
+    }
+
+    @Override
     public void saveWithBooking(WorkOrder workOrder, Booking booking) {
         saveDraft = workOrder;
         saveBooking = booking;
@@ -61,5 +66,10 @@ public class FakeWorkOrderRepository implements IWorkOrderRepository {
     @Override
     public void completeWorkOrder(int workOrderId) {
 
+    }
+
+    @Override
+    public List<WorkOrder> findByBookingId(int bookingId) {
+        return List.of();
     }
 }

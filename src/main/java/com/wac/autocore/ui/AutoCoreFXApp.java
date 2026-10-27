@@ -62,38 +62,6 @@ public class AutoCoreFXApp extends Application {
     private PaymentService paymentService;
     private ServiceItemService serviceItemService;
 
-//    // FIX 1: Konstruktorn MÅSTE vara publik i en JavaFX-applikation!
-//    public AutoCoreFXApp() {
-//        this.garageSystem = new GarageSystem();
-//        this.workOrderRepository = new WorkOrderRepository();
-//        this.bookingRepository = new BookingRepository();
-//        this.invoiceService = new InvoiceService(new InvoiceRepository());
-//        this.mechanicService = new MechanicService(new MechanicRepository(), bookingRepository::findAll, workOrderRepository::findAll);
-//        this.vehicleRepository = new VehicleRepository();
-//        this.vehicleService = new VehicleService(vehicleRepository);
-//        this.servicePackageService = new ServicePackageService(new ServicePackageRepository());
-//        this.paymentRepository = new PaymentRepository();
-//        this.serviceRepository = new ServiceItemRepository();
-//        this.workOrderService = new WorkOrderService(workOrderRepository, bookingRepository, serviceRepository, vehicleRepository);
-//        this.customerService = new CustomerService(new CustomerRepository());
-//        this.bookingService = new BookingService(bookingRepository);
-
-//
-//        // Sätt instansen i samma sekund som JavaFX startar appen
-//        synchronized (AutoCoreFXApp.class) {
-//            instance = this;
-//        }
-//    }
-//
-//    // Global åtkomstpunkt för alla dina vyer
-//    public static synchronized AutoCoreFXApp getInstance() {
-//        // Om gränssnittet inte hunnit starta än skapar vi en tillfällig fallback
-//        if (instance == null) {
-//            instance = new AutoCoreFXApp();
-//        }
-//        return instance;
-//    }
-
     private static final Logger LOGGER =
             LoggerFactory.getLogger(AutoCoreFXApp.class);
 
@@ -580,7 +548,8 @@ public class AutoCoreFXApp extends Application {
 
         addNavSection(menuBox, "menu.section.bookings",
                 createNavItem("show-bookings", "menu.bookings", () -> showView(new ShowBookingsView(bookingService).getView())),
-                createNavItem("create-booking", "menu.createBooking", () -> showView(new CreateBookingView(bookingService).getView())));
+                createNavItem("create-booking", "menu.createBooking", () -> showView(new CreateBookingView(bookingService).getView())),
+                createNavItem("edit-booking", "menu.editBooking", () -> showView(new EditBookingServicesView(bookingService).getView())));
 
         addNavSection(menuBox, "menu.section.workOrders",
                 createNavItem("show-work-orders", "menu.workOrders", () -> showView(new ShowWorkOrdersView(workOrderService, bookingService).getView())),
