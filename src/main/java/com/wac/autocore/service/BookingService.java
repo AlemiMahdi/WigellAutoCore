@@ -10,6 +10,7 @@ import java.util.Optional;
 
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
+import com.wac.autocore.model.BookingOverlapChecker;
 import com.wac.autocore.model.InvoiceLine;
 import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.repository.IBookingRepository;
@@ -120,31 +121,9 @@ public class BookingService {
         LocalDateTime newEnd = newStart.plusMinutes(durationMinutes);
 
         List<Booking> bookings = bookingRepository.findAll();
-        for( Booking booking : bookings) {
+        boolean result = BookingOverlapChecker.hasOverlap(bookings, mechanicId, newStart, newEnd);
 
-            //kontroll endast samma mekaniker
-            if (booking.getMechanicId() == null || booking.getMechanicId() != mechanicId) {
-                continue;
-            }
-
-            //Hoppa över bokningar som saknar tidsinformation
-            if (booking.getDate() == null
-                    || booking.getStartTime() == null
-                    || booking.getDurationMinutes() <= 0) {
-                continue;
-            }
-
-            LocalDateTime existingStart = LocalDateTime.of(
-                booking.getDate(), 
-                booking.getStartTime()
-            );
-
-            LocalDateTime existingEnd = existingStart.plusMinutes(booking.getDurationMinutes());
-            if (newStart.isBefore(existingEnd) && newEnd.isAfter(existingStart)) {
-                return true;
-            }
-        }
-        return false;
+        return result;
     }
     
 }
