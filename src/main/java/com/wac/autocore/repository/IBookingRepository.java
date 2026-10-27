@@ -10,5 +10,5 @@ public interface IBookingRepository {
     Booking save( Booking booking, int mechanicId );
     List<Booking> findAll();
     Booking findById( int id );
-    
+    void update(Booking booking);
 }
