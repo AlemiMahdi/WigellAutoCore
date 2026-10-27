@@ -221,31 +221,8 @@ public class BookingService {
             LocalDateTime newEnd =
                     newStart.plusMinutes(totalMinutes);
 
-            for (Booking other : otherBookings) {
-                if (other.getDate() == null
-                        || other.getStartTime() == null
-                        || other.getDurationMinutes() <= 0) {
-                    continue;
-                }
-
-                LocalDateTime otherStart =
-                        LocalDateTime.of(
-                                other.getDate(),
-                                other.getStartTime()
-                        );
-
-                LocalDateTime otherEnd =
-                        otherStart.plusMinutes(
-                                other.getDurationMinutes()
-                        );
-
-                if (newStart.isBefore(otherEnd)
-                        && newEnd.isAfter(otherStart)) {
-
-                    throw new IllegalArgumentException(
-                            "editBookingServices.overlap"
-                    );
-                }
+            if (BookingOverlapChecker.hasOverlap(otherBookings, booking.getMechanicId(), newStart, newEnd)) {
+                throw new IllegalArgumentException("editBookingServices.overlap");
             }
         }
 
