@@ -96,4 +96,14 @@ public class WorkOrderStatusTest {
     void completedIsNotEditable() {
         assertFalse(WorkOrderStatus.COMPLETED.isEditable());
     }
+
+    @Test
+    void inProgressIsNotEditable() {
+        assertFalse(WorkOrderStatus.IN_PROGRESS.isEditable());
+    }
+
+    @Test
+    void canceledIsNotEditable() {
+        assertFalse(WorkOrderStatus.CANCELLED.isEditable());
+    }
 }

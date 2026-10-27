@@ -22,10 +22,7 @@ public enum WorkOrderStatus {
 
     // Bara utkast får redigeras
     public boolean isEditable() {
-        if (this == WorkOrderStatus.DRAFT) {
-            return true;
-        }
-        return false;
+        return this == DRAFT;
     }
 
 }
