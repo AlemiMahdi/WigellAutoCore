@@ -13,14 +13,17 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
-
 import javafx.util.StringConverter;
-
 
 import java.time.LocalDate;
 
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+
 
 public class CreateInvoiceView {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CreateInvoiceView.class);
 
     public static VBox build(InvoiceService invoiceService) {
         LanguageManager language = LanguageManager.getInstance();
@@ -245,7 +248,7 @@ public class CreateInvoiceView {
                 UiKit.showError(statusLabel,
                         language.text("createInvoice.saveError").get()
                 );
-                exception.printStackTrace();
+                LOGGER.error("Kunde inte skapa faktura för arbetsorder {}", workOrderId, exception);
             }
 
 
