@@ -140,7 +140,7 @@ public class WorkOrderService {
             return errors;
         }
 
-        if (workOrder.getStatus() != WorkOrderStatus.DRAFT) {
+        if (!workOrder.getStatus().canChangeTo(WorkOrderStatus.CONFIRMED)) {
             errors.add("confirmWorkOrder.onlyDraft");
             return errors;
         }
@@ -198,7 +198,7 @@ public class WorkOrderService {
                                           String instructions,
                                           String comments,
                                           Integer originalWorkOrderId) {
-        if (draft == null || draft.getStatus() != WorkOrderStatus.DRAFT) {
+        if (draft == null || !draft.getStatus().isEditable()) {
             throw new IllegalArgumentException("editWorkOrderDraft.onlyDraft");
         }
 

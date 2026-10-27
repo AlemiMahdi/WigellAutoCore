@@ -2,6 +2,7 @@ package com.wac.autocore.ui.views;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.ServiceItem;
+import com.wac.autocore.service.BookingService;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -13,7 +14,6 @@ import java.util.Locale;
 import javafx.scene.control.ListCell;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
-import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.model.WorkOrder;
 import com.wac.autocore.model.WorkOrderStatus;
 import com.wac.autocore.ui.UiKit;
@@ -24,6 +24,9 @@ import java.util.Arrays;
 
 public class EditBookingServicesView {
 
+    private final BookingService bookingService;
+
+    public EditBookingServicesView(BookingService bookingService) { this.bookingService = bookingService; }
     public VBox getView() {
         return getView(null);
     }
@@ -168,8 +171,6 @@ public class EditBookingServicesView {
 
         Label noticeLabel = UiKit.feedbackLabel();
 
-        BookingRepository bookingRepository = new BookingRepository();
-
         Button saveButton = UiKit.primaryButton("");
         saveButton.textProperty().bind(language.text("editBookingServices.save"));
         saveButton.disableProperty().bind(
@@ -197,7 +198,7 @@ public class EditBookingServicesView {
             final int totalMinutes;
 
             try {
-                totalMinutes = bookingRepository.updateBookingServices(
+                totalMinutes = bookingService.updateBookingServices(
                         booking.getId(), serviceIds
                 );
             } catch (RuntimeException exception) {

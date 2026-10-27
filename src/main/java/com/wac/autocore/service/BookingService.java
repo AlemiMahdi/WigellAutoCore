@@ -9,18 +9,22 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 import com.wac.autocore.data.Database;
-import com.wac.autocore.model.Booking;
-import com.wac.autocore.model.BookingOverlapChecker;
-import com.wac.autocore.model.InvoiceLine;
-import com.wac.autocore.model.ServiceItem;
+import com.wac.autocore.model.*;
 import com.wac.autocore.repository.IBookingRepository;
+import com.wac.autocore.repository.IServiceItemRepository;
+import com.wac.autocore.repository.IWorkOrderRepository;
 
 public class BookingService {
 
     private final IBookingRepository bookingRepository;
+    private final IWorkOrderRepository workOrderRepository;
+    private final IServiceItemRepository serviceItemRepository;
 
-    public BookingService(IBookingRepository bookingRepository){
+    public BookingService(IBookingRepository bookingRepository, IWorkOrderRepository workOrderRepository,
+                          IServiceItemRepository serviceItemRepository) {
         this.bookingRepository = bookingRepository;
+        this.workOrderRepository = workOrderRepository;
+        this.serviceItemRepository = serviceItemRepository;
     }
 
     public List<Booking> getAllBookings(){
@@ -125,5 +129,161 @@ public class BookingService {
 
         return result;
     }
-    
+
+    public int updateBookingServices(
+            int bookingId,
+            List<Integer> serviceIds
+    ) {
+        Booking booking = bookingRepository.findByIdAndServices(bookingId);
+        if (booking == null) {
+            throw new IllegalArgumentException(
+                    "editBookingServices.notFound"
+            );
+        }
+
+        // Endast bokningar där arbetet inte har börjat får ändras.
+        if (!"BOOKED".equals(booking.getStatus())
+                && !"WORK_ORDER_CREATED".equals(
+                booking.getStatus()
+        )) { throw new IllegalArgumentException(
+                    "editBookingServices.locked");
+        }
+
+        List<WorkOrder> workOrders = workOrderRepository.findByBookingId(bookingId);
+        for (WorkOrder order : workOrders) {
+            if (order.getStatus() != WorkOrderStatus.CONFIRMED) {
+                throw new IllegalArgumentException(
+                        "editBookingServices.locked"
+                );
+            }
+        }
+
+        if (serviceIds == null || serviceIds.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "editBookingServices.selectService"
+            );
+        }
+
+        List<ServiceItem> services = new ArrayList<>();
+        List<Integer> uniqueIds = new ArrayList<>();
+
+        int totalMinutes = 0;
+
+        for (Integer serviceId : serviceIds) {
+
+            if (serviceId == null) {
+                throw new IllegalArgumentException(
+                        "editBookingServices.serviceMissing"
+                );
+            }
+
+            if (uniqueIds.contains(serviceId)) {
+                continue;
+            }
+
+            ServiceItem service = serviceItemRepository.findById(serviceId);
+            if (service == null) {
+                throw new IllegalArgumentException(
+                        "editBookingServices.serviceMissing");
+            }
+
+            if (service.getEstimatedMinutes() <= 0) {
+                throw new IllegalArgumentException(
+                        "editBookingServices.invalidDuration");
+            }
+
+            services.add(service);
+            uniqueIds.add(serviceId);
+
+            totalMinutes = Math.addExact(
+                    totalMinutes,
+                    service.getEstimatedMinutes()
+            );
+        }
+
+        if (booking.getDate() == null
+                || booking.getStartTime() == null) {
+
+            throw new IllegalArgumentException(
+                    "editBookingServices.missingTime");
+        }
+
+        // Kontrollerar andra bokningar i samma session.
+        if (booking.getMechanicId() != null) {
+
+            List<Booking> otherBookings = bookingRepository.findOtherBookingsByMechanic(booking.getMechanicId(), booking.getId());
+
+            LocalDateTime newStart =
+                    LocalDateTime.of(
+                            booking.getDate(),
+                            booking.getStartTime());
+
+            LocalDateTime newEnd =
+                    newStart.plusMinutes(totalMinutes);
+
+            for (Booking other : otherBookings) {
+                if (other.getDate() == null
+                        || other.getStartTime() == null
+                        || other.getDurationMinutes() <= 0) {
+                    continue;
+                }
+
+                LocalDateTime otherStart =
+                        LocalDateTime.of(
+                                other.getDate(),
+                                other.getStartTime()
+                        );
+
+                LocalDateTime otherEnd =
+                        otherStart.plusMinutes(
+                                other.getDurationMinutes()
+                        );
+
+                if (newStart.isBefore(otherEnd)
+                        && newEnd.isAfter(otherStart)) {
+
+                    throw new IllegalArgumentException(
+                            "editBookingServices.overlap"
+                    );
+                }
+            }
+        }
+
+        // Alla ändringar sparas i samma transaktion.
+        booking.getServices().clear();
+        booking.getServices().addAll(services);
+        booking.setDurationMinutes(totalMinutes);
+
+        /*
+         * Bokningens tjänster får ändras innan arbetet har börjat.
+         * Därför uppdateras även historical-price-snapshoten.
+         */
+        booking.getFrozenPrice().clear();
+        booking.getFrozenPrice().addAll(createFrozenPrices(services));
+
+        for (WorkOrder order : workOrders) {
+            order.getServiceItemIds().clear();
+            order.getServiceItemIds().addAll(uniqueIds);
+        }
+        bookingRepository.updateBookingAndOrder(workOrders, booking);
+//        bookingRepository.update(booking);
+//        for(WorkOrder order : workOrders) {
+//            workOrderRepository.save(order);
+//        }
+        return totalMinutes;
+    }
+
+    public List<InvoiceLine> createFrozenPrices(List<ServiceItem> serviceItems) {
+
+        List<InvoiceLine> frozenPrices = new ArrayList<>();
+        for (ServiceItem service : serviceItems) {
+            InvoiceLine frozenLine = new InvoiceLine(
+                    service.getId(),
+                    service.getName(),
+                    service.getPrice() // Sparar priset inför faktureringen
+            );
+            frozenPrices.add(frozenLine);
+        }
+        return frozenPrices;
+    }
 }

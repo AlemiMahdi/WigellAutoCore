@@ -41,6 +41,16 @@ public class BookingRepository implements IBookingRepository{
             return booking;
         }
 
+        @Override
+        public void updateBookingAndOrder(List<WorkOrder> orderList, Booking booking){
+            entityManager.merge(booking);
+            if(orderList != null) {
+                for(WorkOrder workOrder : orderList){
+                    entityManager.merge(workOrder);
+                }
+            }
+        }
+
         //Används den inte?
         private Booking saveBooking(
                 Booking booking,
@@ -133,166 +143,37 @@ public class BookingRepository implements IBookingRepository{
             return entityManager.find(Booking.class, id);
         }
 
-        public int updateBookingServices(
-            int bookingId,
-            List<Integer> serviceIds
-    ) {
-                Booking booking = entityManager.find(Booking.class, bookingId);
-                if (booking == null) {
-                    throw new IllegalArgumentException(
-                            "editBookingServices.notFound"
-                    );
-                }
+        @Override
+        public Booking findByIdAndServices(int id){
+            List<Booking> bookingList = entityManager.createQuery(
+                    "SELECT b FROM Booking b LEFT JOIN FETCH b.services WHERE b.id = :id",
+                    Booking.class)
+                    .setParameter("id", id)
+                    .getResultList();
+            return bookingList.isEmpty() ? null : bookingList.getFirst();
+        }
+        
+        @Override
+        public List<Booking> findOtherBookingsByMechanic(int mechanicId, int bookingId) {
+            return entityManager.createQuery(
+                    "FROM Booking WHERE mechanicId = :mechanicId and id <> :bookingId",
+                    Booking.class)
+                    .setParameter("mechanicId", mechanicId)
+                    .setParameter("bookingId", bookingId)
+                    .getResultList();
+        }
 
-                // Endast bokningar där arbetet inte har börjat får ändras.
-                if (!"BOOKED".equals(booking.getStatus())
-                        && !"WORK_ORDER_CREATED".equals(
-                                booking.getStatus()
-                        )) {
+    public List<InvoiceLine> createFrozenPrices(List<ServiceItem> serviceItems) {
 
-                    throw new IllegalArgumentException(
-                            "editBookingServices.locked"
-                    );
-                }
-
-                List<WorkOrder> workOrders =
-                        entityManager.createQuery(
-                                "from WorkOrder " +
-                                        "where bookingId = :bookingId",
-                                WorkOrder.class
-                        )
-                        .setParameter("bookingId", bookingId)
-                        .getResultList();
-
-                for (WorkOrder order : workOrders) {
-
-                    if (order.getStatus() != WorkOrderStatus.CONFIRMED) {
-                        throw new IllegalArgumentException(
-                                "editBookingServices.locked"
-                        );
-                    }
-                }
-
-                if (serviceIds == null || serviceIds.isEmpty()) {
-                    throw new IllegalArgumentException(
-                            "editBookingServices.selectService"
-                    );
-                }
-
-                List<ServiceItem> services = new ArrayList<>();
-                List<Integer> uniqueIds = new ArrayList<>();
-
-                int totalMinutes = 0;
-
-                for (Integer serviceId : serviceIds) {
-
-                    if (serviceId == null) {
-                        throw new IllegalArgumentException(
-                                "editBookingServices.serviceMissing"
-                        );
-                    }
-
-                    if (uniqueIds.contains(serviceId)) {
-                        continue;
-                    }
-
-                    ServiceItem service = entityManager.find(ServiceItem.class, serviceId);
-                    if (service == null) {
-                        throw new IllegalArgumentException(
-                                "editBookingServices.serviceMissing"
-                        );
-                    }
-
-                    if (service.getEstimatedMinutes() <= 0) {
-                        throw new IllegalArgumentException(
-                                "editBookingServices.invalidDuration"
-                        );
-                    }
-
-                    services.add(service);
-                    uniqueIds.add(serviceId);
-
-                    totalMinutes = Math.addExact(
-                            totalMinutes,
-                            service.getEstimatedMinutes()
-                    );
-                }
-
-                if (booking.getDate() == null
-                        || booking.getStartTime() == null) {
-
-                    throw new IllegalArgumentException(
-                            "editBookingServices.missingTime"
-                    );
-                }
-
-                // Kontrollerar andra bokningar i samma session.
-                if (booking.getMechanicId() != null) {
-
-                    List<Booking> otherBookings =
-                            entityManager.createQuery(
-                                    "from Booking " +
-                                            "where mechanicId = :mechanicId " +
-                                            "and id <> :bookingId",
-                                    Booking.class
-                            )
-                            .setParameter(
-                                    "mechanicId",
-                                    booking.getMechanicId()
-                            )
-                            .setParameter(
-                                    "bookingId",
-                                    bookingId
-                            )
-                            .getResultList();
-
-                    LocalDateTime newStart =
-                            LocalDateTime.of(
-                                    booking.getDate(),
-                                    booking.getStartTime()
-                            );
-
-                    LocalDateTime newEnd =
-                            newStart.plusMinutes(totalMinutes);
-
-                    if (BookingOverlapChecker.hasOverlap(otherBookings, booking.getMechanicId(), newStart, newEnd)) {
-
-                        throw new IllegalArgumentException(
-                                "editBookingServices.overlap"
-                        );
-                    }
-                }
-
-                // Alla ändringar sparas i samma transaktion.
-                booking.getServices().clear();
-                booking.getServices().addAll(services);
-                booking.setDurationMinutes(totalMinutes);
-
-                /*
-                 * Bokningens tjänster får ändras innan arbetet har börjat.
-                 * Därför uppdateras även historical-price-snapshoten.
-                 */
-                booking.getFrozenPrice().clear();
-                booking.getFrozenPrice().addAll(createFrozenPrices(services));
-
-                for (WorkOrder order : workOrders) {
-                    order.getServiceItemIds().clear();
-                    order.getServiceItemIds().addAll(uniqueIds);
-                }
-                return totalMinutes;
+        List<InvoiceLine> frozenPrices = new ArrayList<>();
+        for (ServiceItem service : serviceItems) {
+            InvoiceLine frozenLine = new InvoiceLine(
+                    service.getId(),
+                    service.getName(),
+                    service.getPrice() // Sparar priset inför faktureringen
+            );
+            frozenPrices.add(frozenLine);
+        }
+        return frozenPrices;
     }
-
-public List<InvoiceLine> createFrozenPrices(List<ServiceItem> serviceItems) {
-
-    List<InvoiceLine> frozenPrices = new ArrayList<>();
-    for (ServiceItem service : serviceItems) {
-        InvoiceLine frozenLine = new InvoiceLine(
-                service.getId(),
-                service.getName(),
-                service.getPrice() // Sparar priset inför faktureringen
-        );
-        frozenPrices.add(frozenLine);
-    }
-    return frozenPrices;
-}
 }
