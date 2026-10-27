@@ -189,5 +189,9 @@ class MechanicServiceTest {
             return new ArrayList<>();
         }
 
+        @Override
+        public void update(Mechanic mechanic) {
+        }
+
     }
 }

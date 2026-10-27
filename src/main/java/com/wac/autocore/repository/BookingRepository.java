@@ -29,6 +29,7 @@ public class BookingRepository implements IBookingRepository{
         public void update(Booking booking){
             entityManager.merge(booking);
         }
+
         // Sparar bokningen tillsammans med vald mekaniker.
         @Override 
         public Booking save(Booking booking, int mechanicId) {

@@ -27,4 +27,8 @@ public class FakeMechanicRepository implements IMechanicRepository {
         // Används inte i testerna, returnerar en tom lista
         return new ArrayList<Mechanic>();
     }
+
+    @Override
+    public void update(Mechanic mechanic) {
+    }
 }

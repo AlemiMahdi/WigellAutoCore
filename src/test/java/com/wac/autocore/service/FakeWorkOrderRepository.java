@@ -22,6 +22,11 @@ public class FakeWorkOrderRepository implements IWorkOrderRepository {
     }
 
     @Override
+    public void update(WorkOrder workOrder) {
+
+    }
+
+    @Override
     public void saveWithBooking(WorkOrder workOrder, Booking booking) {
         saveDraft = workOrder;
         saveBooking = booking;
