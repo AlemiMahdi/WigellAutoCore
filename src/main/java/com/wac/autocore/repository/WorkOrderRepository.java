@@ -113,6 +113,9 @@ public class WorkOrderRepository implements IWorkOrderRepository {
         savedBooking.getServices().addAll(savedServices);
         savedDraft.setOriginalWorkOrderId(originalWorkOrderId);
         savedBooking.setFrozenPrice(createFrozenPrices(savedServices));
+
+        entityManager.merge(savedBooking);
+        entityManager.merge(savedDraft);
     }
 
     public void saveDropInOrder(WorkOrder workOrder, Booking booking) {

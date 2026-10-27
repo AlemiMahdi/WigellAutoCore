@@ -349,11 +349,11 @@ public class WorkOrderService {
         mechanic.setAvailable(false);
         workOrder.changeStatus(WorkOrderStatus.IN_PROGRESS);
 
-        // 7. Spara i databasen
+        // 7. Uppdatera istället i databasen
         try {
             workOrderRepository.update(workOrder);
             bookingRepository.update(booking);
-            mechanicRepository.save(mechanic);
+            mechanicRepository.update(mechanic);
         } catch (RuntimeException exception) {
             // Återställ det som går att återställa i minnet
             booking.setStatus(previousBookingStatus);
