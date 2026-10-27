@@ -19,6 +19,7 @@ import com.wac.autocore.model.ServiceItem;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -77,7 +78,7 @@ public class EditWorkOrderDraftView {
             return new VBox(10, errorLabel);
         }
 
-        // Problembeskrivning bor i boknien (en källa), här visas den bara
+        // Problembeskrivning bor i bokningen (en källa), här visas den bara
         Label descriptionLabel = new Label(booking.getDescription());
         descriptionLabel.getStyleClass().add("detail-text");
         descriptionLabel.setWrapText(true);
@@ -197,12 +198,18 @@ public class EditWorkOrderDraftView {
         );
         serviceList.setPrefHeight(150);
 
+        Booking loadedBookings = bookingService.findByIdAndServices(draft.getBookingId());
+        List<ServiceItem> services = new ArrayList<>();
+        if(loadedBookings != null){
+            services = loadedBookings.getServices();
+        }
+
         ViewHelpMethod.setupServiceChecklist(
                 serviceList,
                 selectedServiceIds,
                 estimatedMinutesField,
                 totalPriceLabel,
-                booking.getServices() // Skickar med existerande tjänster som förval
+                services // Skickar med existerande tjänster som förval
         );
 
 
