@@ -8,5 +8,5 @@ public interface IMechanicRepository {
     Mechanic save(Mechanic mechanic);
 
     List<Mechanic> findAll();
-
+    void update(Mechanic mechanic);
 }

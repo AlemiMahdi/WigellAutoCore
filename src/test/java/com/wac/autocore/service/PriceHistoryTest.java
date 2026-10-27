@@ -49,6 +49,11 @@ public class PriceHistoryTest {
         public Booking findById(int id) {
             return null;
         }
+
+        @Override
+        public void update(Booking booking) {
+
+        }
     };
 
     // Fake: sparar ingenting, prisändringen stannar i objektet

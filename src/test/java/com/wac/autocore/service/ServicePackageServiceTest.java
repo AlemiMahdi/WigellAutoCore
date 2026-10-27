@@ -54,6 +54,11 @@ public class ServicePackageServiceTest {
         public Booking findById(int id) {
             return null;
         }
+
+        @Override
+        public void update(Booking booking) {
+
+        }
     };
 
     private final ServicePackageService servicePackageService =
