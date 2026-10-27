@@ -31,10 +31,14 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 // Formulär för att boka in ett fordon: välj fordon, datum, mekaniker och skriv en beskrivning.
 public class CreateBookingView {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(CreateBookingView.class);
     private final LanguageManager language = LanguageManager.getInstance();
     private  final BookingService bookingService;
 
@@ -283,7 +287,7 @@ public class CreateBookingView {
                 language.text("createBooking.saveError").get()
             );
 
-            exception.printStackTrace();
+            LOGGER.error("Kunde inte skapa bokning", exception);
             return;
         }
 

@@ -10,8 +10,12 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class CreateServicePackageView {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(CreateServicePackageView.class);
     private final LanguageManager language = LanguageManager.getInstance();
     private final ServicePackageService servicePackageService;
 
@@ -47,7 +51,7 @@ public class CreateServicePackageView {
                 return;
             } catch (RuntimeException exception) {
                 UiKit.showError(messageLabel, language.text("createServicePackage.saveError").get());
-                exception.printStackTrace();
+                LOGGER.error("Kunde inte skapa service paket", exception);
                 return;
             }
 

@@ -17,10 +17,14 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 // Visar befintliga tjänster i en tabell och låter användaren ändra tidsåtgången.
 public class ServiceView extends VBox {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ServiceView.class);
     private final LanguageManager language = LanguageManager.getInstance();
     private final TableView<ServiceItem> table = new TableView<>();
     private final TextField durationField = new TextField();
@@ -140,7 +144,7 @@ public class ServiceView extends VBox {
             } catch (RuntimeException exception) {
                 table.refresh();
                 UiKit.showError(feedbackLabel, language.text("services.error").get());
-                exception.printStackTrace();
+                LOGGER.error("Kunde inte spara tid för tjänst {}", selected.getId(), exception);
             }
 
         });
@@ -178,7 +182,7 @@ public class ServiceView extends VBox {
             } catch (RuntimeException exception) {
                 table.refresh();
                 UiKit.showError(priceFeedbackLabel, language.text("services.priceError").get());
-                exception.printStackTrace();
+                LOGGER.error("Kunde inte spara pris för tjänst {}", selected.getId(), exception);
             }
 
         });
@@ -190,7 +194,7 @@ public class ServiceView extends VBox {
         column.setMaxWidth(percent * 100000.0);
     }
 
-    private VBox inputRow(Label heading, Label hint, TextField field, Label feedback, Button saveButton){
+    private VBox inputRow(Label heading, Label hint, TextField field, Label feedback, Button saveButton) {
         HBox inputRow = new HBox(12, field, saveButton);
         inputRow.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(field, Priority.NEVER);

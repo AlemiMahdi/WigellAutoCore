@@ -22,9 +22,12 @@ import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class EditWorkOrderDraftView {
 
+private static final Logger LOGGER = LoggerFactory.getLogger(EditWorkOrderDraftView.class);
     private final LanguageManager language =
             LanguageManager.getInstance();
     private final WorkOrderService workOrderService;
@@ -282,7 +285,7 @@ public class EditWorkOrderDraftView {
 
             } catch (RuntimeException exception) {
                 showFeedback(messageLabel, "editWorkOrderDraft.saveError", false);
-                exception.printStackTrace();
+                LOGGER.error("kunde inte spara ändringar i utkast {}", draft.getId(), exception);
             }
 
         });

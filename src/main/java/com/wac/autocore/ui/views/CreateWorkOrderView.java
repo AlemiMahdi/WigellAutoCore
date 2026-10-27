@@ -24,10 +24,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 //Formulär för att skapa arbetsordrar.
 public class CreateWorkOrderView  extends VBox {
 
-    private final LanguageManager language = LanguageManager.getInstance();
+private static final Logger LOGGER = LoggerFactory.getLogger(CreateWorkOrderView.class);
+private final LanguageManager language = LanguageManager.getInstance();
     private final ObservableList<ServiceItem> selectedServices = FXCollections.observableArrayList();
     private final WorkOrderService workOrderService;
     private final BookingService bookingService;
@@ -457,7 +461,7 @@ public class CreateWorkOrderView  extends VBox {
             } catch (RuntimeException exception) {
                 String errorKey = "createWorkOrder.saveError".equals(exception.getMessage()) ? "createWorkOrder.saveError" : "createWorkOrder.createError";
                 UiKit.showError(feedbackLabel, language.text(errorKey).get());
-                exception.printStackTrace();
+                LOGGER.error("Kunde inte skapa arbetsorder av typ {}", selectedType, exception);
                 return;
             }
 

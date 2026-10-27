@@ -32,14 +32,20 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.Map;
+
 import javafx.scene.Node;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 // Visar alla bokningar i en tabell: fordon, datum, mekaniker, beskrivning och status.
 public class ShowBookingsView {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ShowWorkOrdersView.class);
     private final LanguageManager language = LanguageManager.getInstance();
     private final BookingService bookingService;
-    public ShowBookingsView( BookingService bookingService) {
+
+    public ShowBookingsView(BookingService bookingService) {
         this.bookingService = bookingService;
     }
 
@@ -65,8 +71,7 @@ public class ShowBookingsView {
             }
 
         } catch (RuntimeException e) {
-            e.printStackTrace();
-
+            LOGGER.error("kunde inte hämta bokningar", e);
             return buildErrorView(
                     language.text("bookings.loadError").get()
             );
@@ -180,7 +185,6 @@ public class ShowBookingsView {
         });
 
         mechanicColumn.getStyleClass().add("cell-muted");
-
 
 
         // Status visas som en färgad badge.
@@ -422,7 +426,7 @@ public class ShowBookingsView {
             if (selectedBooking != null) {
                 showBookingForm(
                         root,
-                        new CreateBookingView(bookingService ,selectedBooking).getView()
+                        new CreateBookingView(bookingService, selectedBooking).getView()
                 );
             }
         });

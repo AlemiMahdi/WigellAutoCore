@@ -15,9 +15,12 @@ import javafx.scene.layout.VBox;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class ManageServicePackageView {
 
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(ManageServicePackageView.class);
     private final ServicePackageService servicePackageService;
     private final LanguageManager language = LanguageManager.getInstance();
 
@@ -30,7 +33,7 @@ public class ManageServicePackageView {
         ComboBox<ServicePackage> packageBox = new ComboBox<>();
         packageBox.getItems().addAll(servicePackageService.findAll());
         packageBox.promptTextProperty().bind(
-            language.text("manageServicePackage.packagePrompt")
+                language.text("manageServicePackage.packagePrompt")
         );
 
         VBox servicesBox = new VBox(8);
@@ -62,7 +65,7 @@ public class ManageServicePackageView {
         Label messageLabel = UiKit.feedbackLabel();
         Button saveButton = UiKit.primaryButton("Save changes");
         saveButton.textProperty().bind(
-            language.text("manageServicePackage.saveButton")
+                language.text("manageServicePackage.saveButton")
         );
 
         saveButton.setOnAction(event -> {
@@ -89,7 +92,7 @@ public class ManageServicePackageView {
                 return;
             } catch (RuntimeException exception) {
                 UiKit.showError(messageLabel, language.text("manageServicePackage.saveError").get());
-                exception.printStackTrace();
+                LOGGER.error("Kunde inte uppdatera tjänster i servicepaket {}", selectedPackage.getId(), exception);
                 return;
             }
             UiKit.showSuccess(messageLabel, language.text("manageServicePackage.success").get());

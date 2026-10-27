@@ -1,4 +1,5 @@
 package com.wac.autocore.ui.views;
+
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.ServiceItem;
@@ -10,7 +11,9 @@ import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+
 import java.util.Locale;
+
 import javafx.scene.control.ListCell;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -22,11 +25,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Arrays;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class EditBookingServicesView {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(EditBookingServicesView.class);
     private final BookingService bookingService;
 
-    public EditBookingServicesView(BookingService bookingService) { this.bookingService = bookingService; }
+    public EditBookingServicesView(BookingService bookingService) {
+        this.bookingService = bookingService;
+    }
+
     public VBox getView() {
         return getView(null);
     }
@@ -218,13 +228,7 @@ public class EditBookingServicesView {
                         && validationKeys.contains(exception.getMessage())) {
                     key = exception.getMessage();
                 } else {
-                    java.util.logging.Logger.getLogger(
-                            EditBookingServicesView.class.getName()
-                    ).log(
-                            java.util.logging.Level.SEVERE,
-                            "Could not update booking services",
-                            exception
-                    );
+                    LOGGER.error("kunde inte uppdatera tjänster för bokning {}", booking.getId(), exception);
                 }
 
                 noticeLabel.textProperty().unbind();
