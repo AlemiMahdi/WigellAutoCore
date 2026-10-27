@@ -20,4 +20,9 @@ public enum WorkOrderStatus {
         }
     }
 
+    // Bara utkast får redigeras
+    public boolean isEditable() {
+        return this == DRAFT;
+    }
+
 }

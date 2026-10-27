@@ -171,7 +171,7 @@ public class WorkOrderRepository implements IWorkOrderRepository {
     private void validateWorkOrder(WorkOrder workOrder, List<String> errors) {
         if (workOrder == null) {
             errors.add("confirmWorkOrder.orderMissing");
-        } else if (workOrder.getStatus() != WorkOrderStatus.DRAFT) {
+        } else if (!workOrder.getStatus().canChangeTo(WorkOrderStatus.CONFIRMED)) {
             errors.add("confirmWorkOrder.onlyDraft");
         }
     }
@@ -250,7 +250,7 @@ public class WorkOrderRepository implements IWorkOrderRepository {
     //Hjälpmetoder UpdateDraft
     private void validateSavedDraft(WorkOrder savedDraft) {
         if (savedDraft == null
-                || savedDraft.getStatus() != WorkOrderStatus.DRAFT) {
+                || !savedDraft.getStatus().isEditable()) {
             throw new IllegalArgumentException(
                     "editWorkOrderDraft.onlyDraft"
             );
