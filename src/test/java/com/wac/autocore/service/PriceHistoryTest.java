@@ -67,6 +67,11 @@ public class PriceHistoryTest {
         public void update(Booking booking) {
 
         }
+
+        @Override
+        public void updateBookingAndOrder(List<WorkOrder> orderList, Booking booking) {
+
+        }
     };
 
     // Fake: inga tidigare fakturor

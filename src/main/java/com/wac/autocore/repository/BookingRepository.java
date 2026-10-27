@@ -40,6 +40,16 @@ public class BookingRepository implements IBookingRepository{
             return booking;
         }
 
+        @Override
+        public void updateBookingAndOrder(List<WorkOrder> orderList, Booking booking){
+            entityManager.merge(booking);
+            if(orderList != null) {
+                for(WorkOrder workOrder : orderList){
+                    entityManager.merge(workOrder);
+                }
+            }
+        }
+
         //Används den inte?
         private Booking saveBooking(
                 Booking booking,
@@ -134,11 +144,12 @@ public class BookingRepository implements IBookingRepository{
 
         @Override
         public Booking findByIdAndServices(int id){
-            return entityManager.createQuery(
+            List<Booking> bookingList = entityManager.createQuery(
                     "SELECT b FROM Booking b LEFT JOIN FETCH b.services WHERE b.id = :id",
                     Booking.class)
                     .setParameter("id", id)
-                    .getSingleResult();
+                    .getResultList();
+            return bookingList.getFirst();
         }
 
         @Override

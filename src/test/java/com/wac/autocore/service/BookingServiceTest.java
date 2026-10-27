@@ -3,6 +3,7 @@ package com.wac.autocore.service;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.ServiceItem;
+import com.wac.autocore.model.WorkOrder;
 import com.wac.autocore.repository.IBookingRepository;
 import com.wac.autocore.repository.IServiceItemRepository;
 import com.wac.autocore.repository.IWorkOrderRepository;
@@ -57,6 +58,11 @@ public class BookingServiceTest {
 
         @Override
         public void update(Booking booking) {
+        }
+
+        @Override
+        public void updateBookingAndOrder(List<WorkOrder> orderList, Booking booking) {
+
         }
     };
 
