@@ -150,9 +150,9 @@ public class BookingRepository implements IBookingRepository{
                     Booking.class)
                     .setParameter("id", id)
                     .getResultList();
-            return bookingList.getFirst();
+            return bookingList.isEmpty() ? null : bookingList.getFirst();
         }
-
+        
         @Override
         public List<Booking> findOtherBookingsByMechanic(int mechanicId, int bookingId) {
             return entityManager.createQuery(
