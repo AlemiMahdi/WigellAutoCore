@@ -173,7 +173,7 @@ public class BookingService {
 
         List<WorkOrder> workOrders = workOrderRepository.findByBookingId(bookingId);
         for (WorkOrder order : workOrders) {
-            if (order.getStatus() != WorkOrderStatus.CONFIRMED) {
+            if (!order.getStatus().allowsServiceChanges()) {
                 throw new IllegalArgumentException(
                         "editBookingServices.locked"
                 );
