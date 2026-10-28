@@ -28,4 +28,8 @@ public class MechanicRepository implements IMechanicRepository {
                 Mechanic.class
         ).getResultList();
     }
+    @Override
+    public void update(Mechanic mechanic) {
+        entityManager.merge(mechanic);
+    }
 }

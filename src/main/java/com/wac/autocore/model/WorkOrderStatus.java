@@ -20,4 +20,14 @@ public enum WorkOrderStatus {
         }
     }
 
+    // Bara utkast får redigeras
+    public boolean isEditable() {
+        return this == DRAFT;
+    }
+
+    // bokningens tjänster får ändras när arbetsordern är CONFIRMED.
+    public boolean allowsServiceChanges() {
+        return this == CONFIRMED;
+    }
+
 }

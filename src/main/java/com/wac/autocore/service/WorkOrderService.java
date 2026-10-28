@@ -74,7 +74,7 @@ public class WorkOrderService {
                 case PLANNED:
                     if (originalBooking != null) {
                         originalBooking.setStatus("WORK_ORDER_CREATED");
-                        bookingRepository.save(originalBooking);
+                        bookingRepository.update(originalBooking);
                     }
                     workOrderRepository.save(workOrder);
                     break;
@@ -140,7 +140,7 @@ public class WorkOrderService {
             return errors;
         }
 
-        if (workOrder.getStatus() != WorkOrderStatus.DRAFT) {
+        if (!workOrder.getStatus().canChangeTo(WorkOrderStatus.CONFIRMED)) {
             errors.add("confirmWorkOrder.onlyDraft");
             return errors;
         }
@@ -198,7 +198,7 @@ public class WorkOrderService {
                                           String instructions,
                                           String comments,
                                           Integer originalWorkOrderId) {
-        if (draft == null || draft.getStatus() != WorkOrderStatus.DRAFT) {
+        if (draft == null || !draft.getStatus().isEditable()) {
             throw new IllegalArgumentException("editWorkOrderDraft.onlyDraft");
         }
 
@@ -349,11 +349,11 @@ public class WorkOrderService {
         mechanic.setAvailable(false);
         workOrder.changeStatus(WorkOrderStatus.IN_PROGRESS);
 
-        // 7. Spara i databasen
+        // 7. Uppdatera istället i databasen
         try {
-            workOrderRepository.save(workOrder);
-            bookingRepository.save(booking);
-            mechanicRepository.save(mechanic);
+            workOrderRepository.update(workOrder);
+            bookingRepository.update(booking);
+            mechanicRepository.update(mechanic);
         } catch (RuntimeException exception) {
             // Återställ det som går att återställa i minnet
             booking.setStatus(previousBookingStatus);
