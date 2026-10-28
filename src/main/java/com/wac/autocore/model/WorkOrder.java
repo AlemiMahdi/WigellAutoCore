@@ -188,7 +188,6 @@ public class WorkOrder {
         return id +
                 " - Booking ID: " + bookingId +
                 " | Mechanic ID: " + mechanicId +
-                " | Services: " + serviceItemIds +
                 " | Status: " + status;
     }
 }

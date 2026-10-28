@@ -18,22 +18,29 @@ import javafx.util.StringConverter;
 
 
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 
 public class CreateInvoiceView {
 
+    private final static Map<Integer, String> workOrderDescription = new HashMap<>();
+
     public static VBox build(InvoiceService invoiceService) {
         LanguageManager language = LanguageManager.getInstance();
-
 
         // --- Arbetsorder ---
         // Bara avslutade (COMPLETED) arbetsordrar kan faktureras,
         // så vi visar bara dem i listan.
         ComboBox<WorkOrder> workOrderBox = new ComboBox<>();
-        workOrderBox.setConverter(new StringConverter<WorkOrder>() {
+        workOrderBox.setConverter(new StringConverter<>() {
             @Override
             public String toString(WorkOrder workOrder) {
-                return workOrder == null ? "" : describeWorkOrder(workOrder, invoiceService);
+                if(workOrder == null) {
+                    return "";
+                }
+                return workOrderDescription.getOrDefault(workOrder.getId(), ShowInvoiceView.workOrderCode(workOrder.getId()));
             }
 
 
@@ -290,9 +297,15 @@ public class CreateInvoiceView {
             ComboBox<WorkOrder> workOrderBox,
             InvoiceService invoiceService) {
 
+        List<WorkOrder> workOrders = invoiceService.getInvoiceableWorkOrders();
+        workOrderDescription.clear();
+        for (WorkOrder wo : workOrders) {
+            workOrderDescription.put(wo.getId(), describeWorkOrder(wo, invoiceService));
+        }
+
         workOrderBox.getItems().setAll(
                 UiKit.newestFirst(
-                        invoiceService.getInvoiceableWorkOrders(),
+                        workOrders,
                         WorkOrder::getId
                 )
         );
@@ -308,6 +321,7 @@ public class CreateInvoiceView {
         );
     }
 
+    //Hämta invoiceService och findVehicle gör att det laggar i stringConverter
         // "WO-2 · Volkswagen Passat" – bilen gör det lättare att hitta rätt order
         private static String describeWorkOrder (WorkOrder workOrder, InvoiceService invoiceService){
             String text = ShowInvoiceView.workOrderCode(workOrder.getId());
