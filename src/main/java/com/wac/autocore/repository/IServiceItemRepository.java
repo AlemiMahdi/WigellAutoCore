@@ -9,4 +9,5 @@ public interface IServiceItemRepository {
     List<ServiceItem> findAll();
     ServiceItem findById(int id);
     List<ServiceItem> findAllByIds(List<Integer> ids);
+    void update(ServiceItem serviceItem);
 }

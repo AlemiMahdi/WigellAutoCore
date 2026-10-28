@@ -27,7 +27,7 @@ public class ServiceItemService {
         selected.setEstimatedMinutes(minutes);
 
         try {
-            repository.save(selected);
+            repository.update(selected);
         } catch (RuntimeException exception) {
             selected.setEstimatedMinutes(previousMinutes);
 
@@ -50,7 +50,7 @@ public class ServiceItemService {
         selected.setPrice(price);
 
         try {
-            repository.save(selected);
+            repository.update(selected);
         } catch (RuntimeException exception) {
             selected.setPrice(previousPrice);
             throw new RuntimeException("Kunde inte spara pris för tjänst " + selected.getId(), exception);
