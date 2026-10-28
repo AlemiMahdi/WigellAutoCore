@@ -141,7 +141,8 @@ public class BookingOverlapCheckerTest {
     }
 
     private Booking booking(int mechanicId, LocalDate date, LocalTime startTime, int minutes) {
-        Booking booking = new Booking(0, 1, date, startTime, minutes, "test");
+        Booking booking = new Booking(1, date, startTime, minutes, "test");
+        booking.setId(1);
 
         booking.setMechanicId(mechanicId);
         return booking;
