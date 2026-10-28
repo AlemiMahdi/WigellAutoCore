@@ -106,4 +106,30 @@ public class WorkOrderStatusTest {
     void canceledIsNotEditable() {
         assertFalse(WorkOrderStatus.CANCELLED.isEditable());
     }
+
+    // allowsServiceChange(): bara CONFIRMED tillåter att bokningens tjänster ändras
+    @Test
+    void draftDoesNotAllowServiceChanges() {
+        assertFalse(WorkOrderStatus.DRAFT.allowsServiceChanges());
+    }
+
+    @Test
+    void confirmedAllowsServiceChanges() {
+        assertTrue(WorkOrderStatus.CONFIRMED.allowsServiceChanges());
+    }
+
+    @Test
+    void inProgressDoesNotAllowServiceChanges() {
+        assertFalse(WorkOrderStatus.IN_PROGRESS.allowsServiceChanges());
+    }
+
+    @Test
+    void completedDoesNotAllowServiceChanges() {
+        assertFalse(WorkOrderStatus.COMPLETED.allowsServiceChanges());
+    }
+
+    @Test
+    void canceledDoesNotAllowServiceChanges() {
+        assertFalse(WorkOrderStatus.CANCELLED.allowsServiceChanges());
+    }
 }

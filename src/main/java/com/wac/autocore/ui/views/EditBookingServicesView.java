@@ -239,7 +239,7 @@ public class EditBookingServicesView {
 
             for (WorkOrder order : Database.getWorkOrders()) {
                 if (order.getBookingId() == booking.getId()
-                        && order.getStatus() == WorkOrderStatus.CONFIRMED) {
+                        && order.getStatus().allowsServiceChanges()) {
                     order.setServiceItemIds(new ArrayList<>(serviceIds));
                 }
             }

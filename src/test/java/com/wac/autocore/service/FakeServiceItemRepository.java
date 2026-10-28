@@ -20,4 +20,8 @@ public class FakeServiceItemRepository implements IServiceItemRepository {
     public ServiceItem findById(int id) {
         return null;
     }
+
+    @Override
+    public void update(ServiceItem serviceItem) {
+    }
 }
