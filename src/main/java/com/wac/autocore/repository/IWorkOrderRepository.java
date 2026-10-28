@@ -12,6 +12,7 @@ import java.util.List;
 public interface IWorkOrderRepository {
 
     WorkOrder save(WorkOrder workOrder);
+    void update(WorkOrder workOrder);
     void saveWithBooking(WorkOrder workOrder, Booking booking);
     WorkOrder findWorkOrder(int id);
     List<WorkOrder> findAll();
@@ -31,5 +32,5 @@ public interface IWorkOrderRepository {
     void saveDropInOrder(WorkOrder workOrder, Booking booking);
     List<InvoiceLine> createFrozenPrices(List<ServiceItem> serviceItems);
     void completeWorkOrder(int workOrderId);
-
+List<WorkOrder> findByBookingId(int bookingId);
 }

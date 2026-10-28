@@ -129,7 +129,7 @@ public class ShowWorkOrdersView {
 
         card.getStyleClass().add("kanban-card");
 
-        if (workOrder.getStatus() == WorkOrderStatus.DRAFT) {
+        if (workOrder.getStatus().isEditable()) {
             Button editButton = UiKit.primaryButton("");
             editButton.textProperty().bind(
                     language.text("editWorkOrderDraft.open")

@@ -24,6 +24,10 @@ public class WorkOrderRepository implements IWorkOrderRepository {
         return workOrder;
     }
 
+    public void update(WorkOrder workOrder) {
+        entityManager.merge(workOrder);
+    }
+
     // Sparar bokningen och utkastet i samma transaktion (WAC-63)
     // Antingen sparas båda, eller ingen av dem.
     public void saveWithBooking(WorkOrder workOrder, Booking booking) {
@@ -109,6 +113,9 @@ public class WorkOrderRepository implements IWorkOrderRepository {
         savedBooking.getServices().addAll(savedServices);
         savedDraft.setOriginalWorkOrderId(originalWorkOrderId);
         savedBooking.setFrozenPrice(createFrozenPrices(savedServices));
+
+        entityManager.merge(savedBooking);
+        entityManager.merge(savedDraft);
     }
 
     public void saveDropInOrder(WorkOrder workOrder, Booking booking) {
@@ -159,12 +166,19 @@ public class WorkOrderRepository implements IWorkOrderRepository {
                 .getSingleResult();
                 return count > 0;
     }
+    public List<WorkOrder> findByBookingId(int bookingId) {
+        return entityManager.createQuery(
+                "FROM WorkOrder WHERE bookingId = :bookingId",
+                WorkOrder.class)
+                .setParameter("bookingId", bookingId)
+                .getResultList();
+    }
 
     //Hjälpmetoder ConfirmDraft först
     private void validateWorkOrder(WorkOrder workOrder, List<String> errors) {
         if (workOrder == null) {
             errors.add("confirmWorkOrder.orderMissing");
-        } else if (workOrder.getStatus() != WorkOrderStatus.DRAFT) {
+        } else if (!workOrder.getStatus().canChangeTo(WorkOrderStatus.CONFIRMED)) {
             errors.add("confirmWorkOrder.onlyDraft");
         }
     }
@@ -243,7 +257,7 @@ public class WorkOrderRepository implements IWorkOrderRepository {
     //Hjälpmetoder UpdateDraft
     private void validateSavedDraft(WorkOrder savedDraft) {
         if (savedDraft == null
-                || savedDraft.getStatus() != WorkOrderStatus.DRAFT) {
+                || !savedDraft.getStatus().isEditable()) {
             throw new IllegalArgumentException(
                     "editWorkOrderDraft.onlyDraft"
             );
