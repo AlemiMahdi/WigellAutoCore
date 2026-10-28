@@ -87,8 +87,8 @@ public class WorkOrderRepository implements IWorkOrderRepository {
         validateSavedDraft(savedDraft);
         validateOriginalId(originalWorkOrderId, savedDraft);
 
-        WorkOrder original = entityManager.find(WorkOrder.class, originalWorkOrderId);
-        validateOriginal(original);
+//        WorkOrder original = entityManager.find(WorkOrder.class, originalWorkOrderId);
+//        validateOriginal(original);
 
         Booking savedBooking = entityManager.find(
                 Booking.class,
@@ -265,7 +265,7 @@ public class WorkOrderRepository implements IWorkOrderRepository {
     }
 
     private void validateOriginalId(Integer originalWorkOrderId, WorkOrder savedDraft) {
-        if (originalWorkOrderId != null) {
+        if (originalWorkOrderId != null && originalWorkOrderId > 0) {
             if (savedDraft.getType() != WorkOrderTypeEnum.COMPLAINT) {
                 throw new IllegalArgumentException("confirmWorkOrder.originalWrongType");
             }
@@ -273,7 +273,16 @@ public class WorkOrderRepository implements IWorkOrderRepository {
             if (originalWorkOrderId == savedDraft.getId()) {
                 throw new IllegalArgumentException("confirmWorkOrder.originalSelfReference");
             }
+
+            WorkOrder original = entityManager.find(WorkOrder.class, originalWorkOrderId);
+            if(original == null) {
+                throw new IllegalArgumentException("confirmWorkOrder.originalMissing");
+            }
+            savedDraft.setOriginalWorkOrderId(original.getId());
         }
+            else {
+                savedDraft.setOriginalWorkOrderId(null);
+            }
     }
 
     private void validateOriginal(WorkOrder original) {

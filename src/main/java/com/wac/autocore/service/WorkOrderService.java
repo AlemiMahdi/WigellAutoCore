@@ -150,6 +150,10 @@ public class WorkOrderService {
         if (errors.isEmpty()) {
             // Uppdatera minnet först när databasen har sparats.
             workOrder.changeStatus(WorkOrderStatus.CONFIRMED);
+            WorkOrder inMemory = findWorkOrderInMemory(workOrderId);
+            if (inMemory != null) {
+                inMemory.changeStatus(WorkOrderStatus.CONFIRMED);
+            }
         }
 
         return errors;

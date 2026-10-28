@@ -32,6 +32,7 @@ public class EditWorkOrderDraftView {
     private final BookingService bookingService;
     private final ComboBox<WorkOrder> originalCombo = new ComboBox<>();
     private final ComboBox<Mechanic> mechanicCombo = new ComboBox<>();
+    private final ComboBox<Booking> bookingCombo = new ComboBox<>();
     private final DatePicker plannedDateField = new DatePicker();
     private final TextField estimatedMinutesField = new TextField();
     private final TextField priceField = new TextField();
@@ -83,7 +84,40 @@ public class EditWorkOrderDraftView {
         descriptionLabel.getStyleClass().add("detail-text");
         descriptionLabel.setWrapText(true);
 
+        bookingCombo.setMaxWidth(Double.MAX_VALUE);
+        bookingCombo.promptTextProperty().bind(language.text("editWorkOrderDraft.selectBooking"));
+
+        bookingCombo.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(Booking b) {
+                return b == null ? "" : b.getId() + " - " + b.getDescription();
+            }
+            @Override
+            public Booking fromString(String string) {
+                return null;
+            }
+        });
+
+        VBox bookingField = UiKit.formField(language.text("editWorkOrderDraft.linkedBooking"), bookingCombo);
+
+        boolean isPlanned = draft.getType() == WorkOrderTypeEnum.PLANNED;
         boolean isComplaint = draft.getType() == WorkOrderTypeEnum.COMPLAINT;
+
+        if (isPlanned) {
+            List<Booking> allBookings = bookingService.getAllBookings();
+            for(Booking b : allBookings) {
+                if("BOOKED".equals(b.getStatus())) {
+                    bookingCombo.getItems().add(b);
+                }
+            }
+        }
+
+        //Om bokning redan finns på utkast, förval i listan
+        if (draft.getBookingId() > 0) {
+            Booking currentBooking = bookingService.findByIdAndServices(draft.getBookingId());
+            bookingCombo.setValue(currentBooking);
+        }
+
 
         originalCombo.setMaxWidth(Double.MAX_VALUE);
         originalCombo.promptTextProperty().bind(
@@ -96,7 +130,7 @@ public class EditWorkOrderDraftView {
                 .collect(Collectors.toList());
         originalCombo.getItems().setAll(completedOrders);
 
-        originalCombo.setConverter(new StringConverter<WorkOrder>() {
+        originalCombo.setConverter(new StringConverter<>() {
             @Override
             public String toString(WorkOrder order) {
                 return order == null ? "" : "WO-" + order.getId();
@@ -211,9 +245,16 @@ public class EditWorkOrderDraftView {
                 totalPriceLabel,
                 services // Skickar med existerande tjänster som förval
         );
-
+        //Uppdatera pris på tjänster när man klickar på tjänst
+        totalPriceLabel.textProperty().addListener((observable, oldValue, newValue) -> {
+           if(newValue != null && !newValue.isEmpty()){
+               String cleanedPrice = newValue.replaceAll("[^0-9.,]", "").trim();
+               priceField.setText(cleanedPrice);
+           }
+        });
 
         saveButton.setOnAction(event -> {
+
             int minutes;
             BigDecimal price = null;
 
@@ -269,8 +310,7 @@ public class EditWorkOrderDraftView {
                     .collect(Collectors.toList());
 
             try {
-                workOrderService.updateDraftWorkOrder(draft,
-                        booking,
+                workOrderService.updateDraftWorkOrder(draft, loadedBookings,
                         serviceIds,
                 mechanicId,
                 plannedDate,
@@ -298,6 +338,7 @@ public class EditWorkOrderDraftView {
                 UiKit.pageHeader(language.text("editWorkOrderDraft.title"), null ),
                 UiKit.formField(language.text("editWorkOrderDraft.description"), descriptionLabel),
                 originalField,
+                bookingField,
                 UiKit.formField(language.text("editWorkOrderDraft.mechanic"), mechanicFields),
                 UiKit.formField(language.text("editWorkOrderDraft.services"), serviceList
                 ),
