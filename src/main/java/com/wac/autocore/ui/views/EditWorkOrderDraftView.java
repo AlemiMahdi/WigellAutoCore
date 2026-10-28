@@ -32,7 +32,6 @@ public class EditWorkOrderDraftView {
     private final BookingService bookingService;
     private final ComboBox<WorkOrder> originalCombo = new ComboBox<>();
     private final ComboBox<Mechanic> mechanicCombo = new ComboBox<>();
-    private final ComboBox<Booking> bookingCombo = new ComboBox<>();
     private final DatePicker plannedDateField = new DatePicker();
     private final TextField estimatedMinutesField = new TextField();
     private final TextField priceField = new TextField();
@@ -84,39 +83,29 @@ public class EditWorkOrderDraftView {
         descriptionLabel.getStyleClass().add("detail-text");
         descriptionLabel.setWrapText(true);
 
-        bookingCombo.setMaxWidth(Double.MAX_VALUE);
-        bookingCombo.promptTextProperty().bind(language.text("editWorkOrderDraft.selectBooking"));
-
-        bookingCombo.setConverter(new StringConverter<>() {
-            @Override
-            public String toString(Booking b) {
-                return b == null ? "" : b.getId() + " - " + b.getDescription();
-            }
-            @Override
-            public Booking fromString(String string) {
-                return null;
-            }
-        });
-
-        VBox bookingField = UiKit.formField(language.text("editWorkOrderDraft.linkedBooking"), bookingCombo);
-
         boolean isPlanned = draft.getType() == WorkOrderTypeEnum.PLANNED;
         boolean isComplaint = draft.getType() == WorkOrderTypeEnum.COMPLAINT;
 
-        if (isPlanned) {
-            List<Booking> allBookings = bookingService.getAllBookings();
-            for(Booking b : allBookings) {
-                if("BOOKED".equals(b.getStatus())) {
-                    bookingCombo.getItems().add(b);
-                }
-            }
+        //Om bokning redan finns på utkast, förval i listan
+
+            Booking currentBooking = bookingService.findByIdAndServices(draft.getBookingId());
+        if (booking == null) {
+            Label errorLabel = UiKit.feedbackLabel();
+            UiKit.showError(errorLabel, "");
+            errorLabel.textProperty().bind(language.text("editWorkOrderDraft.bookingMissing"));
+            return new VBox(10, errorLabel);
         }
 
-        //Om bokning redan finns på utkast, förval i listan
-        if (draft.getBookingId() > 0) {
-            Booking currentBooking = bookingService.findByIdAndServices(draft.getBookingId());
-            bookingCombo.setValue(currentBooking);
-        }
+        Label bookingInfoLabel = new Label(
+                "id: " + booking.getId() + " (" + booking.getDescription() + ")"
+        );
+        bookingInfoLabel.getStyleClass().add("detail-text");
+
+// 3. Lägg till det som ett vanligt låst formulärfält
+        VBox bookingField = UiKit.formField(
+                language.text("editWorkOrderDraft.linkedBooking"),
+                bookingInfoLabel
+        );
 
 
         originalCombo.setMaxWidth(Double.MAX_VALUE);
