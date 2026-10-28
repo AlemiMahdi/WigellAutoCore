@@ -87,9 +87,6 @@ public class WorkOrderRepository implements IWorkOrderRepository {
         validateSavedDraft(savedDraft);
         validateOriginalId(originalWorkOrderId, savedDraft);
 
-//        WorkOrder original = entityManager.find(WorkOrder.class, originalWorkOrderId);
-//        validateOriginal(original);
-
         Booking savedBooking = entityManager.find(
                 Booking.class,
                 savedDraft.getBookingId(),
