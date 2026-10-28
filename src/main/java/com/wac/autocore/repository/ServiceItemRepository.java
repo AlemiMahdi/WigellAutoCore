@@ -20,6 +20,10 @@ public class ServiceItemRepository implements IServiceItemRepository {
         return serviceItem;
     }
 
+    public void update(ServiceItem serviceItem) {
+        entityManager.merge(serviceItem);
+    }
+
     public List<ServiceItem> findAll() {
         return entityManager.createQuery(
                 "from ServiceItem order by id",
