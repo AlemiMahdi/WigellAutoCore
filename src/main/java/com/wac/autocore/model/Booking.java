@@ -106,10 +106,8 @@ public class Booking {
                 : new ArrayList<>();
     }
 
-    public int getId() {
-        return id;
-    }
-        //Använd inte setId
+    public int getId() { return id; }
+
     public void setId(int id) {
         this.id = id;
     }
