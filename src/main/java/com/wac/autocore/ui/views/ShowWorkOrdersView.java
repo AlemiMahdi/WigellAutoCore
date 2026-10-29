@@ -6,6 +6,8 @@ import com.wac.autocore.service.BookingService;
 import com.wac.autocore.service.WorkOrderService;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
+import com.wac.autocore.security.actions.SecuredWorkOrderActions;
+import org.springframework.security.access.AccessDeniedException;
 
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
@@ -22,11 +24,19 @@ import javafx.scene.control.Button;
 public class ShowWorkOrdersView {
 
     private final LanguageManager language = LanguageManager.getInstance();
-    private final WorkOrderService workOrderService;
+    private final SecuredWorkOrderActions securedWorkOrderActions;
+    private boolean canEdit;
     private final BookingService bookingService;
 
-    public ShowWorkOrdersView(WorkOrderService workOrderService, BookingService bookingService) { this.workOrderService = workOrderService;
-    this.bookingService = bookingService;}
+    public ShowWorkOrdersView(
+        SecuredWorkOrderActions securedWorkOrderActions,
+        BookingService bookingService,
+        boolean canEdit
+    ) { 
+        this.securedWorkOrderActions = securedWorkOrderActions;
+        this.bookingService = bookingService;
+        this.canEdit = canEdit;
+    }
 
     public VBox getView() {
 
@@ -40,7 +50,7 @@ public class ShowWorkOrdersView {
         // Sorterar varje arbetsorder till rätt kolumn utifrån dess status
         // Visa senaste arbetsordern överst i varje statuskolumn
         for (WorkOrder workOrder : UiKit.newestFirst(
-                Database.getWorkOrders(),
+                securedWorkOrderActions.findAll(),
                 WorkOrder::getId
         )) {
             WorkOrderStatus status = workOrder.getStatus();
@@ -129,7 +139,7 @@ public class ShowWorkOrdersView {
 
         card.getStyleClass().add("kanban-card");
 
-        if (workOrder.getStatus() == WorkOrderStatus.DRAFT) {
+        if (canEdit && workOrder.getStatus() == WorkOrderStatus.DRAFT) {
             Button editButton = UiKit.primaryButton("");
             editButton.textProperty().bind(
                     language.text("editWorkOrderDraft.open")
@@ -146,7 +156,7 @@ public class ShowWorkOrdersView {
                 );
 
                 VBox editView =
-                        new EditWorkOrderDraftView(workOrderService, bookingService).getView(workOrder);
+                        new EditWorkOrderDraftView(securedWorkOrderActions, bookingService).getView(workOrder);
 
                 root.getChildren().setAll(backButton, editView);
             });
@@ -167,23 +177,42 @@ public class ShowWorkOrdersView {
 
                 List<String> errors;
 
-                try {
-                    errors = workOrderService.confirmWorkOrder(workOrder.getId());
-                } catch (RuntimeException exception) {
-                    Label errorLabel = UiKit.feedbackLabel();
-                    errorLabel.setWrapText(true);
-                    UiKit.showError(errorLabel, "");
-                    errorLabel.textProperty().bind(
-                            language.text("confirmWorkOrder.saveError")
-                    );
+            try {
+                errors = securedWorkOrderActions.confirmWorkOrder(
+                        workOrder.getId()
+                );
 
-                    feedbackBox.getChildren().add(errorLabel);
-                    feedbackBox.setVisible(true);
-                    feedbackBox.setManaged(true);
+            } catch (AccessDeniedException exception) {
+                Label errorLabel = UiKit.feedbackLabel();
+                errorLabel.setWrapText(true);
 
-                    exception.printStackTrace();
-                    return;
-                }
+                UiKit.showError(errorLabel, "");
+                errorLabel.textProperty().bind(
+                        language.text("security.accessDenied")
+                );
+
+                feedbackBox.getChildren().add(errorLabel);
+                feedbackBox.setVisible(true);
+                feedbackBox.setManaged(true);
+                return;
+
+            } catch (RuntimeException exception) {
+                Label errorLabel = UiKit.feedbackLabel();
+                errorLabel.setWrapText(true);
+
+                UiKit.showError(errorLabel, "");
+                errorLabel.textProperty().bind(
+                        language.text("confirmWorkOrder.saveError")
+                );
+
+                feedbackBox.getChildren().add(errorLabel);
+                feedbackBox.setVisible(true);
+                feedbackBox.setManaged(true);
+
+                exception.printStackTrace();
+                return;
+            }
+
 
                 if (!errors.isEmpty()) {
                     for (String key : errors) {

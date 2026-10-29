@@ -76,9 +76,9 @@ public class SecuredWorkOrderActions {
     public void updateDraftWorkOrder(
         WorkOrder draft,
         Booking booking,
-        List<Integer> serviceId,
+        List<Integer> serviceIds,
         int mechanicId,
-        LocalDate plannDate,
+        LocalDate plannedDate,
         int minutes,
         BigDecimal price,
         String instructions,
@@ -88,9 +88,9 @@ public class SecuredWorkOrderActions {
         workOrderService.updateDraftWorkOrder(
             draft, 
             booking, 
-            serviceId, 
+            serviceIds, 
             mechanicId, 
-            plannDate, 
+            plannedDate, 
             minutes, 
             price, 
             instructions, 
@@ -98,4 +98,14 @@ public class SecuredWorkOrderActions {
             originalWorkOrderId);
     }
 
+
+    @PreAuthorize("isAuthenticated()")
+    public List<WorkOrder> findStartableWorkOrders(){
+        return workOrderService.findStartableWorkOrders();
+    }
+
+    @PreAuthorize ("hasAnyRole('ADMIN', 'WORKSHOP')")
+    public void completeWorkOrder(int workOrderId) {
+        workOrderService.completeWorkOrder(workOrderId);
+    }
 }

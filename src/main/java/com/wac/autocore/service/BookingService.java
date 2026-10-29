@@ -30,6 +30,70 @@ public class BookingService {
         return Optional.ofNullable(bookingRepository.findById(id));
     }
 
+    
+    public int updateBookingServices(
+            int bookingId,
+            List<Integer> serviceIds) {
+
+        // Spara först i databasen.
+        int totalMinutes = bookingRepository.updateBookingServices(
+                bookingId,
+                serviceIds
+        );
+
+        // Uppdatera minnesdata efter lyckat sparande.
+        List<ServiceItem> updatedServices = new ArrayList<>();
+
+        for (Integer serviceId : serviceIds) {
+            for (ServiceItem service : Database.getServiceItems()) {
+                if (service.getId() == serviceId
+                        && updatedServices.stream()
+                            .noneMatch(item -> item.getId() == serviceId)) {
+
+                    updatedServices.add(service);
+                    break;
+                }
+            }
+        }
+
+        for (Booking booking : Database.getBookings()) {
+            if (booking.getId() == bookingId) {
+                booking.setServices(new ArrayList<>(updatedServices));
+                booking.setDurationMinutes(totalMinutes);
+
+                List<InvoiceLine> frozenPrices = new ArrayList<>();
+
+                for (ServiceItem service : updatedServices) {
+                    frozenPrices.add(new InvoiceLine(
+                            service.getId(),
+                            service.getName(),
+                            service.getPrice()
+                    ));
+                }
+
+                booking.setFrozenPrice(frozenPrices);
+            }
+        }
+
+        for (com.wac.autocore.model.WorkOrder order
+                : Database.getWorkOrders()) {
+
+            if (order.getBookingId() == bookingId
+                    && order.getStatus()
+                        == com.wac.autocore.model.WorkOrderStatus.CONFIRMED) {
+
+                order.setServiceItemIds(
+                        updatedServices.stream()
+                                .map(ServiceItem::getId)
+                                .toList()
+                );
+            }
+        }
+
+        return totalMinutes;
+    }
+
+
     public Booking createBooking(
         int vehicleId,
         LocalDate date,

@@ -122,12 +122,22 @@ public class BookingRepository implements IBookingRepository{
                                         Booking.class
                                 ).getResultList();
         }
-
+ 
         @Override
         public Booking findById(int id) {
-            return entityManager.find(Booking.class, id);
+            return entityManager.createQuery(
+                    "SELECT DISTINCT b FROM Booking b " +
+                    "LEFT JOIN FETCH b.services " +
+                    "WHERE b.id = :id",
+                    Booking.class
+            )
+            .setParameter("id", id)
+            .getResultStream()
+            .findFirst()
+            .orElse(null);
         }
 
+        @Override 
         public int updateBookingServices(
             int bookingId,
             List<Integer> serviceIds

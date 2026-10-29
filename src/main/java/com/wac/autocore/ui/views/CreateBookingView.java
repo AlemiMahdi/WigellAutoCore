@@ -2,9 +2,9 @@ package com.wac.autocore.ui.views;
 
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
+import com.wac.autocore.security.actions.SecuredBookingActions;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
-import com.wac.autocore.service.BookingService;
 
 import javafx.collections.FXCollections;
 import javafx.geometry.Pos;
@@ -36,21 +36,21 @@ import java.util.List;
 public class CreateBookingView {
 
     private final LanguageManager language = LanguageManager.getInstance();
-    private  final BookingService bookingService;
+    private final SecuredBookingActions securedBookingActions;
 
     private final Booking sourceBooking;
 
     // tomt formulär
-    public CreateBookingView(BookingService bookingService) {
-    this(bookingService, null);
+    public CreateBookingView(SecuredBookingActions securedBookingActions) {
+    this(securedBookingActions, null);
 }
 
     // Tidigare bokning som underlag
     public CreateBookingView(
-            BookingService bookingService,
+            SecuredBookingActions securedBookingActions,
             Booking sourceBooking
     ) {
-        this.bookingService = bookingService;
+        this.securedBookingActions = securedBookingActions;
         this.sourceBooking = sourceBooking;
     }
 
@@ -253,7 +253,7 @@ public class CreateBookingView {
             }
 
             try {
-                bookingService.createBooking(
+                securedBookingActions.createBooking(
                     vehicleId,
                     date,
                     startTime,

@@ -1,10 +1,13 @@
 package com.wac.autocore.ui.views;
 
+import org.springframework.security.access.AccessDeniedException;
+
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Vehicle;
 import com.wac.autocore.model.WorkOrder;
 import com.wac.autocore.model.WorkOrderStatus;
 import com.wac.autocore.model.WorkOrderTypeEnum;
+import com.wac.autocore.security.actions.SecuredWorkOrderActions;
 import com.wac.autocore.service.WorkOrderService;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
@@ -23,10 +26,10 @@ import javafx.util.StringConverter;
 public class CreateDraftWorkOrderView {
 
     private final LanguageManager language = LanguageManager.getInstance();
-    private final WorkOrderService workOrderService;
+    private final SecuredWorkOrderActions securedWorkOrderActions;
 
-    public CreateDraftWorkOrderView(WorkOrderService workOrderService) {
-        this.workOrderService = workOrderService;
+    public CreateDraftWorkOrderView(SecuredWorkOrderActions securedWorkOrderActions) {
+        this.securedWorkOrderActions = securedWorkOrderActions;
     }
 
     public VBox getView() {
@@ -131,18 +134,38 @@ public class CreateDraftWorkOrderView {
                 originalId = originalOrder.getId();
             }
             // WorkOrderService kontrollerar reglerna, sparar i MySQL och lägger i minnet.
-            try {
-                workOrderService.createNewDraftWorkOrder(
-                        vehicle.getId(), descriptionField.getText(), type, originalId);
-            } catch (IllegalArgumentException exception) {
-                // Felets text är en språknyckel, t.ex. "createDraft.descriptionMissing"
-                UiKit.showError(messageLabel, language.text(exception.getMessage()).get());
-                return;
-            } catch (RuntimeException exception) {
-                UiKit.showError(messageLabel, language.text("createDraft.saveError").get());
-                exception.printStackTrace();
-                return;
-            }
+           
+        try {
+            securedWorkOrderActions.createNewDraftWorkOrder(
+                    vehicle.getId(),
+                    descriptionField.getText(),
+                    type,
+                    originalId
+            );
+
+        } catch (AccessDeniedException exception) {
+            UiKit.showError(
+                    messageLabel,
+                    language.text("security.accessDenied").get()
+            );
+            return;
+
+        } catch (IllegalArgumentException exception) {
+            UiKit.showError(
+                    messageLabel,
+                    language.text(exception.getMessage()).get()
+            );
+            return;
+
+        } catch (RuntimeException exception) {
+            UiKit.showError(
+                    messageLabel,
+                    language.text("createDraft.saveError").get()
+            );
+            exception.printStackTrace();
+            return;
+        }
+
 
             UiKit.showSuccess(messageLabel, language.text("createDraft.success").get());
 

@@ -15,9 +15,17 @@ public class ServiceItemRepository implements IServiceItemRepository {
     @PersistenceContext
     private EntityManager entityManager;
 
+    @Override
     public ServiceItem save(ServiceItem serviceItem) {
-        entityManager.persist(serviceItem);
-        return serviceItem;
+
+        // Ny tjänst – MySQL genererar ett nytt ID
+        if (serviceItem.getId() == 0) {
+            entityManager.persist(serviceItem);
+            return serviceItem;
+        }
+
+        // Befintlig tjänst – uppdatera den i databasen
+        return entityManager.merge(serviceItem);
     }
 
     public List<ServiceItem> findAll() {

@@ -10,12 +10,11 @@ import javafx.scene.control.*;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import java.util.Locale;
-import javafx.scene.control.ListCell;
+
 import javafx.scene.input.MouseButton;
+import com.wac.autocore.security.actions.SecuredBookingActions;
+import org.springframework.security.access.AccessDeniedException;
 import javafx.scene.input.MouseEvent;
-import com.wac.autocore.repository.BookingRepository;
-import com.wac.autocore.model.WorkOrder;
-import com.wac.autocore.model.WorkOrderStatus;
 import com.wac.autocore.ui.UiKit;
 
 import java.util.ArrayList;
@@ -23,6 +22,11 @@ import java.util.List;
 import java.util.Arrays;
 
 public class EditBookingServicesView {
+
+    private final SecuredBookingActions securedBookingActions;
+    public EditBookingServicesView( SecuredBookingActions securedBookingActions) {
+        this.securedBookingActions = securedBookingActions;
+    }
 
     public VBox getView() {
         return getView(null);
@@ -40,7 +44,7 @@ public class EditBookingServicesView {
         bookingLabel.textProperty().bind(language.text("editBookingServices.booking"));
 
         ComboBox<Booking> bookingComboBox = new ComboBox<>(
-                FXCollections.observableArrayList(Database.getBookings())
+                FXCollections.observableArrayList(securedBookingActions.getAllBookings())
         );
 
         bookingComboBox.setMaxWidth(Double.MAX_VALUE);
@@ -168,8 +172,6 @@ public class EditBookingServicesView {
 
         Label noticeLabel = UiKit.feedbackLabel();
 
-        BookingRepository bookingRepository = new BookingRepository();
-
         Button saveButton = UiKit.primaryButton("");
         saveButton.textProperty().bind(language.text("editBookingServices.save"));
         saveButton.disableProperty().bind(
@@ -194,13 +196,22 @@ public class EditBookingServicesView {
                 serviceIds.add(service.getId());
             }
 
-            final int totalMinutes;
+           
 
             try {
-                totalMinutes = bookingRepository.updateBookingServices(
+                securedBookingActions.updateBookingServices(
                         booking.getId(), serviceIds
                 );
-            } catch (RuntimeException exception) {
+            }
+            catch(AccessDeniedException exception) {
+                noticeLabel.textProperty().unbind();
+                UiKit.showError(
+                    noticeLabel, 
+                    language.text("security.accessDenied").get()
+                );
+                return;
+            }
+            catch (RuntimeException exception) {
                 String key = "editBookingServices.saveError";
 
                 List<String> validationKeys = Arrays.asList(
@@ -230,17 +241,6 @@ public class EditBookingServicesView {
                 UiKit.showError(noticeLabel, "");
                 noticeLabel.textProperty().bind(language.text(key));
                 return;
-            }
-
-            // Uppdaterar minnet först efter lyckat databassparande.
-            booking.setServices(new ArrayList<>(selectedServices));
-            booking.setDurationMinutes(totalMinutes);
-
-            for (WorkOrder order : Database.getWorkOrders()) {
-                if (order.getBookingId() == booking.getId()
-                        && order.getStatus() == WorkOrderStatus.CONFIRMED) {
-                    order.setServiceItemIds(new ArrayList<>(serviceIds));
-                }
             }
 
             noticeLabel.textProperty().unbind();

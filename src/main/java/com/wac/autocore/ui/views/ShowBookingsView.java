@@ -4,6 +4,7 @@ import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.Mechanic;
 import com.wac.autocore.model.Vehicle;
+import com.wac.autocore.security.actions.SecuredBookingActions;
 import com.wac.autocore.service.BookingService;
 import com.wac.autocore.ui.Navigator;
 import com.wac.autocore.ui.UiKit;
@@ -31,17 +32,25 @@ import javafx.scene.control.TextArea;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javafx.scene.Node;
 
 // Visar alla bokningar i en tabell: fordon, datum, mekaniker, beskrivning och status.
 public class ShowBookingsView {
 
-    private final LanguageManager language = LanguageManager.getInstance();
-    private final BookingService bookingService;
-    public ShowBookingsView( BookingService bookingService) {
-        this.bookingService = bookingService;
-    }
+        private final LanguageManager language = LanguageManager.getInstance();
+        private final SecuredBookingActions securedBookingActions;
+        private final boolean canEdit;
+
+        public ShowBookingsView(
+                SecuredBookingActions securedBookingActions,
+                boolean canEdit
+        ){
+                this.securedBookingActions = securedBookingActions;
+                this.canEdit = canEdit;
+        }
+
 
     public VBox getView() {
 
@@ -55,17 +64,18 @@ public class ShowBookingsView {
             );
         }
 
+        List<Booking> loadedBookings;
         try {
 
-            for (Booking booking : bookingService.getAllBookings()) {
-                mechanicByBooking.put(
-                        booking.getId(),
-                        booking.getMechanicId()
-                );
-            }
+                loadedBookings = securedBookingActions.getAllBookings();
+                for(Booking booking : loadedBookings) {
+                        mechanicByBooking.put(
+                                booking.getId(), 
+                                booking.getMechanicId());
+                }
 
         } catch (RuntimeException e) {
-            e.printStackTrace();
+                e.printStackTrace();
 
             return buildErrorView(
                     language.text("bookings.loadError").get()
@@ -255,7 +265,7 @@ public class ShowBookingsView {
 
         ObservableList<Booking> bookings =
                 UiKit.newestFirst(
-                        Database.getBookings(),
+                        loadedBookings,
                         Booking::getId
                 );
 
@@ -404,7 +414,10 @@ public class ShowBookingsView {
                         }
         );
 
-        table.getColumns().add(editColumn);
+        if (canEdit) {
+                table.getColumns().add(editColumn);    
+        }
+        
 
         // Skapar en ny bokning med den markerade som underlag.
         Button copyButton = UiKit.primaryButton("");
@@ -422,7 +435,7 @@ public class ShowBookingsView {
             if (selectedBooking != null) {
                 showBookingForm(
                         root,
-                        new CreateBookingView(bookingService ,selectedBooking).getView()
+                        new CreateBookingView(securedBookingActions ,selectedBooking).getView()
                 );
             }
         });
@@ -430,27 +443,23 @@ public class ShowBookingsView {
         root.getChildren().addAll(buildHeader(copyButton), table);
 
         // Dubbelklick på en bokning öppnar formuläret.
+        if (canEdit) {
         table.setRowFactory(tableView -> {
 
-            TableRow<Booking> row =
-                    new TableRow<>();
+                TableRow<Booking> row = new TableRow<>();
 
-            row.setOnMouseClicked(event -> {
-
-                if (event.getButton()
-                        == MouseButton.PRIMARY
+                row.setOnMouseClicked(event -> {
+                if (event.getButton() == MouseButton.PRIMARY
                         && event.getClickCount() == 2
                         && !row.isEmpty()) {
 
-                    openBookingEditor(
-                            root,
-                            row.getItem()
-                    );
+                        openBookingEditor(root, row.getItem());
                 }
-            });
+                });
 
-            return row;
+                return row;
         });
+        }
 
         return root;
     }
@@ -511,7 +520,7 @@ public class ShowBookingsView {
     private void openBookingEditor(VBox root, Booking booking) {
         showBookingForm(
                 root,
-                new EditBookingServicesView().getView(booking)
+                new EditBookingServicesView(securedBookingActions).getView(booking)
         );
     }
 
@@ -529,37 +538,42 @@ public class ShowBookingsView {
         return buildHeader(null);
     }
 
-    // Rubrik med "+ New booking" till höger.
-    private HBox buildHeader(Button copyButton) {
+        // Rubrik med "+ New booking" till höger.
+        private HBox buildHeader(Button copyButton) {
 
-        Button newBookingButton =
-                UiKit.primaryButton(
-                        "+ New booking"
+        // READ_ONLY får bara se rubriken
+        if (!canEdit) {
+                return UiKit.pageHeader(
+                        language.text("bookings.title"),
+                        null
                 );
+        }
+
+        // ADMIN och WORKSHOP får skapa bokningar
+        Button newBookingButton =
+                UiKit.primaryButton("+ New booking");
 
         newBookingButton.textProperty().bind(
                 language.text("bookings.new")
         );
 
         newBookingButton.setOnAction(
-                event ->
-                        Navigator.goTo(
-                                "create-booking"
-                        )
+                event -> Navigator.goTo("create-booking")
         );
 
         VBox actions = new VBox(8, newBookingButton);
         actions.setAlignment(javafx.geometry.Pos.TOP_RIGHT);
 
         if (copyButton != null) {
-            actions.getChildren().add(copyButton);
+                actions.getChildren().add(copyButton);
         }
 
         return UiKit.pageHeader(
                 language.text("bookings.title"),
                 actions
         );
-    }
+        }
+
 
     // Visas om bokningarna inte gick att läsa från databasen.
     private VBox buildErrorView(

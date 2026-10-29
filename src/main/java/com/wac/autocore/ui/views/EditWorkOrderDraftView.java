@@ -1,10 +1,8 @@
 package com.wac.autocore.ui.views;
 
 import com.wac.autocore.service.BookingService;
-import com.wac.autocore.service.WorkOrderService;
 import com.wac.autocore.ui.UiKit;
-import com.wac.autocore.model.WorkOrderTypeEnum;
-import com.wac.autocore.ui.views.ViewHelpMethod;
+import com.wac.autocore.security.actions.SecuredWorkOrderActions;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -14,7 +12,6 @@ import javafx.scene.layout.VBox;
 import com.wac.autocore.model.*;
 import com.wac.autocore.data.Database;
 import javafx.util.StringConverter;
-import com.wac.autocore.model.ServiceItem;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -23,11 +20,13 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.security.access.AccessDeniedException;
+
 public class EditWorkOrderDraftView {
 
     private final LanguageManager language =
             LanguageManager.getInstance();
-    private final WorkOrderService workOrderService;
+    private final SecuredWorkOrderActions securedWorkOrderActions;
     private final BookingService bookingService;
     private final ComboBox<WorkOrder> originalCombo = new ComboBox<>();
     private final ComboBox<Mechanic> mechanicCombo = new ComboBox<>();
@@ -38,8 +37,11 @@ public class EditWorkOrderDraftView {
     private final TextArea commentsField = new TextArea();
     private final Label totalPriceLabel = new Label();
 
-    public EditWorkOrderDraftView(WorkOrderService workOrderService, BookingService bookingService) {
-        this.workOrderService = workOrderService;
+    public EditWorkOrderDraftView(
+        SecuredWorkOrderActions securedWorkOrderActions, 
+        BookingService bookingService
+    ) {
+        this.securedWorkOrderActions = securedWorkOrderActions;
         this.bookingService = bookingService;
     }
 
@@ -88,7 +90,7 @@ public class EditWorkOrderDraftView {
         originalCombo.promptTextProperty().bind(
                 language.text("createWorkOrder.selectOriginalWorkOrder")
         );
-        List<WorkOrder> completedOrders = workOrderService.findAll().stream()
+        List<WorkOrder> completedOrders = securedWorkOrderActions.findAll().stream()
                 .filter(order -> order.getId() != draft.getId())
                 .filter(order -> order.getStatus() == WorkOrderStatus.COMPLETED)
                 .sorted(Comparator.comparing(WorkOrder::getId).reversed())
@@ -262,7 +264,7 @@ public class EditWorkOrderDraftView {
                     .collect(Collectors.toList());
 
             try {
-                workOrderService.updateDraftWorkOrder(draft,
+                securedWorkOrderActions.updateDraftWorkOrder(draft,
                         booking,
                         serviceIds,
                 mechanicId,
@@ -276,8 +278,17 @@ public class EditWorkOrderDraftView {
                                 : null);
 
                 showFeedback(messageLabel, "editWorkOrderDraft.saved", true);
-
-            } catch (IllegalArgumentException exception) {
+            
+            }catch (AccessDeniedException exception) {
+                showFeedback(
+                        messageLabel,
+                        "security.accessDenied",
+                        false
+                );
+                return;
+            }
+            
+            catch (IllegalArgumentException exception) {
                 showFeedback(messageLabel, exception.getMessage(), false);
 
             } catch (RuntimeException exception) {
