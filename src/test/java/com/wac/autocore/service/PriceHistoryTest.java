@@ -1,5 +1,6 @@
 package com.wac.autocore.service;
 
+import com.wac.autocore.DTO.InvoiceableOrder;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.Invoice;
@@ -84,6 +85,11 @@ public class PriceHistoryTest {
         @Override
         public List<Invoice> findAll() {
             return new ArrayList<>();
+        }
+
+        @Override
+        public List<InvoiceableOrder> findInvoiceableWorkOrdersWithVehicle() {
+            return List.of();
         }
     };
 

@@ -37,7 +37,7 @@ public class Invoice {
 
     @OneToMany(
             cascade = CascadeType.ALL,
-            fetch = FetchType.EAGER
+            fetch = FetchType.LAZY
     )
     @JoinColumn(name = "invoice_id")
     private List<InvoiceLine> lines = new ArrayList<>();

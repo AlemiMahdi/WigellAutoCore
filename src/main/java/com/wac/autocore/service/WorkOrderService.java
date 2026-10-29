@@ -107,7 +107,8 @@ public class WorkOrderService {
         // Räkna ut tid och frys priser för reklamationen
         List<InvoiceLine> frozenLines = new ArrayList<>();
         int totalMinutes = 0;
-        List<ServiceItem> services = serviceItemRepository.findAll();
+        List<Integer> serviceItems = workOrder.getServiceItemIds();
+        List<ServiceItem> services = serviceItemRepository.findAllByIds(serviceItems);
         if (services.size() != workOrder.getServiceItemIds().size()) {
             throw new IllegalArgumentException("editWorkOrderDraft.serviceMissing");
         }
