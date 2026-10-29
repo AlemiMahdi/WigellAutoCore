@@ -86,7 +86,6 @@ public class BookingService {
 
         // 5. Skapa bokningen
         Booking booking = new Booking(
-                0,
                 vehicleId,
                 date,
                 startTime,
@@ -125,31 +124,9 @@ public class BookingService {
         LocalDateTime newEnd = newStart.plusMinutes(durationMinutes);
 
         List<Booking> bookings = bookingRepository.findAll();
-        for( Booking booking : bookings) {
+        boolean result = BookingOverlapChecker.hasOverlap(bookings, mechanicId, newStart, newEnd);
 
-            //kontroll endast samma mekaniker
-            if (booking.getMechanicId() == null || booking.getMechanicId() != mechanicId) {
-                continue;
-            }
-
-            //Hoppa över bokningar som saknar tidsinformation
-            if (booking.getDate() == null
-                    || booking.getStartTime() == null
-                    || booking.getDurationMinutes() <= 0) {
-                continue;
-            }
-
-            LocalDateTime existingStart = LocalDateTime.of(
-                booking.getDate(), 
-                booking.getStartTime()
-            );
-
-            LocalDateTime existingEnd = existingStart.plusMinutes(booking.getDurationMinutes());
-            if (newStart.isBefore(existingEnd) && newEnd.isAfter(existingStart)) {
-                return true;
-            }
-        }
-        return false;
+        return result;
     }
 
     public int updateBookingServices(
@@ -173,7 +150,7 @@ public class BookingService {
 
         List<WorkOrder> workOrders = workOrderRepository.findByBookingId(bookingId);
         for (WorkOrder order : workOrders) {
-            if (order.getStatus() != WorkOrderStatus.CONFIRMED) {
+            if (!order.getStatus().allowsServiceChanges()) {
                 throw new IllegalArgumentException(
                         "editBookingServices.locked"
                 );
@@ -243,31 +220,8 @@ public class BookingService {
             LocalDateTime newEnd =
                     newStart.plusMinutes(totalMinutes);
 
-            for (Booking other : otherBookings) {
-                if (other.getDate() == null
-                        || other.getStartTime() == null
-                        || other.getDurationMinutes() <= 0) {
-                    continue;
-                }
-
-                LocalDateTime otherStart =
-                        LocalDateTime.of(
-                                other.getDate(),
-                                other.getStartTime()
-                        );
-
-                LocalDateTime otherEnd =
-                        otherStart.plusMinutes(
-                                other.getDurationMinutes()
-                        );
-
-                if (newStart.isBefore(otherEnd)
-                        && newEnd.isAfter(otherStart)) {
-
-                    throw new IllegalArgumentException(
-                            "editBookingServices.overlap"
-                    );
-                }
+            if (BookingOverlapChecker.hasOverlap(otherBookings, booking.getMechanicId(), newStart, newEnd)) {
+                throw new IllegalArgumentException("editBookingServices.overlap");
             }
         }
 
