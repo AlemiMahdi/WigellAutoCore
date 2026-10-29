@@ -42,7 +42,9 @@ public class WorkOrderRepository implements IWorkOrderRepository {
 
     public List<WorkOrder> findAll() {
         return entityManager.createQuery(
-                "from WorkOrder order by id",
+                "select distinct wo from WorkOrder wo " +
+                        "left join fetch wo.serviceItemIds " +
+                        "order by wo.id",
                 WorkOrder.class
         ).getResultList();
     }
