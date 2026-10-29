@@ -4,7 +4,6 @@ import com.wac.autocore.service.BookingService;
 import com.wac.autocore.service.WorkOrderService;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.model.WorkOrderTypeEnum;
-import com.wac.autocore.ui.views.ViewHelpMethod;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -68,7 +67,7 @@ public class EditWorkOrderDraftView {
             return new VBox(10, errorLabel);
         }
 
-        Booking booking = bookingService.getBookingById(draft.getBookingId()).orElse(null);
+        Booking booking = bookingService.findByIdAndServices(draft.getBookingId());
         if (booking == null) {
             javafx.scene.control.Label errorLabel = UiKit.feedbackLabel();
             UiKit.showError(errorLabel, "");
@@ -83,17 +82,17 @@ public class EditWorkOrderDraftView {
         descriptionLabel.getStyleClass().add("detail-text");
         descriptionLabel.setWrapText(true);
 
-        boolean isPlanned = draft.getType() == WorkOrderTypeEnum.PLANNED;
         boolean isComplaint = draft.getType() == WorkOrderTypeEnum.COMPLAINT;
 
-        //Om bokning redan finns på utkast, förval i listan
+        ObservableList<ServiceItem> selectedServiceIds = FXCollections.observableArrayList();
+        ListView<ServiceItem> serviceList = new ListView<>(
+                FXCollections.observableArrayList(Database.getServiceItems())
+        );
+        serviceList.setPrefHeight(150);
 
-            Booking currentBooking = bookingService.findByIdAndServices(draft.getBookingId());
-        if (booking == null) {
-            Label errorLabel = UiKit.feedbackLabel();
-            UiKit.showError(errorLabel, "");
-            errorLabel.textProperty().bind(language.text("editWorkOrderDraft.bookingMissing"));
-            return new VBox(10, errorLabel);
+        List<ServiceItem> services = new ArrayList<>();
+        if (booking.getServices() != null) {
+            services.addAll(booking.getServices());
         }
 
         Label bookingInfoLabel = new Label(
@@ -106,7 +105,6 @@ public class EditWorkOrderDraftView {
                 language.text("editWorkOrderDraft.linkedBooking"),
                 bookingInfoLabel
         );
-
 
         originalCombo.setMaxWidth(Double.MAX_VALUE);
         originalCombo.promptTextProperty().bind(
@@ -188,7 +186,10 @@ public class EditWorkOrderDraftView {
                     String.valueOf(booking.getDurationMinutes())
             );
         }
-        if (draft.getEstimatedPrice() != null) {
+        if(isComplaint) {
+            priceField.setText("0");
+        }
+        else if (draft.getEstimatedPrice() != null) {
             priceField.setText(draft.getEstimatedPrice().toPlainString());
         }
 
@@ -215,17 +216,6 @@ public class EditWorkOrderDraftView {
                 language.text("editWorkOrderDraft.saveButton")
         );
 
-        ObservableList<ServiceItem> selectedServiceIds = FXCollections.observableArrayList();
-        ListView<ServiceItem> serviceList = new ListView<>(
-                FXCollections.observableArrayList(Database.getServiceItems())
-        );
-        serviceList.setPrefHeight(150);
-
-        Booking loadedBookings = bookingService.findByIdAndServices(draft.getBookingId());
-        List<ServiceItem> services = new ArrayList<>();
-        if(loadedBookings != null){
-            services = loadedBookings.getServices();
-        }
 
         ViewHelpMethod.setupServiceChecklist(
                 serviceList,
@@ -236,7 +226,7 @@ public class EditWorkOrderDraftView {
         );
         //Uppdatera pris på tjänster när man klickar på tjänst
         totalPriceLabel.textProperty().addListener((observable, oldValue, newValue) -> {
-           if(newValue != null && !newValue.isEmpty()){
+           if(!isComplaint && newValue != null && !newValue.isEmpty()){
                String cleanedPrice = newValue.replaceAll("[^0-9.,]", "").trim();
                priceField.setText(cleanedPrice);
            }
@@ -299,7 +289,7 @@ public class EditWorkOrderDraftView {
                     .collect(Collectors.toList());
 
             try {
-                workOrderService.updateDraftWorkOrder(draft, loadedBookings,
+                workOrderService.updateDraftWorkOrder(draft, booking,
                         serviceIds,
                 mechanicId,
                 plannedDate,

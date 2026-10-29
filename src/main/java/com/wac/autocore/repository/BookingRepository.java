@@ -146,7 +146,7 @@ public class BookingRepository implements IBookingRepository{
         @Override
         public Booking findByIdAndServices(int id){
             List<Booking> bookingList = entityManager.createQuery(
-                    "SELECT b FROM Booking b LEFT JOIN FETCH b.services WHERE b.id = :id",
+                    "SELECT DISTINCT b FROM Booking b LEFT JOIN FETCH b.services WHERE b.id = :id",
                     Booking.class)
                     .setParameter("id", id)
                     .getResultList();

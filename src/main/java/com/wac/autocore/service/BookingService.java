@@ -243,10 +243,6 @@ public class BookingService {
             order.getServiceItemIds().addAll(uniqueIds);
         }
         bookingRepository.updateBookingAndOrder(workOrders, booking);
-//        bookingRepository.update(booking);
-//        for(WorkOrder order : workOrders) {
-//            workOrderRepository.save(order);
-//        }
         return totalMinutes;
     }
 
