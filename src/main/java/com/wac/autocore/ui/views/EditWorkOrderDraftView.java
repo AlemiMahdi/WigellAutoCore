@@ -285,7 +285,7 @@ private static final Logger LOGGER = LoggerFactory.getLogger(EditWorkOrderDraftV
 
             } catch (RuntimeException exception) {
                 showFeedback(messageLabel, "editWorkOrderDraft.saveError", false);
-                LOGGER.error("kunde inte spara ändringar i utkast {}", draft.getId(), exception);
+                LOGGER.error("Could not save changes to draft {}", draft.getId(), exception);
             }
 
         });

@@ -86,7 +86,7 @@ public class CreateVehicleView {
                 return;
             } catch (RuntimeException exception) {
                 UiKit.showError(statusLabel, language.text("vehicle.create.error").get());
-                LOGGER.error("Kunde inte skapa fordon", exception);
+                LOGGER.error("Could not create vehicle", exception);
                 return;
             }
 

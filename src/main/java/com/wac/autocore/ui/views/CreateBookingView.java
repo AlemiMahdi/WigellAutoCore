@@ -287,7 +287,7 @@ public class CreateBookingView {
                 language.text("createBooking.saveError").get()
             );
 
-            LOGGER.error("Kunde inte skapa bokning", exception);
+            LOGGER.error("Could not create booking", exception);
             return;
         }
 

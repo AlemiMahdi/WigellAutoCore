@@ -228,7 +228,7 @@ public class EditBookingServicesView {
                         && validationKeys.contains(exception.getMessage())) {
                     key = exception.getMessage();
                 } else {
-                    LOGGER.error("kunde inte uppdatera tjänster för bokning {}", booking.getId(), exception);
+                    LOGGER.error("Could not update services for booking {}", booking.getId(), exception);
                 }
 
                 noticeLabel.textProperty().unbind();

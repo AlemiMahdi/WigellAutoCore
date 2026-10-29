@@ -92,7 +92,7 @@ public class ManageServicePackageView {
                 return;
             } catch (RuntimeException exception) {
                 UiKit.showError(messageLabel, language.text("manageServicePackage.saveError").get());
-                LOGGER.error("Kunde inte uppdatera tjänster i servicepaket {}", selectedPackage.getId(), exception);
+                LOGGER.error("Could not update services in service package {}", selectedPackage.getId(), exception);
                 return;
             }
             UiKit.showSuccess(messageLabel, language.text("manageServicePackage.success").get());

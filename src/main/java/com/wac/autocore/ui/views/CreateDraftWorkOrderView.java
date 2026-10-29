@@ -144,7 +144,7 @@ public class CreateDraftWorkOrderView {
                 return;
             } catch (RuntimeException exception) {
                 UiKit.showError(messageLabel, language.text("createDraft.saveError").get());
-                LOGGER.error("Kunde inte spara utkast för fordon {} med typ {}", vehicle.getId(), type, exception);
+                LOGGER.error("Could not save draft for vehicle {} with type {}", vehicle.getId(), type, exception);
                 return;
             }
 

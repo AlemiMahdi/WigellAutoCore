@@ -461,7 +461,7 @@ private final LanguageManager language = LanguageManager.getInstance();
             } catch (RuntimeException exception) {
                 String errorKey = "createWorkOrder.saveError".equals(exception.getMessage()) ? "createWorkOrder.saveError" : "createWorkOrder.createError";
                 UiKit.showError(feedbackLabel, language.text(errorKey).get());
-                LOGGER.error("Kunde inte skapa arbetsorder av typ {}", selectedType, exception);
+                LOGGER.error("Could not create work order of type {}", selectedType, exception);
                 return;
             }
 

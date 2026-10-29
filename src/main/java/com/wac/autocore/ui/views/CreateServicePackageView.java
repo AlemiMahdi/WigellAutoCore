@@ -51,8 +51,7 @@ public class CreateServicePackageView {
                 return;
             } catch (RuntimeException exception) {
                 UiKit.showError(messageLabel, language.text("createServicePackage.saveError").get());
-                LOGGER.error("Kunde inte skapa service paket", exception);
-                return;
+                LOGGER.error("Could not create service package", exception);
             }
 
             nameField.clear();

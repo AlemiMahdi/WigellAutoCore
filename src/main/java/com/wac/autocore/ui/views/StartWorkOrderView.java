@@ -209,7 +209,7 @@ public class StartWorkOrderView extends VBox {
             // Lagringsfel: fast text till användaren, tekniska detaljer bara i loggen
             UiKit.showError(feedbackLabel, "");
             feedbackLabel.textProperty().bind(language.text("startWorkOrder.saveError"));
-            LOGGER.error("Kunde inte starta arbetsorder {}", workOrder.getId(), exception);
+            LOGGER.error("Could not start work order {}", workOrder.getId(), exception);
         }
 
         // Laddar om listan (startad order försvinner ur den).

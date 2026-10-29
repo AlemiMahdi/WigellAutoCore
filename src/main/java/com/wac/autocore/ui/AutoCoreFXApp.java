@@ -192,7 +192,7 @@ public class AutoCoreFXApp extends Application {
             loadPayments();
 
         } catch (RuntimeException exception) {
-            LOGGER.error("Kunde inte läsa data från databasen.", exception);
+            LOGGER.error("Could not load data from database", exception);
             offlineMode = true;
         }
     }

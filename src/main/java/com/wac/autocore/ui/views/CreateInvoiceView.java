@@ -248,7 +248,7 @@ public class CreateInvoiceView {
                 UiKit.showError(statusLabel,
                         language.text("createInvoice.saveError").get()
                 );
-                LOGGER.error("Kunde inte skapa faktura för arbetsorder {}", workOrderId, exception);
+                LOGGER.error("Could not create invoice for work order {}", workOrderId, exception);
             }
 
 

@@ -163,7 +163,7 @@ public class MechanicScheduleView {
                 errorLabel.setWrapText(true);
                 table.setPlaceholder(errorLabel);
 
-                LOGGER.error ("Kunde inte hämta schema för mekaniker {}", selected.getId(), exception);
+                LOGGER.error("Could not load schedule for mechanic {}", selected.getId(), exception);
                 return;
             }
 

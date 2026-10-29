@@ -144,7 +144,7 @@ public class ServiceView extends VBox {
             } catch (RuntimeException exception) {
                 table.refresh();
                 UiKit.showError(feedbackLabel, language.text("services.error").get());
-                LOGGER.error("Kunde inte spara tid för tjänst {}", selected.getId(), exception);
+                LOGGER.error("Could not save duration for service {}", selected.getId(), exception);
             }
 
         });
@@ -182,7 +182,7 @@ public class ServiceView extends VBox {
             } catch (RuntimeException exception) {
                 table.refresh();
                 UiKit.showError(priceFeedbackLabel, language.text("services.priceError").get());
-                LOGGER.error("Kunde inte spara pris för tjänst {}", selected.getId(), exception);
+                LOGGER.error("Could not save price for service {}", selected.getId(), exception);
             }
 
         });

@@ -166,7 +166,7 @@ public class CompleteWorkOrderView {
             // Lagringsfel: fast text till användaren, tekniska detaljer i loggen
             UiKit.showError(statusLabel, "");
             statusLabel.textProperty().bind(language.text("completeWorkOrder.error"));
-            LOGGER.error("Kunde inte avsluta arbetsorder {}", workOrderId, exception);
+            LOGGER.error("Could not complete work order {}", workOrderId, exception);
             return false;
         }
     }

@@ -71,7 +71,7 @@ public class ShowBookingsView {
             }
 
         } catch (RuntimeException e) {
-            LOGGER.error("kunde inte hämta bokningar", e);
+            LOGGER.error("Could not load bookings", e);
             return buildErrorView(
                     language.text("bookings.loadError").get()
             );

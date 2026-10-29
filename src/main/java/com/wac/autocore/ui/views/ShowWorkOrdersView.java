@@ -187,7 +187,7 @@ public class ShowWorkOrdersView {
                     feedbackBox.setVisible(true);
                     feedbackBox.setManaged(true);
 
-                    LOGGER.error("Kunde inte bekräfta arbetsorder {}", workOrder.getId(), exception);
+                    LOGGER.error("Could not confirm work order {}", workOrder.getId(), exception);
                     return;
                 }
 
