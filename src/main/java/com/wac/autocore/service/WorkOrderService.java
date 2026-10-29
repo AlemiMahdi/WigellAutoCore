@@ -48,7 +48,7 @@ public class WorkOrderService {
                     if (originalBooking != null) {
                         // Skapa en ny skuggbokning för reklamationen (id = 0 MySQL ger id via AUTO_INCREMENT)
 
-                        Booking complaintBooking = new Booking(0,
+                        Booking complaintBooking = new Booking(
                                 originalBooking.getVehicleId(),
                                 null,
                                 originalBooking.getDescription()
@@ -102,7 +102,8 @@ public class WorkOrderService {
         // Räkna ut tid och frys priser för reklamationen
         List<InvoiceLine> frozenLines = new ArrayList<>();
         int totalMinutes = 0;
-        List<ServiceItem> services = serviceItemRepository.findAll();
+        List<Integer> serviceItems = workOrder.getServiceItemIds();
+        List<ServiceItem> services = serviceItemRepository.findAllByIds(serviceItems);
         if (services.size() != workOrder.getServiceItemIds().size()) {
             throw new IllegalArgumentException("editWorkOrderDraft.serviceMissing");
         }
@@ -288,7 +289,7 @@ public class WorkOrderService {
             draft.setOriginalWorkOrderId(originalWorkOrderId);
         }
 
-        Booking booking = new Booking(0, vehicleId, null, description.trim());
+        Booking booking = new Booking(vehicleId, null, description.trim());
         booking.setStatus("WORK_ORDER_CREATED");
 
         // 3. Spara bokning och utkast i samma transaktion

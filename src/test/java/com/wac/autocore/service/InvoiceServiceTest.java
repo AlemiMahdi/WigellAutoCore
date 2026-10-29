@@ -186,9 +186,10 @@ class InvoiceServiceTest {
             );
 
             Booking booking = new Booking(
-                    1, vehicle.getId(), LocalDate.of(2026, 10, 17),
+                    vehicle.getId(), LocalDate.of(2026, 10, 17),
                     "Testbokning"
             );
+            booking.setId(1);
             booking.addFrozenPrice(
                     new InvoiceLine(1, "Oil change", 1000.0)
             );
@@ -427,8 +428,9 @@ class InvoiceServiceTest {
             Database.getBookings().clear();
 
             Booking booking = new Booking(
-                    1, 1, LocalDate.now(), "Bokning utan sparade priser"
+                     1, LocalDate.now(), "Bokning utan sparade priser"
             );
+            booking.setId(1);
             Database.getBookings().add(booking);
 
             WorkOrder order = new WorkOrder(booking.getId(), 1, WorkOrderTypeEnum.PLANNED
@@ -493,8 +495,9 @@ class InvoiceServiceTest {
             Database.getServiceItems().add(serviceItem);
 
             Booking booking = new Booking(
-                    1, 1, LocalDate.now(), "Reklamation"
+                    1, LocalDate.now(), "Reklamation"
             );
+            booking.setId(1);
             Database.getBookings().add(booking);
 
             WorkOrder order = new WorkOrder(booking.getId(), 1, WorkOrderTypeEnum.COMPLAINT
@@ -552,8 +555,9 @@ class InvoiceServiceTest {
         );
 
         Booking booking = new Booking(
-                1, vehicle.getId(), LocalDate.of(2026, 10, 23), "Service"
+                vehicle.getId(), LocalDate.of(2026, 10, 23), "Service"
         );
+        booking.setId(1);
         booking.addFrozenPrice(new InvoiceLine(1, "Oljebyte", 1000.0));
         booking.addFrozenPrice(new InvoiceLine(2, "Bromsservice", 500.0));
 

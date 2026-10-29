@@ -65,8 +65,7 @@ public class Booking {
     public Booking() {
     }
 
-    public Booking(int id, int vehicleId, LocalDate date, String description) {
-        this.id = id;
+    public Booking(int vehicleId, LocalDate date, String description) {
         this.vehicleId = vehicleId;
         this.date = date;
         this.description = description;
@@ -74,14 +73,12 @@ public class Booking {
     }
 
     public Booking(
-            int id,
             int vehicleId,
             LocalDate date,
             LocalTime startTime,
             int durationMinutes,
             String description
     ) {
-        this.id = id;
         this.vehicleId = vehicleId;
         this.date = date;
         this.startTime = startTime;
@@ -91,7 +88,6 @@ public class Booking {
     }
 
     public Booking(
-            int id,
             int vehicleId,
             LocalDate date,
             LocalTime startTime,
@@ -99,7 +95,6 @@ public class Booking {
             String description,
             List<InvoiceLine> frozenPrice
     ) {
-        this.id = id;
         this.vehicleId = vehicleId;
         this.date = date;
         this.startTime = startTime;
@@ -111,9 +106,7 @@ public class Booking {
                 : new ArrayList<>();
     }
 
-    public int getId() {
-        return id;
-    }
+    public int getId() { return id; }
 
     public void setId(int id) {
         this.id = id;
