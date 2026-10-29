@@ -30,7 +30,7 @@ public final class ErrorHandler {
 
         if (exception instanceof DataAccessException
                 || !(exception instanceof ApplicationException)) {
-            LOGGER.error("Operation failed", exception);
+            LOGGER.error("Operation failed: {}", messageKey, exception);
         }
 
         label.textProperty().unbind();
