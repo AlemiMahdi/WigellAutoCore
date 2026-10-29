@@ -19,8 +19,12 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class InvoiceService {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(InvoiceService.class);
     private final IInvoiceRepository invoiceRepository;
     private final Supplier<List<WorkOrder>> workOrderSource;
     private final Supplier<List<Booking>> bookingSource;
@@ -382,7 +386,7 @@ public class InvoiceService {
 
             if (customer != null && customer.isVip()) {
                 discount += amount * 0.10;
-                System.out.println("VIP discount applied: 10%");
+                LOGGER.debug("VIP discount applied: 10% for workorder {}", workOrderId);
             }
         }
 
@@ -390,14 +394,14 @@ public class InvoiceService {
 
             if (discountCode.equalsIgnoreCase("WELCOME10")) {
                 discount += amount * 0.10;
-                System.out.println("Discount code WELCOME10 applied.");
+                LOGGER.debug("Discount code WELCOME10 applied for workorder {}.", workOrderId);
 
             } else if (discountCode.equalsIgnoreCase("SERVICE200")) {
                 discount += 200.0;
-                System.out.println("Discount code SERVICE200 applied.");
+                LOGGER.debug("Discount code SERVICE200 applied for workorder {}.", workOrderId);
 
             } else {
-                System.out.println("Unknown discount code. No code discount applied.");
+                LOGGER.debug("Unknown discount code. No code discount applied for workorder {}.", workOrderId);
             }
         }
 
