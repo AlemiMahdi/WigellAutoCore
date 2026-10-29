@@ -84,6 +84,8 @@ public class InvoiceService {
         Invoice savedInvoice = invoiceRepository.save(invoice);
         Database.getInvoices().add(savedInvoice);
 
+        LOGGER.info("Invoice {} created for work order {}", savedInvoice.getId(),  workOrderId);
+
         return savedInvoice;
     }
 
