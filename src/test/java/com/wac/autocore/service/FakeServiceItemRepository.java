@@ -22,6 +22,11 @@ public class FakeServiceItemRepository implements IServiceItemRepository {
     }
 
     @Override
+    public List<ServiceItem> findAllByIds(List<Integer> ids) {
+        return List.of();
+    }
+
+    @Override
     public void update(ServiceItem serviceItem) {
     }
 }
