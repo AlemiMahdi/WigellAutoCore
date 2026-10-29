@@ -25,6 +25,11 @@ public class BookingRepository implements IBookingRepository{
         entityManager.persist(booking);
         return booking;}
 
+        @Override
+        public void update(Booking booking){
+            entityManager.merge(booking);
+        }
+
         // Sparar bokningen tillsammans med vald mekaniker.
         @Override 
         public Booking save(Booking booking, int mechanicId) {
@@ -34,6 +39,16 @@ public class BookingRepository implements IBookingRepository{
             } else { throw new IllegalArgumentException("Mechanic not found"); }
                 entityManager.persist(booking);
             return booking;
+        }
+
+        @Override
+        public void updateBookingAndOrder(List<WorkOrder> orderList, Booking booking){
+            entityManager.merge(booking);
+            if(orderList != null) {
+                for(WorkOrder workOrder : orderList){
+                    entityManager.merge(workOrder);
+                }
+            }
         }
 
         //Används den inte?
@@ -149,7 +164,7 @@ public class BookingRepository implements IBookingRepository{
                     );
                 }
 
-                // Endast bokningar där arbetet inte har börjat får ändras.
+                // Endast bokningar d├ñr arbetet inte har b├Ârjat f├Ñr ├ñndras.
                 if (!"BOOKED".equals(booking.getStatus())
                         && !"WORK_ORDER_CREATED".equals(
                                 booking.getStatus()
@@ -289,14 +304,14 @@ public class BookingRepository implements IBookingRepository{
                     }
                 }
 
-                // Alla ändringar sparas i samma transaktion.
+                // Alla ├ñndringar sparas i samma transaktion.
                 booking.getServices().clear();
                 booking.getServices().addAll(services);
                 booking.setDurationMinutes(totalMinutes);
 
                 /*
-                 * Bokningens tjänster får ändras innan arbetet har börjat.
-                 * Därför uppdateras även historical-price-snapshoten.
+                 * Bokningens tj├ñnster f├Ñr ├ñndras innan arbetet har b├Ârjat.
+                 * D├ñrf├Âr uppdateras ├ñven historical-price-snapshoten.
                  */
                 booking.getFrozenPrice().clear();
                 booking.getFrozenPrice().addAll(createFrozenPrices(services));
@@ -307,18 +322,45 @@ public class BookingRepository implements IBookingRepository{
                 }
                 return totalMinutes;
     }
+    
+    @Override
+    public Booking findByIdAndServices(int id) {
+        List<Booking> bookingList = entityManager.createQuery(
+                "SELECT DISTINCT b FROM Booking b " +
+                "LEFT JOIN FETCH b.services WHERE b.id = :id",
+                Booking.class
+        )
+        .setParameter("id", id)
+        .getResultList();
 
-public List<InvoiceLine> createFrozenPrices(List<ServiceItem> serviceItems) {
-
-    List<InvoiceLine> frozenPrices = new ArrayList<>();
-    for (ServiceItem service : serviceItems) {
-        InvoiceLine frozenLine = new InvoiceLine(
-                service.getId(),
-                service.getName(),
-                service.getPrice() // Sparar priset inför faktureringen
-        );
-        frozenPrices.add(frozenLine);
+        return bookingList.isEmpty() ? null : bookingList.getFirst();
     }
-    return frozenPrices;
-}
+
+    @Override
+    public List<Booking> findOtherBookingsByMechanic(
+            int mechanicId, int bookingId) {
+
+        return entityManager.createQuery(
+                "FROM Booking WHERE mechanicId = :mechanicId " +
+                "AND id <> :bookingId",
+                Booking.class
+        )
+        .setParameter("mechanicId", mechanicId)
+        .setParameter("bookingId", bookingId)
+        .getResultList();
+    }
+
+    public List<InvoiceLine> createFrozenPrices(List<ServiceItem> serviceItems) {
+
+        List<InvoiceLine> frozenPrices = new ArrayList<>();
+        for (ServiceItem service : serviceItems) {
+            InvoiceLine frozenLine = new InvoiceLine(
+                    service.getId(),
+                    service.getName(),
+                    service.getPrice() // Sparar priset inför faktureringen
+            );
+            frozenPrices.add(frozenLine);
+        }
+        return frozenPrices;
+    }
 }

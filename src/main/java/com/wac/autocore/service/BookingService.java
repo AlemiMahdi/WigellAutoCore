@@ -9,17 +9,22 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 import com.wac.autocore.data.Database;
-import com.wac.autocore.model.Booking;
-import com.wac.autocore.model.InvoiceLine;
-import com.wac.autocore.model.ServiceItem;
+import com.wac.autocore.model.*;
 import com.wac.autocore.repository.IBookingRepository;
+import com.wac.autocore.repository.IServiceItemRepository;
+import com.wac.autocore.repository.IWorkOrderRepository;
 
 public class BookingService {
 
     private final IBookingRepository bookingRepository;
+    private final IWorkOrderRepository workOrderRepository;
+    private final IServiceItemRepository serviceItemRepository;
 
-    public BookingService(IBookingRepository bookingRepository){
+    public BookingService(IBookingRepository bookingRepository, IWorkOrderRepository workOrderRepository,
+                          IServiceItemRepository serviceItemRepository) {
         this.bookingRepository = bookingRepository;
+        this.workOrderRepository = workOrderRepository;
+        this.serviceItemRepository = serviceItemRepository;
     }
 
     public List<Booking> getAllBookings(){
@@ -145,7 +150,6 @@ public class BookingService {
 
         // 5. Skapa bokningen
         Booking booking = new Booking(
-                0,
                 vehicleId,
                 date,
                 startTime,
@@ -184,31 +188,22 @@ public class BookingService {
         LocalDateTime newEnd = newStart.plusMinutes(durationMinutes);
 
         List<Booking> bookings = bookingRepository.findAll();
-        for( Booking booking : bookings) {
+        boolean result = BookingOverlapChecker.hasOverlap(bookings, mechanicId, newStart, newEnd);
 
-            //kontroll endast samma mekaniker
-            if (booking.getMechanicId() == null || booking.getMechanicId() != mechanicId) {
-                continue;
-            }
-
-            //Hoppa över bokningar som saknar tidsinformation
-            if (booking.getDate() == null
-                    || booking.getStartTime() == null
-                    || booking.getDurationMinutes() <= 0) {
-                continue;
-            }
-
-            LocalDateTime existingStart = LocalDateTime.of(
-                booking.getDate(), 
-                booking.getStartTime()
-            );
-
-            LocalDateTime existingEnd = existingStart.plusMinutes(booking.getDurationMinutes());
-            if (newStart.isBefore(existingEnd) && newEnd.isAfter(existingStart)) {
-                return true;
-            }
-        }
-        return false;
+        return result;
     }
-    
+
+    public List<InvoiceLine> createFrozenPrices(List<ServiceItem> serviceItems) {
+
+        List<InvoiceLine> frozenPrices = new ArrayList<>();
+        for (ServiceItem service : serviceItems) {
+            InvoiceLine frozenLine = new InvoiceLine(
+                    service.getId(),
+                    service.getName(),
+                    service.getPrice() // Sparar priset inför faktureringen
+            );
+            frozenPrices.add(frozenLine);
+        }
+        return frozenPrices;
+    }
 }

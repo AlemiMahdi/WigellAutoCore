@@ -1,5 +1,6 @@
 package com.wac.autocore.service;
 
+import com.wac.autocore.DTO.InvoiceableOrder;
 import com.wac.autocore.model.*;
 import com.wac.autocore.repository.IInvoiceRepository;
 import com.wac.autocore.data.Database;
@@ -17,7 +18,6 @@ import java.util.List;
 import java.util.Objects;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.stream.Collectors;
 
 public class InvoiceService {
 
@@ -28,7 +28,6 @@ public class InvoiceService {
     private final Supplier<List<Customer>> customerSource;
     private final Supplier<List<ServiceItem>> serviceItemSource;
 
-//Korta konstruktorn ställer till det för Spring eventuellt, ska inte skapa NEW instanser
     public InvoiceService(IInvoiceRepository invoiceRepository) {
         this(
                 invoiceRepository,
@@ -56,26 +55,7 @@ public class InvoiceService {
         this.serviceItemSource = Objects.requireNonNull(serviceItemSource);
     }
 
-//    public InvoiceService(
-//            IInvoiceRepository invoiceRepository,
-//            WorkOrderRepository workOrderRepository,
-//            BookingRepository bookingRepository,
-//            VehicleRepository vehicleRepository,
-//            CustomerRepository customerRepository,
-//            ServiceItemRepository serviceItemRepository
-//    ){
-//        this.invoiceRepository = Objects.requireNonNull(invoiceRepository);
-//        this.workOrderSource = workOrderRepository::findAll;
-//        this.bookingSource = bookingRepository::findAll;
-//        this.vehicleSource = vehicleRepository::findAll;
-//        this.customerSource = customerRepository::findAll;
-//        this.serviceItemSource = serviceItemRepository::findAll;
-//    }
-
     public Invoice createInvoice(
-
-
-
             int workOrderId,
             String discountCode,
             String extraDescription,
@@ -157,41 +137,8 @@ public class InvoiceService {
         return invoiceRepository.findAll();
     }
 
-    public List<WorkOrder> getInvoiceableWorkOrders() {
-
-        List<Invoice> invoices = invoiceRepository.findAll();
-
-        return workOrderSource.get().stream()
-                .filter(order -> order.getStatus() == WorkOrderStatus.COMPLETED)
-                .filter(order -> invoices.stream()
-                        .noneMatch(invoice ->
-                                invoice.getWorkOrderId() == order.getId()))
-                .collect(Collectors.toList());
-    }
-
-    public Vehicle findVehicleForWorkOrder(int workOrderId) {
-        WorkOrder order = workOrderSource.get().stream()
-                .filter(item -> item.getId() == workOrderId)
-                .findFirst()
-                .orElse(null);
-
-        if (order == null) {
-            return null;
-        }
-
-        Booking booking = bookingSource.get().stream()
-                .filter(item -> item.getId() == order.getBookingId())
-                .findFirst()
-                .orElse(null);
-
-        if (booking == null) {
-            return null;
-        }
-
-        return vehicleSource.get().stream()
-                .filter(item -> item.getId() == booking.getVehicleId())
-                .findFirst()
-                .orElse(null);
+    public List<InvoiceableOrder> getInvoiceableWorkOrders() {
+         return invoiceRepository.findInvoiceableWorkOrdersWithVehicle();
     }
 
     private void calculateAmountFromLines(Invoice invoice) {

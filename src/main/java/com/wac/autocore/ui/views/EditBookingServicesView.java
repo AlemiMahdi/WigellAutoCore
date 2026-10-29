@@ -2,6 +2,7 @@ package com.wac.autocore.ui.views;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.ServiceItem;
+import com.wac.autocore.service.BookingService;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -15,6 +16,8 @@ import javafx.scene.input.MouseButton;
 import com.wac.autocore.security.actions.SecuredBookingActions;
 import org.springframework.security.access.AccessDeniedException;
 import javafx.scene.input.MouseEvent;
+import com.wac.autocore.model.WorkOrder;
+import com.wac.autocore.model.WorkOrderStatus;
 import com.wac.autocore.ui.UiKit;
 
 import java.util.ArrayList;
@@ -196,10 +199,10 @@ public class EditBookingServicesView {
                 serviceIds.add(service.getId());
             }
 
-           
-
+           final int totalMinutes;
+            
             try {
-                securedBookingActions.updateBookingServices(
+                totalMinutes = securedBookingActions.updateBookingServices(
                         booking.getId(), serviceIds
                 );
             }

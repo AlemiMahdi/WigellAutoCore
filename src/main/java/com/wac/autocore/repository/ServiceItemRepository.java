@@ -28,6 +28,12 @@ public class ServiceItemRepository implements IServiceItemRepository {
         return entityManager.merge(serviceItem);
     }
 
+    @Override
+    public void update(ServiceItem serviceItem) {
+        entityManager.merge(serviceItem);
+    }
+
+    @Override
     public List<ServiceItem> findAll() {
         return entityManager.createQuery(
                 "from ServiceItem order by id",
@@ -35,7 +41,14 @@ public class ServiceItemRepository implements IServiceItemRepository {
         ).getResultList();
     }
 
+    @Override
     public ServiceItem findById(int id) {
         return entityManager.find(ServiceItem.class, id);
+    }
+
+    @Override
+    public List<ServiceItem> findAllByIds(List<Integer> ids){
+        return entityManager.createQuery("SELECT s FROM ServiceItem s where s.id in :ids", ServiceItem.class)
+                .setParameter("ids", ids).getResultList();
     }
 }

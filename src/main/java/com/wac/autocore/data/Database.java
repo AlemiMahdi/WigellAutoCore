@@ -131,19 +131,19 @@ public class Database {
                 "Diagnostics"
         ));
 
-        bookings.add(new Booking(
-                1,
-                1,
-                LocalDate.now().plusDays(2),
-                "Annual service and general inspection"
-        ));
-
-        bookings.add(new Booking(
-                2,
-                2,
-                LocalDate.now().plusDays(4),
-                "Noise from front brakes"
-        ));
+//        bookings.add(new Booking(
+//                1,
+//                1,
+//                LocalDate.now().plusDays(2),
+//                "Annual service and general inspection"
+//        ));
+//
+//        bookings.add(new Booking(
+//                2,
+//                2,
+//                LocalDate.now().plusDays(4),
+//                "Noise from front brakes"
+//        ));
     }
 
     public static List<Customer> getCustomers() {

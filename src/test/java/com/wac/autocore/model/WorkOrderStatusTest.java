@@ -3,7 +3,7 @@ package com.wac.autocore.model;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static  org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class WorkOrderStatusTest {
 
@@ -60,5 +60,76 @@ public class WorkOrderStatusTest {
     @Test
     void canceledCannotChangeToDraft() {
         assertFalse(WorkOrderStatus.CANCELLED.canChangeTo(WorkOrderStatus.DRAFT));
+    }
+
+    @Test
+    void completedCannotChangeToInProgress() {
+        assertFalse(WorkOrderStatus.COMPLETED.canChangeTo(WorkOrderStatus.IN_PROGRESS));
+    }
+
+    @Test
+    void canceledCannotChangeToConfirmed() {
+        assertFalse(WorkOrderStatus.CANCELLED.canChangeTo(WorkOrderStatus.CONFIRMED));
+    }
+
+    @Test
+    void draftCannotChangeToDraft() {
+        assertFalse(WorkOrderStatus.DRAFT.canChangeTo(WorkOrderStatus.DRAFT));
+    }
+
+    @Test
+    void confirmedCannotChangeToCompleted() {
+        assertFalse(WorkOrderStatus.CONFIRMED.canChangeTo(WorkOrderStatus.COMPLETED));
+    }
+
+    @Test
+    void draftIsEditable() {
+        assertTrue(WorkOrderStatus.DRAFT.isEditable());
+    }
+
+    @Test
+    void confirmedIsNotEditable() {
+        assertFalse(WorkOrderStatus.CONFIRMED.isEditable());
+    }
+
+    @Test
+    void completedIsNotEditable() {
+        assertFalse(WorkOrderStatus.COMPLETED.isEditable());
+    }
+
+    @Test
+    void inProgressIsNotEditable() {
+        assertFalse(WorkOrderStatus.IN_PROGRESS.isEditable());
+    }
+
+    @Test
+    void canceledIsNotEditable() {
+        assertFalse(WorkOrderStatus.CANCELLED.isEditable());
+    }
+
+    // allowsServiceChange(): bara CONFIRMED tillåter att bokningens tjänster ändras
+    @Test
+    void draftDoesNotAllowServiceChanges() {
+        assertFalse(WorkOrderStatus.DRAFT.allowsServiceChanges());
+    }
+
+    @Test
+    void confirmedAllowsServiceChanges() {
+        assertTrue(WorkOrderStatus.CONFIRMED.allowsServiceChanges());
+    }
+
+    @Test
+    void inProgressDoesNotAllowServiceChanges() {
+        assertFalse(WorkOrderStatus.IN_PROGRESS.allowsServiceChanges());
+    }
+
+    @Test
+    void completedDoesNotAllowServiceChanges() {
+        assertFalse(WorkOrderStatus.COMPLETED.allowsServiceChanges());
+    }
+
+    @Test
+    void canceledDoesNotAllowServiceChanges() {
+        assertFalse(WorkOrderStatus.CANCELLED.allowsServiceChanges());
     }
 }

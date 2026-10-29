@@ -48,7 +48,7 @@ public class WorkOrderService {
                     if (originalBooking != null) {
                         // Skapa en ny skuggbokning för reklamationen (id = 0 MySQL ger id via AUTO_INCREMENT)
 
-                        Booking complaintBooking = new Booking(0,
+                        Booking complaintBooking = new Booking(
                                 originalBooking.getVehicleId(),
                                 null,
                                 originalBooking.getDescription()
@@ -74,7 +74,7 @@ public class WorkOrderService {
                 case PLANNED:
                     if (originalBooking != null) {
                         originalBooking.setStatus("WORK_ORDER_CREATED");
-                        bookingRepository.save(originalBooking);
+                        bookingRepository.update(originalBooking);
                     }
                     workOrderRepository.save(workOrder);
                     break;
@@ -102,7 +102,8 @@ public class WorkOrderService {
         // Räkna ut tid och frys priser för reklamationen
         List<InvoiceLine> frozenLines = new ArrayList<>();
         int totalMinutes = 0;
-        List<ServiceItem> services = serviceItemRepository.findAll();
+        List<Integer> serviceItems = workOrder.getServiceItemIds();
+        List<ServiceItem> services = serviceItemRepository.findAllByIds(serviceItems);
         if (services.size() != workOrder.getServiceItemIds().size()) {
             throw new IllegalArgumentException("editWorkOrderDraft.serviceMissing");
         }
@@ -140,7 +141,7 @@ public class WorkOrderService {
             return errors;
         }
 
-        if (workOrder.getStatus() != WorkOrderStatus.DRAFT) {
+        if (!workOrder.getStatus().canChangeTo(WorkOrderStatus.CONFIRMED)) {
             errors.add("confirmWorkOrder.onlyDraft");
             return errors;
         }
@@ -206,7 +207,7 @@ public class WorkOrderService {
                                           String instructions,
                                           String comments,
                                           Integer originalWorkOrderId) {
-        if (draft == null || draft.getStatus() != WorkOrderStatus.DRAFT) {
+        if (draft == null || !draft.getStatus().isEditable()) {
             throw new IllegalArgumentException("editWorkOrderDraft.onlyDraft");
         }
 
@@ -296,7 +297,7 @@ public class WorkOrderService {
             draft.setOriginalWorkOrderId(originalWorkOrderId);
         }
 
-        Booking booking = new Booking(0, vehicleId, null, description.trim());
+        Booking booking = new Booking(vehicleId, null, description.trim());
         booking.setStatus("WORK_ORDER_CREATED");
 
         // 3. Spara bokning och utkast i samma transaktion
@@ -357,11 +358,11 @@ public class WorkOrderService {
         mechanic.setAvailable(false);
         workOrder.changeStatus(WorkOrderStatus.IN_PROGRESS);
 
-        // 7. Spara i databasen
+        // 7. Uppdatera istället i databasen
         try {
-            workOrderRepository.save(workOrder);
-            bookingRepository.save(booking);
-            mechanicRepository.save(mechanic);
+            workOrderRepository.update(workOrder);
+            bookingRepository.update(booking);
+            mechanicRepository.update(mechanic);
         } catch (RuntimeException exception) {
             // Återställ det som går att återställa i minnet
             booking.setStatus(previousBookingStatus);

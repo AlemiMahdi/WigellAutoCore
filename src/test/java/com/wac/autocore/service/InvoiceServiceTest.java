@@ -1,5 +1,6 @@
 package com.wac.autocore.service;
 
+import com.wac.autocore.DTO.InvoiceableOrder;
 import com.wac.autocore.model.Invoice;
 import com.wac.autocore.repository.IInvoiceRepository;
 import com.wac.autocore.data.Database;
@@ -185,9 +186,10 @@ class InvoiceServiceTest {
             );
 
             Booking booking = new Booking(
-                    1, vehicle.getId(), LocalDate.of(2026, 10, 17),
+                    vehicle.getId(), LocalDate.of(2026, 10, 17),
                     "Testbokning"
             );
+            booking.setId(1);
             booking.addFrozenPrice(
                     new InvoiceLine(1, "Oil change", 1000.0)
             );
@@ -348,10 +350,10 @@ class InvoiceServiceTest {
 
             InvoiceService service = createService(repository);
 
-            List<WorkOrder> result = service.getInvoiceableWorkOrders();
+            List<InvoiceableOrder> result = service.getInvoiceableWorkOrders();
 
             assertEquals(1, result.size());
-            assertSame(completed, result.get(0));
+            assertSame(completed, result.get(0).getWorkOrder());
 
             // Att ändra resultatlistan ska inte ändra originalets lista.
             result.clear();
@@ -426,8 +428,9 @@ class InvoiceServiceTest {
             Database.getBookings().clear();
 
             Booking booking = new Booking(
-                    1, 1, LocalDate.now(), "Bokning utan sparade priser"
+                     1, LocalDate.now(), "Bokning utan sparade priser"
             );
+            booking.setId(1);
             Database.getBookings().add(booking);
 
             WorkOrder order = new WorkOrder(booking.getId(), 1, WorkOrderTypeEnum.PLANNED
@@ -492,8 +495,9 @@ class InvoiceServiceTest {
             Database.getServiceItems().add(serviceItem);
 
             Booking booking = new Booking(
-                    1, 1, LocalDate.now(), "Reklamation"
+                    1, LocalDate.now(), "Reklamation"
             );
+            booking.setId(1);
             Database.getBookings().add(booking);
 
             WorkOrder order = new WorkOrder(booking.getId(), 1, WorkOrderTypeEnum.COMPLAINT
@@ -539,6 +543,57 @@ class InvoiceServiceTest {
         }
     }
 
+    @Test
+    void vipDiscountAndDiscountCodeAreCombined() {
+        Customer vipCustomer = new Customer(
+                1, "VIP-kund", "0701234567", "vip@example.com"
+        );
+        vipCustomer.setVip(true);
+
+        Vehicle vehicle = new Vehicle(
+                1, "VIP123", "Volvo", "XC60", 2020, vipCustomer.getId()
+        );
+
+        Booking booking = new Booking(
+                vehicle.getId(), LocalDate.of(2026, 10, 23), "Service"
+        );
+        booking.setId(1);
+        booking.addFrozenPrice(new InvoiceLine(1, "Oljebyte", 1000.0));
+        booking.addFrozenPrice(new InvoiceLine(2, "Bromsservice", 500.0));
+
+        WorkOrder order = new WorkOrder(
+                booking.getId(), 1, WorkOrderTypeEnum.PLANNED
+        );
+        order.setId(1);
+        order.changeStatus(WorkOrderStatus.IN_PROGRESS);
+        order.changeStatus(WorkOrderStatus.COMPLETED);
+
+        // Egna listor i stället för Database, så att inget delat ändras
+        InvoiceService service = new InvoiceService(
+                new FakeInvoiceRepository(),
+                () -> List.of(order),
+                () -> List.of(booking),
+                () -> List.of(vehicle),
+                () -> List.of(vipCustomer),
+                ArrayList::new
+        );
+
+        Invoice invoice = service.previewInvoice(
+                order.getId(), "WELCOME10", "", 0.0
+        );
+
+        // 1500 kr, 10 % VIP + 10 % WELCOME10 = 300 kr rabatt
+        assertEquals(1500.0, invoice.getAmount(), 0.001);
+        assertEquals(300.0, invoice.getDiscount(), 0.001);
+        assertEquals(1200.0, invoice.getTotalAmount(), 0.001);
+
+        // Rabatten är fördelad på raderna, så att raderna summerar till totalen
+        double lineTotal = invoice.getLines().stream()
+                .mapToDouble(InvoiceLine::getFinalPrice)
+                .sum();
+        assertEquals(invoice.getTotalAmount(), lineTotal, 0.001);
+    }
+
     private InvoiceService createService(IInvoiceRepository repository) {
         return new InvoiceService(
                 repository,
@@ -577,6 +632,21 @@ class InvoiceServiceTest {
             return new ArrayList<>(invoices);
         }
 
+        @Override
+        public List<InvoiceableOrder> findInvoiceableWorkOrdersWithVehicle() {
+            List<InvoiceableOrder> fakeList = new ArrayList<>();
+            List<Invoice> invoices = this.findAll();
+
+            for(WorkOrder order : Database.getWorkOrders()) {
+                if(order.getStatus() == WorkOrderStatus.COMPLETED) {
+                    boolean alreadyInvoiced = invoices.stream()
+                            .anyMatch(invoice -> invoice.getWorkOrderId() == order.getId());
+                    if (!alreadyInvoiced) {
+                        fakeList.add(new InvoiceableOrder(order, "Volvo", "V90"));
+                    }
+                }
+            } return fakeList;
+        }
     }
 
     private static class StubInvoiceService extends InvoiceService {

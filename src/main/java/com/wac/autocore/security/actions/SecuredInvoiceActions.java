@@ -59,13 +59,4 @@ public class SecuredInvoiceActions {
         invoiceService.save(invoice);
     }
 
-    @PreAuthorize ("isAuthenticated()")
-    public Vehicle findVehicleForWorkOrder(int workOrderId) {
-        return invoiceService.findVehicleForWorkOrder(workOrderId);
-    }
-
-
-
-
-
 }

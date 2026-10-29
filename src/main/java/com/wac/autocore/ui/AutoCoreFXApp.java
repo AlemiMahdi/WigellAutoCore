@@ -75,38 +75,6 @@ public class AutoCoreFXApp extends Application {
     private SecuredServiceItemActions securedServiceItemActions;
     private SecuredInvoiceActions securedInvoiceActions;
 
-//    // FIX 1: Konstruktorn MÅSTE vara publik i en JavaFX-applikation!
-//    public AutoCoreFXApp() {
-//        this.garageSystem = new GarageSystem();
-//        this.workOrderRepository = new WorkOrderRepository();
-//        this.bookingRepository = new BookingRepository();
-//        this.invoiceService = new InvoiceService(new InvoiceRepository());
-//        this.mechanicService = new MechanicService(new MechanicRepository(), bookingRepository::findAll, workOrderRepository::findAll);
-//        this.vehicleRepository = new VehicleRepository();
-//        this.vehicleService = new VehicleService(vehicleRepository);
-//        this.servicePackageService = new ServicePackageService(new ServicePackageRepository());
-//        this.paymentRepository = new PaymentRepository();
-//        this.serviceRepository = new ServiceItemRepository();
-//        this.workOrderService = new WorkOrderService(workOrderRepository, bookingRepository, serviceRepository, vehicleRepository);
-//        this.customerService = new CustomerService(new CustomerRepository());
-//        this.bookingService = new BookingService(bookingRepository);
-
-//
-//        // Sätt instansen i samma sekund som JavaFX startar appen
-//        synchronized (AutoCoreFXApp.class) {
-//            instance = this;
-//        }
-//    }
-//
-//    // Global åtkomstpunkt för alla dina vyer
-//    public static synchronized AutoCoreFXApp getInstance() {
-//        // Om gränssnittet inte hunnit starta än skapar vi en tillfällig fallback
-//        if (instance == null) {
-//            instance = new AutoCoreFXApp();
-//        }
-//        return instance;
-//    }
-
     private static final Logger LOGGER =
             Logger.getLogger(AutoCoreFXApp.class.getName());
 
