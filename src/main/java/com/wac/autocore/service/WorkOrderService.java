@@ -12,7 +12,12 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class WorkOrderService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(WorkOrderService.class);
     private final IWorkOrderRepository workOrderRepository;
     private final IBookingRepository bookingRepository;
     private final IServiceItemRepository serviceItemRepository;
@@ -95,7 +100,7 @@ public class WorkOrderService {
             }
             throw new RuntimeException("createWorkOrder.saveError", exception);
         }
-
+        LOGGER.info("Workorder {} created, type {}", workOrder.getId(), selectedType);
     }
 
     public void createFrozenComplaintPrice(WorkOrder workOrder, Booking complaintBooking){
@@ -150,6 +155,8 @@ public class WorkOrderService {
         if (errors.isEmpty()) {
             // Uppdatera minnet först när databasen har sparats.
             workOrder.changeStatus(WorkOrderStatus.CONFIRMED);
+            LOGGER.info("Workorder {} has been confirmed.", workOrderId);
+
         }
 
         return errors;
@@ -168,6 +175,8 @@ public class WorkOrderService {
 
         // Spara i databasen (order, mekaniker och bokning i en transaktion)
         workOrderRepository.completeWorkOrder(workOrderId);
+
+        LOGGER.info("Workorder {} has been completed.", workOrderId);
 
         // Uppdatera minnet först när databasen har sparats,
         // annars ligger ordern kvar i listan tills appen startas om.
@@ -298,6 +307,8 @@ public class WorkOrderService {
         Database.getBookings().add(booking);
         Database.getWorkOrders().add(draft);
 
+        LOGGER.info("Draft {} created for vehicle {}.", draft.getId(), vehicleId);
+
         return draft;
     }
 
@@ -360,6 +371,7 @@ public class WorkOrderService {
             mechanic.setAvailable(true);
             throw new RuntimeException("startWorkOrder.saveError", exception);
         }
+        LOGGER.info("Starting workOrder {}.", workOrderId);
     }
 
     // Samma kontroller som vid bekräftelse (från GarageSystem.validateWorkOrderForConfirmation).
