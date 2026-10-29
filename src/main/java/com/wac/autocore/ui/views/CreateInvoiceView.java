@@ -16,14 +16,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 
 import javafx.util.StringConverter;
-
-
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
 
 public class CreateInvoiceView {
 
@@ -303,21 +297,6 @@ public class CreateInvoiceView {
 
         workOrderBox.getItems().setAll(orders);
 
-
-//
-//        List<WorkOrder> workOrders = invoiceService.getInvoiceableWorkOrders();
-//        workOrderDescription.clear();
-//        for (WorkOrder wo : workOrders) {
-//            workOrderDescription.put(wo.getId(), describeWorkOrder(wo, invoiceService));
-//        }
-//
-//        workOrderBox.getItems().setAll(
-//                UiKit.newestFirst(
-//                        workOrders,
-//                        WorkOrder::getId
-//                )
-//        );
-
         workOrderBox.promptTextProperty().unbind();
 
         String key = workOrderBox.getItems().isEmpty()
@@ -327,21 +306,5 @@ public class CreateInvoiceView {
         workOrderBox.promptTextProperty().bind(
                 LanguageManager.getInstance().text(key)
         );
-    }
-
-    //Hämta invoiceService och findVehicle gör att det laggar i stringConverter
-        // "WO-2 · Volkswagen Passat" – bilen gör det lättare att hitta rätt order
-        private static String describeWorkOrder (WorkOrder workOrder, InvoiceService invoiceService){
-            String text = ShowInvoiceView.workOrderCode(workOrder.getId());
-            Vehicle vehicle = invoiceService.findVehicleForWorkOrder(
-                    workOrder.getId()
-            );
-
-            if (vehicle != null) {
-                text += " · " + vehicle.getBrand() + " " + vehicle.getModel();
-            }
-            return text;
-        }
-
-
+     }
     }
