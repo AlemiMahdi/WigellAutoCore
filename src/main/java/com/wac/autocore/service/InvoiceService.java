@@ -1,5 +1,6 @@
 package com.wac.autocore.service;
 
+import com.wac.autocore.DTO.InvoiceableOrder;
 import com.wac.autocore.model.*;
 import com.wac.autocore.repository.IInvoiceRepository;
 import com.wac.autocore.data.Database;
@@ -140,16 +141,17 @@ public class InvoiceService {
         return invoiceRepository.findAll();
     }
 
-    public List<WorkOrder> getInvoiceableWorkOrders() {
+    public List<InvoiceableOrder> getInvoiceableWorkOrders() {
 
-        List<Invoice> invoices = invoiceRepository.findAll();
-
-        return workOrderSource.get().stream()
-                .filter(order -> order.getStatus() == WorkOrderStatus.COMPLETED)
-                .filter(order -> invoices.stream()
-                        .noneMatch(invoice ->
-                                invoice.getWorkOrderId() == order.getId()))
-                .collect(Collectors.toList());
+         return invoiceRepository.findInvoiceableWorkOrdersWithVehicle();
+//        List<Invoice> invoices = invoiceRepository.findAll();
+//
+//        return workOrderSource.get().stream()
+//                .filter(order -> order.getStatus() == WorkOrderStatus.COMPLETED)
+//                .filter(order -> invoices.stream()
+//                        .noneMatch(invoice ->
+//                                invoice.getWorkOrderId() == order.getId()))
+//                .collect(Collectors.toList());
     }
 
     public Vehicle findVehicleForWorkOrder(int workOrderId) {

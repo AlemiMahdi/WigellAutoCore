@@ -1,5 +1,6 @@
 package com.wac.autocore.service;
 
+import com.wac.autocore.DTO.InvoiceableOrder;
 import com.wac.autocore.model.Invoice;
 import com.wac.autocore.repository.IInvoiceRepository;
 import com.wac.autocore.data.Database;
@@ -348,10 +349,10 @@ class InvoiceServiceTest {
 
             InvoiceService service = createService(repository);
 
-            List<WorkOrder> result = service.getInvoiceableWorkOrders();
+            List<InvoiceableOrder> result = service.getInvoiceableWorkOrders();
 
             assertEquals(1, result.size());
-            assertSame(completed, result.get(0));
+            assertSame(completed, result.get(0).getWorkOrder());
 
             // Att ändra resultatlistan ska inte ändra originalets lista.
             result.clear();
@@ -627,6 +628,21 @@ class InvoiceServiceTest {
             return new ArrayList<>(invoices);
         }
 
+        @Override
+        public List<InvoiceableOrder> findInvoiceableWorkOrdersWithVehicle() {
+            List<InvoiceableOrder> fakeList = new ArrayList<>();
+            List<Invoice> invoices = this.findAll();
+
+            for(WorkOrder order : Database.getWorkOrders()) {
+                if(order.getStatus() == WorkOrderStatus.COMPLETED) {
+                    boolean alreadyInvoiced = invoices.stream()
+                            .anyMatch(invoice -> invoice.getWorkOrderId() == order.getId());
+                    if (!alreadyInvoiced) {
+                        fakeList.add(new InvoiceableOrder(order, "Volvo", "V90"));
+                    }
+                }
+            } return fakeList;
+        }
     }
 
     private static class StubInvoiceService extends InvoiceService {
