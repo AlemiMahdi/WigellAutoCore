@@ -253,7 +253,8 @@ public class WorkOrderServiceTest {
         Vehicle vehicle = new Vehicle("TST999", "Volvo", "V70", 2015, 9201);   // ägs av kund 9201
         vehicle.setId(9201);
 
-        Booking booking = new Booking(9201, 9201, LocalDate.now(), "Testbokning");   // för fordon 9201
+        Booking booking = new Booking(9201, LocalDate.now(), "Testbokning");   // för fordon 9201
+        booking.setId(9201);
 
         Mechanic mechanic = new Mechanic(9201, "Testmekaniker", "0700000000", "Allmän");
         mechanic.setAvailable(false);   // ← det testet handlar om: mekanikern är upptagen
