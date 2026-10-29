@@ -145,10 +145,7 @@ public class GarageSystem {
             return null;
         }
 
-        int id = Database.getBookings().size() + 1;
-
         Booking booking = new Booking(
-                id,
                 vehicleId,
                 date,
                 description
