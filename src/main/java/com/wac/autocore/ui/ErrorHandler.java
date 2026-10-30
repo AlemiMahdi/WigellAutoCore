@@ -4,9 +4,13 @@ import com.wac.autocore.exception.ApplicationException;
 import com.wac.autocore.exception.DataAccessException;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.scene.control.Label;
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.StringBinding;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.UUID;
 
 public final class ErrorHandler {
 
@@ -30,7 +34,21 @@ public final class ErrorHandler {
 
         if (exception instanceof DataAccessException
                 || !(exception instanceof ApplicationException)) {
-            LOGGER.error("Operation failed: {}", messageKey, exception);
+            String errorId = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+            LOGGER.error("Operation failed: {}(error id {})", messageKey, errorId, exception);
+
+            LanguageManager language = LanguageManager.getInstance();
+            StringBinding message = language.text(messageKey);
+            StringBinding codeTemplate = language.text("error.code");
+
+            label.textProperty().unbind();
+            UiKit.showError(label, "");
+            label.textProperty().bind(Bindings.createStringBinding(
+                    () -> message.get() + " " + String.format(codeTemplate.get(), errorId),
+                    message, codeTemplate
+            ));
+            return;
+
         }
 
         label.textProperty().unbind();
