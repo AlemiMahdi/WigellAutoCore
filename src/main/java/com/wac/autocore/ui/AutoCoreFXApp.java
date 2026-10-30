@@ -102,6 +102,9 @@ public class AutoCoreFXApp extends Application {
 
     @Override
     public void start(Stage primaryStage) {
+
+        Thread.setDefaultUncaughtExceptionHandler((thread, exception)-> LOGGER.error("Unexpected error in thread {}", thread.getName(), exception));
+
         getServicesFromSpring();
         loadDataFromDatabase();
 
