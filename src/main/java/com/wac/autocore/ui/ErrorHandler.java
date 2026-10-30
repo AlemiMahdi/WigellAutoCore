@@ -25,17 +25,21 @@ public final class ErrorHandler {
             RuntimeException exception,
             String fallbackKey) {
 
-        String messageKey = fallbackKey;
+        boolean isValidation =
+                exception instanceof IllegalArgumentException
+                        || (exception instanceof ApplicationException
+                        && !(exception instanceof DataAccessException));
 
-        if (exception instanceof ApplicationException) {
-            messageKey =
-                    ((ApplicationException) exception).getMessageKey();
+        String messageKey = fallbackKey;
+        if ((exception instanceof ApplicationException
+                || exception instanceof IllegalArgumentException)
+                && exception.getMessage() != null) {
+            messageKey = exception.getMessage();
         }
 
-        if (exception instanceof DataAccessException
-                || !(exception instanceof ApplicationException)) {
+        if (!isValidation) {
             String errorId = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-            LOGGER.error("Operation failed: {}(error id {})", messageKey, errorId, exception);
+            LOGGER.error("Operation failed: {} (error id {})", messageKey, errorId, exception);
 
             LanguageManager language = LanguageManager.getInstance();
             StringBinding message = language.text(messageKey);
@@ -48,8 +52,9 @@ public final class ErrorHandler {
                     message, codeTemplate
             ));
             return;
-
         }
+
+        LOGGER.warn("Operation rejected: {}", messageKey);
 
         label.textProperty().unbind();
         UiKit.showError(label, "");
