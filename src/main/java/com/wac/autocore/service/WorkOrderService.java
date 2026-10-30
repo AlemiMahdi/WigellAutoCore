@@ -236,17 +236,31 @@ public class WorkOrderService {
         draft.setDraftComments(finalComments);
         draft.setOriginalWorkOrderId(originalWorkOrderId);
 
-        booking.setDate(plannedDate);
-        booking.setDurationMinutes(minutes);
-        booking.setMechanicId(mechanicId == 0 ? null : mechanicId);
+        //Uppdatera minnet till ShowBookingView
+        Booking targetBooking = Database.getBookings().stream()
+                .filter(b -> b.getId() == booking.getId())
+                .findFirst()
+                .orElse(booking);
+
+        targetBooking.setDate(plannedDate);
+        targetBooking.setDurationMinutes(minutes);
+        targetBooking.setMechanicId(mechanicId == 0 ? null : mechanicId);
 
 
         List<ServiceItem> updatedServices = new ArrayList<>();
         for (Integer serviceItem : selectedIds) {
             updatedServices.add(serviceItemRepository.findById(serviceItem));
         }
-        booking.setServices(updatedServices);
-        booking.setFrozenPrice(workOrderRepository.createFrozenPrices(updatedServices));
+        targetBooking.setServices(updatedServices);
+        targetBooking.setFrozenPrice(workOrderRepository.createFrozenPrices(updatedServices));
+
+        if(targetBooking != booking) {
+            booking.setDate(plannedDate);
+            booking.setDurationMinutes(minutes);
+            booking.setMechanicId(mechanicId);
+            booking.setServices(updatedServices);
+            booking.setFrozenPrice(targetBooking.getFrozenPrice());
+        }
     }
 
     private BigDecimal getBigDecimalPrice(BigDecimal price) {

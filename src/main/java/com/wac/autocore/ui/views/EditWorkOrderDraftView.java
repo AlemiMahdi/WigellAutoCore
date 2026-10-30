@@ -181,11 +181,6 @@ public class EditWorkOrderDraftView {
 
         plannedDateField.setValue(booking.getDate());
 
-        if (booking.getDurationMinutes() > 0) {
-            estimatedMinutesField.setText(
-                    String.valueOf(booking.getDurationMinutes())
-            );
-        }
         if(isComplaint) {
             priceField.setText("0");
         }
@@ -224,6 +219,13 @@ public class EditWorkOrderDraftView {
                 totalPriceLabel,
                 services // Skickar med existerande tjänster som förval
         );
+
+        if (booking.getDurationMinutes() > 0) {
+            estimatedMinutesField.setText(
+                    String.valueOf(booking.getDurationMinutes())
+            );
+        }
+
         //Uppdatera pris på tjänster när man klickar på tjänst
         totalPriceLabel.textProperty().addListener((observable, oldValue, newValue) -> {
            if(!isComplaint && newValue != null && !newValue.isEmpty()){
