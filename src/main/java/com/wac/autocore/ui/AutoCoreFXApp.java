@@ -33,8 +33,8 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import com.wac.autocore.SpringBootMain;
 
-import java.util.logging.Logger;
-import java.util.logging.Level;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 import java.util.HashMap;
@@ -63,7 +63,7 @@ public class AutoCoreFXApp extends Application {
     private ServiceItemService serviceItemService;
 
     private static final Logger LOGGER =
-            Logger.getLogger(AutoCoreFXApp.class.getName());
+            LoggerFactory.getLogger(AutoCoreFXApp.class);
 
     private StackPane contentPane;
 
@@ -192,7 +192,7 @@ public class AutoCoreFXApp extends Application {
             loadPayments();
 
         } catch (RuntimeException exception) {
-            LOGGER.log(Level.SEVERE, "Kunde inte läsa data från databasen.", exception);
+            LOGGER.error("Could not load data from database", exception);
             offlineMode = true;
         }
     }

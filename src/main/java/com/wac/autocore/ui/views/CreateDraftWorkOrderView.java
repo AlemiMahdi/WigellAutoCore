@@ -17,11 +17,15 @@ import javafx.scene.control.TextArea;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+
 
 // Formulär för att skapa en arbetsorder som utkast (WAC-63)
 // Bara fordon, typ och en kort problembeskrivning krävs.
 public class CreateDraftWorkOrderView {
-
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(CreateDraftWorkOrderView.class);
     private final LanguageManager language = LanguageManager.getInstance();
     private final WorkOrderService workOrderService;
 
@@ -140,7 +144,7 @@ public class CreateDraftWorkOrderView {
                 return;
             } catch (RuntimeException exception) {
                 UiKit.showError(messageLabel, language.text("createDraft.saveError").get());
-                exception.printStackTrace();
+                LOGGER.error("Could not save draft for vehicle {} with type {}", vehicle.getId(), type, exception);
                 return;
             }
 
