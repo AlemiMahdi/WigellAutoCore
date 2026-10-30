@@ -1,6 +1,7 @@
 package com.wac.autocore.ui.views;
 
 
+import com.wac.autocore.DTO.InvoiceableOrder;
 import com.wac.autocore.model.*;
 import com.wac.autocore.exception.InvoiceValidationException;
 import com.wac.autocore.ui.UiKit;
@@ -15,30 +16,25 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 
 import javafx.util.StringConverter;
-
-
 import java.time.LocalDate;
-
+import java.util.List;
 
 public class CreateInvoiceView {
 
     public static VBox build(InvoiceService invoiceService) {
         LanguageManager language = LanguageManager.getInstance();
 
-
         // --- Arbetsorder ---
         // Bara avslutade (COMPLETED) arbetsordrar kan faktureras,
         // så vi visar bara dem i listan.
-        ComboBox<WorkOrder> workOrderBox = new ComboBox<>();
-        workOrderBox.setConverter(new StringConverter<WorkOrder>() {
+        ComboBox<InvoiceableOrder> workOrderBox = new ComboBox<>();
+        workOrderBox.setConverter(new StringConverter<>() {
             @Override
-            public String toString(WorkOrder workOrder) {
-                return workOrder == null ? "" : describeWorkOrder(workOrder, invoiceService);
+            public String toString(InvoiceableOrder object) {
+                return object == null ? "" : object.toString();
             }
-
-
             @Override
-            public WorkOrder fromString(String text) {
+            public InvoiceableOrder fromString(String text) {
                 return null; // Används inte – listan går inte att skriva i
             }
         });
@@ -100,13 +96,14 @@ public class CreateInvoiceView {
 
         // Uppdatera belopp och totalsumma
         Runnable updateTotal = () -> {
-            WorkOrder selected = workOrderBox.getValue();
+            InvoiceableOrder selectedOrder = workOrderBox.getValue();
 
-            if (selected == null) {
+            if (selectedOrder == null) {
                 amountField.clear();
                 totalValue.setText(ShowInvoiceView.formatSek(0));
                 return;
             }
+            WorkOrder selected = selectedOrder.getWorkOrder();
             try {
                 double extraCost = 0.0;
 
@@ -144,9 +141,11 @@ public class CreateInvoiceView {
             }
         };
 
-        workOrderBox.valueProperty().addListener((obs, oldValue, selected) -> {
+        workOrderBox.valueProperty().addListener((obs, oldValue, selectedOrder) -> {
             extraCostDescriptionField.clear();
             extraCostAmountField.clear();
+            WorkOrder selected = selectedOrder == null ? null : selectedOrder.getWorkOrder();
+
             boolean isComplaint = selected != null
                     && selected.getType() == WorkOrderTypeEnum.COMPLAINT;
 
@@ -179,12 +178,14 @@ public class CreateInvoiceView {
         }
 
         createButton.setOnAction(actionEvent -> {
-            WorkOrder selectedWorkOrder = workOrderBox.getValue();
+            InvoiceableOrder selectedOrder = workOrderBox.getValue();
 
-            if (selectedWorkOrder == null) {
+            if (selectedOrder == null) {
                 UiKit.showError(statusLabel, language.text("startWorkOrder.select").get());
                 return;
             }
+            WorkOrder selectedWorkOrder = selectedOrder.getWorkOrder();
+
             int workOrderId = selectedWorkOrder.getId();
             String discountCode = discountField.getText();
 
@@ -287,15 +288,14 @@ public class CreateInvoiceView {
     }
 
     private static void loadCompletedWorkOrders(
-            ComboBox<WorkOrder> workOrderBox,
+            ComboBox<InvoiceableOrder> workOrderBox,
             InvoiceService invoiceService) {
 
-        workOrderBox.getItems().setAll(
-                UiKit.newestFirst(
-                        invoiceService.getInvoiceableWorkOrders(),
-                        WorkOrder::getId
-                )
-        );
+        List<InvoiceableOrder> orders = invoiceService.getInvoiceableWorkOrders();
+
+        orders.sort((b, a) -> Integer.compare(a.getWorkOrder().getId(), b.getWorkOrder().getId()));
+
+        workOrderBox.getItems().setAll(orders);
 
         workOrderBox.promptTextProperty().unbind();
 
@@ -306,20 +306,5 @@ public class CreateInvoiceView {
         workOrderBox.promptTextProperty().bind(
                 LanguageManager.getInstance().text(key)
         );
-    }
-
-        // "WO-2 · Volkswagen Passat" – bilen gör det lättare att hitta rätt order
-        private static String describeWorkOrder (WorkOrder workOrder, InvoiceService invoiceService){
-            String text = ShowInvoiceView.workOrderCode(workOrder.getId());
-            Vehicle vehicle = invoiceService.findVehicleForWorkOrder(
-                    workOrder.getId()
-            );
-
-            if (vehicle != null) {
-                text += " · " + vehicle.getBrand() + " " + vehicle.getModel();
-            }
-            return text;
-        }
-
-
+     }
     }
