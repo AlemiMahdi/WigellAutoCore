@@ -33,3 +33,6 @@ bin/
 
 # Kraschrapporter från Java
 hs_err_pid*.log
+
+### Loggar ###
+logs/
