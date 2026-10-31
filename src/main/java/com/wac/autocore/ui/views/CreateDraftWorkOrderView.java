@@ -8,7 +8,6 @@ import com.wac.autocore.model.WorkOrder;
 import com.wac.autocore.model.WorkOrderStatus;
 import com.wac.autocore.model.WorkOrderTypeEnum;
 import com.wac.autocore.security.actions.SecuredWorkOrderActions;
-import com.wac.autocore.service.WorkOrderService;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.collections.FXCollections;

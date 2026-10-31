@@ -2,7 +2,6 @@ package com.wac.autocore.ui.views;
 
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.ServiceItem;
-import com.wac.autocore.service.ServiceItemService;
 import com.wac.autocore.security.actions.SecuredServiceItemActions;
 import org.springframework.security.access.AccessDeniedException;
 import com.wac.autocore.ui.UiKit;

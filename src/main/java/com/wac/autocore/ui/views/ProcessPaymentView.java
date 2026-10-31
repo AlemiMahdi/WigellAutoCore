@@ -2,7 +2,6 @@ package com.wac.autocore.ui.views;
 
 import com.wac.autocore.model.Invoice;
 import com.wac.autocore.security.actions.SecuredPaymentActions;
-import com.wac.autocore.service.PaymentService;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 import com.wac.autocore.ui.ErrorHandler;

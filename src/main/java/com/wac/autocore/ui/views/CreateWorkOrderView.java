@@ -3,9 +3,8 @@ package com.wac.autocore.ui.views;
 import com.wac.autocore.DTO.WorkOrderDto;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
+import com.wac.autocore.security.actions.SecuredBookingActions;
 import com.wac.autocore.security.actions.SecuredWorkOrderActions;
-import com.wac.autocore.service.BookingService;
-import com.wac.autocore.service.WorkOrderService;
 import com.wac.autocore.ui.Navigator;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
@@ -33,10 +32,13 @@ public class CreateWorkOrderView  extends VBox {
     private final LanguageManager language = LanguageManager.getInstance();
     private final ObservableList<ServiceItem> selectedServices = FXCollections.observableArrayList();
     private final SecuredWorkOrderActions securedWorkOrderActions;
-    private final BookingService bookingService;
+    private final SecuredBookingActions securedBookingActions;
 
-    public CreateWorkOrderView( SecuredWorkOrderActions securedWorkOrderActions, BookingService bookingService) {
-        this.bookingService = bookingService;
+    public CreateWorkOrderView( 
+            SecuredWorkOrderActions securedWorkOrderActions, 
+            SecuredBookingActions securedBookingActions
+    ) {
+        this.securedBookingActions = securedBookingActions;
         this.securedWorkOrderActions = securedWorkOrderActions;
         // Centrerar formulärkolumnen i innehållsytan
         setAlignment(Pos.TOP_CENTER);
@@ -418,8 +420,8 @@ public class CreateWorkOrderView  extends VBox {
                     feedbackLabel.textProperty().bind(language.text("createBooking.selectService"));
                     return;
                 }
-// Validering för krockande/överlappande bokningar
-                boolean overlapping = bookingService.hasOverlappingBooking(mechanic.getId(), date, startTime, durationMinutes);
+                // Validering för krockande/överlappande bokningar
+                boolean overlapping = securedBookingActions.hasOverlappingBooking(mechanic.getId(), date, startTime, durationMinutes);
                 if (overlapping) {
                     UiKit.showError(feedbackLabel, "");
                     feedbackLabel.textProperty().bind(language.text("createBooking.overlapping"));

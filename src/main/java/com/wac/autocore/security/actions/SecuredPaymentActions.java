@@ -25,7 +25,7 @@ public class SecuredPaymentActions {
     }
 
     //Alla inloggade användare får se obetalda fakturor
-    @PreAuthorize ("isAuthenticated()")
+    @PreAuthorize ("hasRole('ADMIN')")
     public List<Invoice> findUnpaidInvoices(){
         return List.copyOf(PaymentService.findUnpaidInvoices());
     }

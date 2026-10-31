@@ -3,9 +3,9 @@ package com.wac.autocore.ui.views;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
 import com.wac.autocore.service.BookingService;
-import com.wac.autocore.service.WorkOrderService;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
+import com.wac.autocore.security.actions.SecuredBookingActions;
 import com.wac.autocore.security.actions.SecuredWorkOrderActions;
 import org.springframework.security.access.AccessDeniedException;
 
@@ -26,15 +26,15 @@ public class ShowWorkOrdersView {
     private final LanguageManager language = LanguageManager.getInstance();
     private final SecuredWorkOrderActions securedWorkOrderActions;
     private boolean canEdit;
-    private final BookingService bookingService;
+    private final SecuredBookingActions securedBookingActions;
 
     public ShowWorkOrdersView(
         SecuredWorkOrderActions securedWorkOrderActions,
-        BookingService bookingService,
+        SecuredBookingActions securedBookingActions,
         boolean canEdit
     ) { 
         this.securedWorkOrderActions = securedWorkOrderActions;
-        this.bookingService = bookingService;
+        this.securedBookingActions = securedBookingActions;
         this.canEdit = canEdit;
     }
 
@@ -156,7 +156,7 @@ public class ShowWorkOrdersView {
                 );
 
                 VBox editView =
-                        new EditWorkOrderDraftView(securedWorkOrderActions, bookingService).getView(workOrder);
+                        new EditWorkOrderDraftView(securedWorkOrderActions, securedBookingActions).getView(workOrder);
 
                 root.getChildren().setAll(backButton, editView);
             });

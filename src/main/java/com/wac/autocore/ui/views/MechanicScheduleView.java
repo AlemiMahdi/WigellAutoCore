@@ -1,8 +1,8 @@
 package com.wac.autocore.ui.views;
 
-import com.wac.autocore.service.MechanicService;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.Mechanic;
+import com.wac.autocore.security.actions.SecuredMechanicActions;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 
@@ -21,12 +21,13 @@ import java.util.List;
 
 public class MechanicScheduleView {
 
-    private final LanguageManager language = LanguageManager.getInstance();
-    private final MechanicService mechanicService;
+        private final LanguageManager language = LanguageManager.getInstance();
+        private final SecuredMechanicActions securedMechanicActions;
 
-    public MechanicScheduleView(MechanicService mechanicService) {
-        this.mechanicService = mechanicService;
-    }
+        public MechanicScheduleView(
+                SecuredMechanicActions securedMechanicActions) {
+        this.securedMechanicActions = securedMechanicActions;
+        }
 
     public VBox getView() {
 
@@ -38,7 +39,7 @@ public class MechanicScheduleView {
 
         // Rullista
         ComboBox<Mechanic> mechanicCombo = new ComboBox<>();
-        mechanicCombo.getItems().addAll(mechanicService.getLoadedMechanics());
+        mechanicCombo.getItems().addAll(securedMechanicActions.getLoadedMechanics());
         mechanicCombo.promptTextProperty().bind(
                 language.text("schedule.select")
         );
@@ -146,7 +147,7 @@ public class MechanicScheduleView {
             List<Booking> result;
 
             try {
-                result = mechanicService.getSchedule(selected.getId());
+                result = securedMechanicActions.getSchedule(selected.getId());
             } catch (RuntimeException exception) {
                 table.getItems().clear();
                 countLabel.setText("");

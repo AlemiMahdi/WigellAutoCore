@@ -36,7 +36,7 @@ public class SecuredWorkOrderActions {
 
     //Endast admin och verkstadspersonal får avsluta
     @PreAuthorize ("hasAnyRole('ADMIN', 'WORKSHOP')")
-    public void completedWorkOrder(int workOrderId){
+    public void completeWorkOrder(int workOrderId){
         workOrderService.completeWorkOrder(workOrderId);
     }
 

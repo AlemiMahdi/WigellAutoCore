@@ -1,7 +1,8 @@
 package com.wac.autocore.ui.views;
 
-import com.wac.autocore.service.BookingService;
+
 import com.wac.autocore.ui.UiKit;
+import com.wac.autocore.security.actions.SecuredBookingActions;
 import com.wac.autocore.security.actions.SecuredWorkOrderActions;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.collections.FXCollections;
@@ -27,7 +28,7 @@ public class EditWorkOrderDraftView {
     private final LanguageManager language =
             LanguageManager.getInstance();
     private final SecuredWorkOrderActions securedWorkOrderActions;
-    private final BookingService bookingService;
+    private final SecuredBookingActions securedBookingActions;
     private final ComboBox<WorkOrder> originalCombo = new ComboBox<>();
     private final ComboBox<Mechanic> mechanicCombo = new ComboBox<>();
     private final DatePicker plannedDateField = new DatePicker();
@@ -39,10 +40,10 @@ public class EditWorkOrderDraftView {
 
     public EditWorkOrderDraftView(
         SecuredWorkOrderActions securedWorkOrderActions, 
-        BookingService bookingService
+        SecuredBookingActions securedBookingActions
     ) {
         this.securedWorkOrderActions = securedWorkOrderActions;
-        this.bookingService = bookingService;
+        this.securedBookingActions = securedBookingActions;
     }
 
     private void showFeedback(Label label, String key, boolean success) {
@@ -69,7 +70,7 @@ public class EditWorkOrderDraftView {
             return new VBox(10, errorLabel);
         }
 
-        Booking booking = bookingService.getBookingById(draft.getBookingId()).orElse(null);
+        Booking booking = securedBookingActions.getBookingById(draft.getBookingId()).orElse(null);
         if (booking == null) {
             javafx.scene.control.Label errorLabel = UiKit.feedbackLabel();
             UiKit.showError(errorLabel, "");

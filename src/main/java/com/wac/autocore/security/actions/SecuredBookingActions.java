@@ -57,4 +57,19 @@ public class SecuredBookingActions {
                 serviceIds
         );
     }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'WORKSHOP')")
+    public boolean hasOverlappingBooking(
+            int mechanicId,
+            LocalDate date,
+            LocalTime startTime,
+            int durationMinutes
+    ) {
+        return bookingService.hasOverlappingBooking(
+                mechanicId,
+                date,
+                startTime,
+                durationMinutes
+        );
+    }
 }

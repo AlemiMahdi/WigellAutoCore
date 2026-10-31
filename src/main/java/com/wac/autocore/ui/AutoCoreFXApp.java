@@ -12,9 +12,11 @@ import com.wac.autocore.security.Role;
 import com.wac.autocore.security.actions.SecuredBookingActions;
 import com.wac.autocore.security.actions.SecuredCustomerActions;
 import com.wac.autocore.security.actions.SecuredServiceItemActions;
+import com.wac.autocore.security.actions.SecuredServicePackageActions;
 import com.wac.autocore.security.actions.SecuredVehicleActions;
 import com.wac.autocore.security.actions.SecuredWorkOrderActions;
 import com.wac.autocore.security.actions.SecuredInvoiceActions;
+import com.wac.autocore.security.actions.SecuredMechanicActions;
 import com.wac.autocore.security.actions.SecuredPaymentActions;
 import com.wac.autocore.ui.views.*;
 
@@ -76,6 +78,8 @@ public class AutoCoreFXApp extends Application {
     private SecuredServiceItemActions securedServiceItemActions;
     private SecuredInvoiceActions securedInvoiceActions;
     private SecuredPaymentActions securedPaymentActions;
+    private SecuredMechanicActions securedMechanicActions;
+    private SecuredServicePackageActions securedServicePackageActions;
 
     private static final Logger LOGGER =
             Logger.getLogger(AutoCoreFXApp.class.getName());
@@ -221,6 +225,8 @@ public class AutoCoreFXApp extends Application {
         securedServiceItemActions = springContext.getBean(SecuredServiceItemActions.class);
         securedInvoiceActions = springContext.getBean(SecuredInvoiceActions.class);
         securedPaymentActions = springContext.getBean(SecuredPaymentActions.class);
+        securedMechanicActions = springContext.getBean(SecuredMechanicActions.class);
+        securedServicePackageActions = springContext.getBean(SecuredServicePackageActions.class);
     }   
 
     /**
@@ -598,7 +604,7 @@ public class AutoCoreFXApp extends Application {
 
         customerVehicleItems.add(
                 createNavItem("show-customers", "menu.customers",
-                        () -> showView(new CustomerView()))
+                        () -> showView(new CustomerView(securedCustomerActions, canEdit)))
         );
 
         if (canEdit) {
@@ -663,7 +669,7 @@ public class AutoCoreFXApp extends Application {
                         () -> showView(
                                 new ShowWorkOrdersView(
                                         securedWorkOrderActions,
-                                        bookingService,
+                                        securedBookingActions,
                                         canEdit
                                 ).getView()
                         ))
@@ -675,7 +681,7 @@ public class AutoCoreFXApp extends Application {
                             () -> showView(
                                     new CreateWorkOrderView(
                                             securedWorkOrderActions,
-                                            bookingService
+                                            securedBookingActions
                                     )
                             ))
             );
@@ -735,7 +741,7 @@ public class AutoCoreFXApp extends Application {
                             "menu.createServicePackage",
                             () -> showView(
                                     new CreateServicePackageView(
-                                            servicePackageService
+                                            securedServicePackageActions
                                     ).getView()
                             ))
             );
@@ -745,7 +751,7 @@ public class AutoCoreFXApp extends Application {
                             "menu.manageServicePackage",
                             () -> showView(
                                     new ManageServicePackageView(
-                                            servicePackageService
+                                            securedServicePackageActions
                                     ).getView()
                             ))
             );
@@ -755,7 +761,7 @@ public class AutoCoreFXApp extends Application {
         serviceMechanicItems.add(
                 createNavItem("show-mechanics", "menu.mechanics",
                         () -> showView(
-                                new MechanicView(mechanicService)
+                                new MechanicView(securedMechanicActions)
                         ))
         );
 
@@ -764,7 +770,7 @@ public class AutoCoreFXApp extends Application {
                 createNavItem("mechanic-schedule", "menu.schedule",
                         () -> showView(
                                 new MechanicScheduleView(
-                                        mechanicService
+                                        securedMechanicActions
                                 ).getView()
                         ))
         );
