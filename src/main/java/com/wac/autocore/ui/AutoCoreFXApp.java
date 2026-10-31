@@ -15,6 +15,7 @@ import com.wac.autocore.security.actions.SecuredServiceItemActions;
 import com.wac.autocore.security.actions.SecuredVehicleActions;
 import com.wac.autocore.security.actions.SecuredWorkOrderActions;
 import com.wac.autocore.security.actions.SecuredInvoiceActions;
+import com.wac.autocore.security.actions.SecuredPaymentActions;
 import com.wac.autocore.ui.views.*;
 
 import javafx.application.Application;
@@ -74,6 +75,7 @@ public class AutoCoreFXApp extends Application {
     private SecuredWorkOrderActions securedWorkOrderActions;
     private SecuredServiceItemActions securedServiceItemActions;
     private SecuredInvoiceActions securedInvoiceActions;
+    private SecuredPaymentActions securedPaymentActions;
 
     private static final Logger LOGGER =
             Logger.getLogger(AutoCoreFXApp.class.getName());
@@ -218,6 +220,7 @@ public class AutoCoreFXApp extends Application {
         securedWorkOrderActions = springContext.getBean(SecuredWorkOrderActions.class);
         securedServiceItemActions = springContext.getBean(SecuredServiceItemActions.class);
         securedInvoiceActions = springContext.getBean(SecuredInvoiceActions.class);
+        securedPaymentActions = springContext.getBean(SecuredPaymentActions.class);
     }   
 
     /**
@@ -780,7 +783,7 @@ public class AutoCoreFXApp extends Application {
         invoicePaymentItems.add(
                 createNavItem("show-invoices", "menu.invoices",
                         () -> showView(
-                                ShowInvoiceView.build(securedInvoiceActions)
+                                ShowInvoiceView.build(securedInvoiceActions, isAdmin)
                         ))
         );
 
@@ -789,7 +792,7 @@ public class AutoCoreFXApp extends Application {
             invoicePaymentItems.add(
                     createNavItem("create-invoice", "menu.createInvoice",
                             () -> showView(
-                                    CreateInvoiceView.build(invoiceService)
+                                    CreateInvoiceView.build(securedInvoiceActions)
                             ))
             );
         }
@@ -798,7 +801,7 @@ public class AutoCoreFXApp extends Application {
         invoicePaymentItems.add(
                 createNavItem("show-payments", "menu.payments",
                         () -> showView(
-                                new ShowPaymentsView().getView(paymentService)
+                                new ShowPaymentsView().getView(securedPaymentActions)
                         ))
         );
 
@@ -808,7 +811,7 @@ public class AutoCoreFXApp extends Application {
                     createNavItem("process-payment", "menu.processPayment",
                             () -> showView(
                                     new ProcessPaymentView().getView(
-                                            paymentService
+                                            securedPaymentActions
                                     )
                             ))
             );

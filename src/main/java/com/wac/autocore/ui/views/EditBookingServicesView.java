@@ -2,7 +2,6 @@ package com.wac.autocore.ui.views;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.ServiceItem;
-import com.wac.autocore.service.BookingService;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -16,8 +15,6 @@ import javafx.scene.input.MouseButton;
 import com.wac.autocore.security.actions.SecuredBookingActions;
 import org.springframework.security.access.AccessDeniedException;
 import javafx.scene.input.MouseEvent;
-import com.wac.autocore.model.WorkOrder;
-import com.wac.autocore.model.WorkOrderStatus;
 import com.wac.autocore.ui.UiKit;
 
 import java.util.ArrayList;
@@ -227,10 +224,23 @@ public class EditBookingServicesView {
                         "editBookingServices.overlap"
                 );
 
-                if (exception instanceof IllegalArgumentException
-                        && validationKeys.contains(exception.getMessage())) {
-                    key = exception.getMessage();
-                } else {
+                Throwable cause = exception;
+
+                while (cause != null) {
+
+                    if (cause instanceof IllegalArgumentException
+                            && validationKeys.contains(cause.getMessage())) {
+
+                        key = cause.getMessage();
+                        break;
+                    }
+
+                    cause = cause.getCause();
+                }
+
+                // Logga bara oväntade fel
+                if ("editBookingServices.saveError".equals(key)) {
+
                     java.util.logging.Logger.getLogger(
                             EditBookingServicesView.class.getName()
                     ).log(

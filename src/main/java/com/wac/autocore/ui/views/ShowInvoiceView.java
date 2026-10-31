@@ -27,7 +27,10 @@ import java.util.Collections;
 
 public class ShowInvoiceView {
 
-    public static VBox build(SecuredInvoiceActions securedInvoiceActions) {
+    public static VBox build(
+        SecuredInvoiceActions securedInvoiceActions,
+        boolean isAdmin
+) {
         LanguageManager language = LanguageManager.getInstance();
 
         // "+ New invoice" byter sida via Navigator, så att menyn också
@@ -35,6 +38,8 @@ public class ShowInvoiceView {
         Button newInvoiceButton = UiKit.primaryButton("+ New invoice");
         newInvoiceButton.textProperty().bind(language.text("invoices.new"));
         newInvoiceButton.setOnAction(event -> Navigator.goTo("create-invoice"));
+        newInvoiceButton.setVisible(isAdmin);
+        newInvoiceButton.setManaged(isAdmin);
 
         TableView<Invoice> table = new TableView<>();
         Label emptyLabel = UiKit.emptyText("");

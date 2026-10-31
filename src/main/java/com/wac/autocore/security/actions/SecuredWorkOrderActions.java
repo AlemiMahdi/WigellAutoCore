@@ -104,8 +104,4 @@ public class SecuredWorkOrderActions {
         return workOrderService.findStartableWorkOrders();
     }
 
-    @PreAuthorize ("hasAnyRole('ADMIN', 'WORKSHOP')")
-    public void completeWorkOrder(int workOrderId) {
-        workOrderService.completeWorkOrder(workOrderId);
-    }
 }

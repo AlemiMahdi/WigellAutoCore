@@ -158,6 +158,9 @@ public class BookingRepository implements IBookingRepository{
             List<Integer> serviceIds
     ) {
                 Booking booking = entityManager.find(Booking.class, bookingId);
+                System.out.println("Booking ID: " + booking.getId());
+                System.out.println("Booking status: " + booking.getStatus());
+                System.out.println("Status type" + booking.getStatus().getClass().getName());
                 if (booking == null) {
                     throw new IllegalArgumentException(
                             "editBookingServices.notFound"
@@ -185,6 +188,8 @@ public class BookingRepository implements IBookingRepository{
                         .getResultList();
 
                 for (WorkOrder order : workOrders) {
+                    System.out.println("WorkOrder ID: " + order.getId());
+                    System.out.println("WorkOrder status: " + order.getStatus());
 
                     if (order.getStatus() != WorkOrderStatus.CONFIRMED) {
                         throw new IllegalArgumentException(

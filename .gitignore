@@ -36,3 +36,8 @@ hs_err_pid*.log
 
 # Maven build output
 /target/
+
+#Lokal mijövariabler och lösenord
+.env
+
+start-ps1
