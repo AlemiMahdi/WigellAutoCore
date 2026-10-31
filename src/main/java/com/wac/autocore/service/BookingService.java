@@ -248,10 +248,6 @@ public class BookingService {
             order.getServiceItemIds().addAll(uniqueIds);
         }
         bookingRepository.updateBookingAndOrder(workOrders, booking);
-//        bookingRepository.update(booking);
-//        for(WorkOrder order : workOrders) {
-//            workOrderRepository.save(order);
-//        }
         return totalMinutes;
     }
 
@@ -267,5 +263,9 @@ public class BookingService {
             frozenPrices.add(frozenLine);
         }
         return frozenPrices;
+    }
+
+    public Booking findByIdAndServices(int bookingId){
+        return bookingRepository.findByIdAndServices(bookingId);
     }
 }
