@@ -14,6 +14,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 
 import java.util.List;
 
@@ -136,7 +137,7 @@ class SecuredBookingActionsSecurityTest {
         SecurityContextHolder.clearContext();
 
         assertThrows(
-            AccessDeniedException.class,
+            AuthenticationCredentialsNotFoundException.class,
             () -> securedBookingActions.getAllBookings()
         );
 
