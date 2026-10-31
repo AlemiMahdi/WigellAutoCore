@@ -17,15 +17,11 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
-
 import java.util.List;
 
 // Start work order: lista med arbetsordrar till vänster och detaljer om vald order till höger.
 public class StartWorkOrderView extends VBox {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(StartWorkOrderView.class);
     private final LanguageManager language = LanguageManager.getInstance();
     private final WorkOrderService workOrderService;
 

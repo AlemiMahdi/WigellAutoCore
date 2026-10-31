@@ -15,13 +15,10 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 // Complete work order: ett centrerat kort per påbörjad (STARTED) arbetsorder.
 public class CompleteWorkOrderView {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CompleteWorkOrderView.class);
     // Kortens maxbredd – ungefär som i designen
     private static final double CARD_MAX_WIDTH = 680;
 

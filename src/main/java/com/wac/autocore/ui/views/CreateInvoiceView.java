@@ -3,7 +3,6 @@ package com.wac.autocore.ui.views;
 
 import com.wac.autocore.DTO.InvoiceableOrder;
 import com.wac.autocore.model.*;
-import com.wac.autocore.exception.InvoiceValidationException;
 import com.wac.autocore.ui.ErrorHandler;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
@@ -19,15 +18,9 @@ import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
 import java.time.LocalDate;
-
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
-
 import java.util.List;
 
 public class CreateInvoiceView {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(CreateInvoiceView.class);
 
     public static VBox build(InvoiceService invoiceService) {
         LanguageManager language = LanguageManager.getInstance();
@@ -245,12 +238,6 @@ public class CreateInvoiceView {
                 discountField.clear();
 
                 loadCompletedWorkOrders(workOrderBox, invoiceService);
-
-            } catch (InvoiceValidationException exception) {
-                UiKit.showError(
-                        statusLabel,
-                        language.text(exception.getMessage()).get()
-                );
 
             } catch (RuntimeException exception) {
                 ErrorHandler.show(statusLabel, exception, "createInvoice.saveError", "work order " + workOrderId);
