@@ -17,6 +17,7 @@ import javafx.util.StringConverter;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -73,7 +74,9 @@ private static final Logger LOGGER = LoggerFactory.getLogger(EditWorkOrderDraftV
             return new VBox(10, errorLabel);
         }
 
-        Booking booking = securedBookingActions.getBookingById(draft.getBookingId()).orElse(null);
+        Booking booking = securedBookingActions.findByIdAndServices(
+                draft.getBookingId()
+        );
         if (booking == null) {
             javafx.scene.control.Label errorLabel = UiKit.feedbackLabel();
             UiKit.showError(errorLabel, "");
@@ -83,12 +86,34 @@ private static final Logger LOGGER = LoggerFactory.getLogger(EditWorkOrderDraftV
             return new VBox(10, errorLabel);
         }
 
-        // Problembeskrivning bor i boknien (en källa), här visas den bara
+        // Problembeskrivning bor i bokningen (en källa), här visas den bara
         Label descriptionLabel = new Label(booking.getDescription());
         descriptionLabel.getStyleClass().add("detail-text");
         descriptionLabel.setWrapText(true);
 
         boolean isComplaint = draft.getType() == WorkOrderTypeEnum.COMPLAINT;
+
+        ObservableList<ServiceItem> selectedServiceIds = FXCollections.observableArrayList();
+        ListView<ServiceItem> serviceList = new ListView<>(
+                FXCollections.observableArrayList(Database.getServiceItems())
+        );
+        serviceList.setPrefHeight(150);
+
+        List<ServiceItem> services = new ArrayList<>();
+        if (booking.getServices() != null) {
+            services.addAll(booking.getServices());
+        }
+
+        Label bookingInfoLabel = new Label(
+                "id: " + booking.getId() + " (" + booking.getDescription() + ")"
+        );
+        bookingInfoLabel.getStyleClass().add("detail-text");
+
+// 3. Lägg till det som ett vanligt låst formulärfält
+        VBox bookingField = UiKit.formField(
+                language.text("editWorkOrderDraft.linkedBooking"),
+                bookingInfoLabel
+        );
 
         originalCombo.setMaxWidth(Double.MAX_VALUE);
         originalCombo.promptTextProperty().bind(
@@ -101,7 +126,7 @@ private static final Logger LOGGER = LoggerFactory.getLogger(EditWorkOrderDraftV
                 .collect(Collectors.toList());
         originalCombo.getItems().setAll(completedOrders);
 
-        originalCombo.setConverter(new StringConverter<WorkOrder>() {
+        originalCombo.setConverter(new StringConverter<>() {
             @Override
             public String toString(WorkOrder order) {
                 return order == null ? "" : "WO-" + order.getId();
@@ -165,12 +190,10 @@ private static final Logger LOGGER = LoggerFactory.getLogger(EditWorkOrderDraftV
 
         plannedDateField.setValue(booking.getDate());
 
-        if (booking.getDurationMinutes() > 0) {
-            estimatedMinutesField.setText(
-                    String.valueOf(booking.getDurationMinutes())
-            );
+        if(isComplaint) {
+            priceField.setText("0");
         }
-        if (draft.getEstimatedPrice() != null) {
+        else if (draft.getEstimatedPrice() != null) {
             priceField.setText(draft.getEstimatedPrice().toPlainString());
         }
 
@@ -197,22 +220,31 @@ private static final Logger LOGGER = LoggerFactory.getLogger(EditWorkOrderDraftV
                 language.text("editWorkOrderDraft.saveButton")
         );
 
-        ObservableList<ServiceItem> selectedServiceIds = FXCollections.observableArrayList();
-        ListView<ServiceItem> serviceList = new ListView<>(
-                FXCollections.observableArrayList(Database.getServiceItems())
-        );
-        serviceList.setPrefHeight(150);
 
         ViewHelpMethod.setupServiceChecklist(
                 serviceList,
                 selectedServiceIds,
                 estimatedMinutesField,
                 totalPriceLabel,
-                booking.getServices() // Skickar med existerande tjänster som förval
+                services // Skickar med existerande tjänster som förval
         );
 
+        if (booking.getDurationMinutes() > 0) {
+            estimatedMinutesField.setText(
+                    String.valueOf(booking.getDurationMinutes())
+            );
+        }
+
+        //Uppdatera pris på tjänster när man klickar på tjänst
+        totalPriceLabel.textProperty().addListener((observable, oldValue, newValue) -> {
+           if(!isComplaint && newValue != null && !newValue.isEmpty()){
+               String cleanedPrice = newValue.replaceAll("[^0-9.,]", "").trim();
+               priceField.setText(cleanedPrice);
+           }
+        });
 
         saveButton.setOnAction(event -> {
+
             int minutes;
             BigDecimal price = null;
 
@@ -306,6 +338,7 @@ private static final Logger LOGGER = LoggerFactory.getLogger(EditWorkOrderDraftV
                 UiKit.pageHeader(language.text("editWorkOrderDraft.title"), null ),
                 UiKit.formField(language.text("editWorkOrderDraft.description"), descriptionLabel),
                 originalField,
+                bookingField,
                 UiKit.formField(language.text("editWorkOrderDraft.mechanic"), mechanicFields),
                 UiKit.formField(language.text("editWorkOrderDraft.services"), serviceList
                 ),

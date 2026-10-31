@@ -72,4 +72,9 @@ public class SecuredBookingActions {
                 durationMinutes
         );
     }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'WORKSHOP')")
+    public Booking findByIdAndServices(int bookingId) {
+        return bookingService.findByIdAndServices(bookingId);
+    }
 }

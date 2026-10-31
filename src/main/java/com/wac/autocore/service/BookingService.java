@@ -212,4 +212,8 @@ public class BookingService {
         }
         return frozenPrices;
     }
+
+    public Booking findByIdAndServices(int bookingId){
+        return bookingRepository.findByIdAndServices(bookingId);
+    }
 }
