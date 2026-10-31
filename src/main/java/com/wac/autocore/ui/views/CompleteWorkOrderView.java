@@ -3,6 +3,7 @@ package com.wac.autocore.ui.views;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
 import com.wac.autocore.service.WorkOrderService;
+import com.wac.autocore.ui.ErrorHandler;
 import com.wac.autocore.ui.Navigator;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
@@ -163,10 +164,7 @@ public class CompleteWorkOrderView {
             statusLabel.textProperty().bind(language.text(exception.getMessage()));
             return false;
         } catch (RuntimeException exception) {
-            // Lagringsfel: fast text till användaren, tekniska detaljer i loggen
-            UiKit.showError(statusLabel, "");
-            statusLabel.textProperty().bind(language.text("completeWorkOrder.error"));
-            LOGGER.error("Could not complete work order {}", workOrderId, exception);
+            ErrorHandler.show(statusLabel, exception, "completeWorkOrder.error", "work order " + workOrderId);
             return false;
         }
     }

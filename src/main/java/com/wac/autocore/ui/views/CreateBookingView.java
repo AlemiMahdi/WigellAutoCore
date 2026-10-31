@@ -2,6 +2,7 @@ package com.wac.autocore.ui.views;
 
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
+import com.wac.autocore.ui.ErrorHandler;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 import com.wac.autocore.service.BookingService;
@@ -279,17 +280,10 @@ public class CreateBookingView {
             );
             return;
 
-        } catch (RuntimeException exception) {
-
-            // Visa ett generellt felmeddelande om databaslagringen misslyckas.
-            UiKit.showError(
-                messageLabel,
-                language.text("createBooking.saveError").get()
-            );
-
-            LOGGER.error("Could not create booking", exception);
-            return;
-        }
+            } catch (RuntimeException exception) {
+                ErrorHandler.show(messageLabel, exception, "createBooking.saveError", "vehicle " + vehicleId);
+                return;
+            }
 
             // Tömmer formuläret så att nästa bokning kan skrivas in direkt
             vehicleCombo.getSelectionModel().clearSelection();

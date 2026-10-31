@@ -4,6 +4,7 @@ package com.wac.autocore.ui.views;
 import com.wac.autocore.DTO.InvoiceableOrder;
 import com.wac.autocore.model.*;
 import com.wac.autocore.exception.InvoiceValidationException;
+import com.wac.autocore.ui.ErrorHandler;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 import com.wac.autocore.model.WorkOrderTypeEnum;
@@ -252,11 +253,7 @@ public class CreateInvoiceView {
                 );
 
             } catch (RuntimeException exception) {
-
-                UiKit.showError(statusLabel,
-                        language.text("createInvoice.saveError").get()
-                );
-                LOGGER.error("Could not create invoice for work order {}", workOrderId, exception);
+                ErrorHandler.show(statusLabel, exception, "createInvoice.saveError", "work order " + workOrderId);
             }
 
 

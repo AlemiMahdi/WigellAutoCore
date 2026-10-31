@@ -20,10 +20,15 @@ public final class ErrorHandler {
     private ErrorHandler() {
     }
 
+    public static void show(Label label, RuntimeException exception, String fallbackKey) {
+        show(label, exception, fallbackKey, null);
+    }
+
     public static void show(
             Label label,
             RuntimeException exception,
-            String fallbackKey) {
+            String fallbackKey,
+            String context) {
 
         boolean isValidation =
                 exception instanceof IllegalArgumentException

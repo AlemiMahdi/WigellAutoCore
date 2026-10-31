@@ -1,5 +1,6 @@
 package com.wac.autocore.ui.views;
 
+import com.wac.autocore.ui.ErrorHandler;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Vehicle;
 import com.wac.autocore.model.WorkOrder;
@@ -143,8 +144,8 @@ public class CreateDraftWorkOrderView {
                 UiKit.showError(messageLabel, language.text(exception.getMessage()).get());
                 return;
             } catch (RuntimeException exception) {
-                UiKit.showError(messageLabel, language.text("createDraft.saveError").get());
-                LOGGER.error("Could not save draft for vehicle {} with type {}", vehicle.getId(), type, exception);
+                ErrorHandler.show(messageLabel, exception, "createDraft.saveError",
+                        "vehicle " + vehicle.getId() + ", type " + type);
                 return;
             }
 

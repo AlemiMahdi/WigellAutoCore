@@ -4,6 +4,7 @@ import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Customer;
 import com.wac.autocore.model.Vehicle;
 import com.wac.autocore.service.VehicleService;
+import com.wac.autocore.ui.ErrorHandler;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.collections.FXCollections;
@@ -85,8 +86,7 @@ public class CreateVehicleView {
                 UiKit.showError(statusLabel, language.text(exception.getMessage()).get());
                 return;
             } catch (RuntimeException exception) {
-                UiKit.showError(statusLabel, language.text("vehicle.create.error").get());
-                LOGGER.error("Could not create vehicle", exception);
+                ErrorHandler.show(statusLabel, exception, "vehicle.create.error", "customer " + customerId);
                 return;
             }
 

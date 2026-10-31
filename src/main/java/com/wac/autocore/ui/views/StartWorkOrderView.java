@@ -5,6 +5,7 @@ import com.wac.autocore.model.*;
 import com.wac.autocore.repository.BookingRepository;
 import com.wac.autocore.repository.WorkOrderRepository;
 import com.wac.autocore.service.GarageSystem;
+import com.wac.autocore.ui.ErrorHandler;
 import com.wac.autocore.ui.Navigator;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.service.WorkOrderService;
@@ -206,10 +207,9 @@ public class StartWorkOrderView extends VBox {
             UiKit.showError(feedbackLabel, "");
             feedbackLabel.textProperty().bind(language.text(exception.getMessage()));
         } catch (RuntimeException exception) {
-            // Lagringsfel: fast text till användaren, tekniska detaljer bara i loggen
-            UiKit.showError(feedbackLabel, "");
-            feedbackLabel.textProperty().bind(language.text("startWorkOrder.saveError"));
-            LOGGER.error("Could not start work order {}", workOrder.getId(), exception);
+            feedbackLabel.setWrapText(true);
+            ErrorHandler.show(feedbackLabel, exception, "startWorkOrder.saveError",
+                    "work order " + workOrder.getId());
         }
 
         // Laddar om listan (startad order försvinner ur den).
