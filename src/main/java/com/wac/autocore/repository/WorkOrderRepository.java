@@ -110,7 +110,6 @@ public class WorkOrderRepository implements IWorkOrderRepository {
         savedBooking.setMechanicId(mechanicId == 0 ? null : mechanicId);
         savedBooking.getServices().clear();
         savedBooking.getServices().addAll(savedServices);
-        savedDraft.setOriginalWorkOrderId(originalWorkOrderId);
         savedBooking.setFrozenPrice(createFrozenPrices(savedServices));
 
         entityManager.merge(savedBooking);
