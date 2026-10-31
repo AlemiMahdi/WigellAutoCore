@@ -1,6 +1,5 @@
 package com.wac.autocore.config;
 
-import com.wac.autocore.model.WorkOrder;
 import com.wac.autocore.repository.*;
 import com.wac.autocore.service.*;
 import org.springframework.context.annotation.Bean;

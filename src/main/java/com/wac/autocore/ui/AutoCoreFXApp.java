@@ -7,9 +7,18 @@ import com.wac.autocore.ui.language.LanguageManager;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
 import com.wac.autocore.repository.*;
+import com.wac.autocore.security.AuthenticationService;
+import com.wac.autocore.security.Role;
+import com.wac.autocore.security.actions.SecuredBookingActions;
+import com.wac.autocore.security.actions.SecuredCustomerActions;
+import com.wac.autocore.security.actions.SecuredServiceItemActions;
+import com.wac.autocore.security.actions.SecuredServicePackageActions;
+import com.wac.autocore.security.actions.SecuredVehicleActions;
+import com.wac.autocore.security.actions.SecuredWorkOrderActions;
+import com.wac.autocore.security.actions.SecuredInvoiceActions;
+import com.wac.autocore.security.actions.SecuredMechanicActions;
+import com.wac.autocore.security.actions.SecuredPaymentActions;
 import com.wac.autocore.ui.views.*;
-import com.wac.autocore.service.InvoiceService;
-import com.wac.autocore.service.MechanicService;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -36,7 +45,7 @@ import com.wac.autocore.SpringBootMain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import java.util.List;
@@ -61,6 +70,17 @@ public class AutoCoreFXApp extends Application {
     private BookingService bookingService;
     private PaymentService paymentService;
     private ServiceItemService serviceItemService;
+    private SecuredCustomerActions securedCustomerActions;
+    private AuthenticationService authenticationService;
+    private BorderPane appRoot;
+    private SecuredVehicleActions securedVehicleActions;
+    private SecuredBookingActions securedBookingActions;
+    private SecuredWorkOrderActions securedWorkOrderActions;
+    private SecuredServiceItemActions securedServiceItemActions;
+    private SecuredInvoiceActions securedInvoiceActions;
+    private SecuredPaymentActions securedPaymentActions;
+    private SecuredMechanicActions securedMechanicActions;
+    private SecuredServicePackageActions securedServicePackageActions;
 
     private static final Logger LOGGER =
             LoggerFactory.getLogger(AutoCoreFXApp.class);
@@ -99,55 +119,41 @@ public class AutoCoreFXApp extends Application {
         // Springs context att köra "autowire" på den här instansen så fälten blir tillgängliga
         springContext.getAutowireCapableBeanFactory().autowireBean(this);
     }
-
+    
     @Override
     public void start(Stage primaryStage) {
+
         getServicesFromSpring();
-        loadDataFromDatabase();
 
-        // Område där våra olika sidor ska visas
-        contentPane = new StackPane();
-        contentPane.getStyleClass().add("app-content");
-        contentPane.setPadding(new Insets(30));
-        contentPane.setAlignment(Pos.TOP_LEFT);
+        authenticationService = springContext.getBean(AuthenticationService.class);
 
-        // Höga vyer (t.ex. dashboardens kanban) ska gå att scrolla till.
-        // Därför ligger hela innehållsytan i en ScrollPane.
-        contentScroll = createContentScroll(contentPane);
+        // Börja med ett fönster som endast visar inloggningen.
+        appRoot = new BorderPane();
 
-        BorderPane centerArea = new BorderPane(contentScroll);
-        if (offlineMode) {
-            centerArea.setTop(createOfflineBanner());
-        }
+        showLogin();
 
-        BorderPane root = new BorderPane();
-        root.setTop(createHeader());
-        root.setLeft(createMenu());
-        root.setCenter(centerArea);
+        Scene scene = new Scene(appRoot, 1280, 800);
 
-        // Knappar inne i vyerna (t.ex. "+ New customer") byter sida via
-        // Navigator. Vi gör samma sak som när man klickar i menyn.
-        Navigator.setHandler(this::navigateTo);
-
-        // Dashboard är startsidan
-        showDashboard();
-
-        Scene scene = new Scene(root, 1280, 800);
-        URL stylesheet = AutoCoreFXApp.class.getResource("/style/styles.css");
+        URL stylesheet =
+                AutoCoreFXApp.class.getResource("/style/styles.css");
 
         if (stylesheet == null) {
-            throw new IllegalStateException("Kunde inte hitta styles.css");
+            throw new IllegalStateException(
+                    "Kunde inte hitta styles.css"
+            );
         }
 
         scene.getStylesheets().add(stylesheet.toExternalForm());
 
         primaryStage.setTitle("Wigell AutoCore");
-        // Appikonen i titelraden, aktivitetsfältet och Alt-Tab.
+
         primaryStage.getIcons().addAll(
                 loadImage("/images/logo-gron-16.png"),
                 loadImage("/images/logo-gron-32.png"),
                 loadImage("/images/logo-gron-48.png"),
-                loadImage("/images/logo-gron-256.png"));
+                loadImage("/images/logo-gron-256.png")
+        );
+
         primaryStage.setMinWidth(1100);
         primaryStage.setMinHeight(700);
         primaryStage.setScene(scene);
@@ -155,11 +161,52 @@ public class AutoCoreFXApp extends Application {
         primaryStage.show();
     }
 
-    @Override
-    public void stop() {
-        this.springContext.close();
-        Platform.exit();
+    private void showLogin() {
+        appRoot.setTop(null);
+        appRoot.setLeft(null);
+
+        appRoot.setCenter(new LoginView(
+            authenticationService, 
+            () -> showMainApplication(appRoot)));
     }
+
+    private void logout() {
+
+        //Tar bort användarens autentisering
+        authenticationService.logout();;
+        
+        //Rensa den gamla användarens navigering
+        navItemsByKey.clear();
+        activeNavItem = null;
+
+        //Visa inloggningssidan igen
+        showLogin();
+    }
+
+    private void showMainApplication(BorderPane root) {
+        loadDataFromDatabase();
+        contentPane = new StackPane();
+        contentPane.getStyleClass().add("app-content");
+        contentPane.setPadding(new Insets(30));
+        contentPane.setAlignment(Pos.TOP_LEFT);
+        
+        contentScroll = createContentScroll(contentPane);
+        BorderPane centerArea = new BorderPane(contentScroll);
+
+        if (offlineMode) {
+            centerArea.setTop(createOfflineBanner());
+        }
+
+        root.setTop(createHeader());
+        root.setLeft(createMenu());
+        root.setCenter(centerArea);
+
+        Navigator.setHandler(this::navigateTo);
+        showDashboard();
+
+
+    }
+
 
     //hjälpmetoden
     private void getServicesFromSpring() {
@@ -172,7 +219,16 @@ public class AutoCoreFXApp extends Application {
         servicePackageService = springContext.getBean(ServicePackageService.class);
         serviceItemService = springContext.getBean(ServiceItemService.class);
         mechanicService = springContext.getBean(MechanicService.class);
-    }
+        securedVehicleActions = springContext.getBean(SecuredVehicleActions.class);
+        securedBookingActions = springContext.getBean(SecuredBookingActions.class);
+        securedCustomerActions = springContext.getBean(SecuredCustomerActions.class);
+        securedWorkOrderActions = springContext.getBean(SecuredWorkOrderActions.class);
+        securedServiceItemActions = springContext.getBean(SecuredServiceItemActions.class);
+        securedInvoiceActions = springContext.getBean(SecuredInvoiceActions.class);
+        securedPaymentActions = springContext.getBean(SecuredPaymentActions.class);
+        securedMechanicActions = springContext.getBean(SecuredMechanicActions.class);
+        securedServicePackageActions = springContext.getBean(SecuredServicePackageActions.class);
+    }   
 
     /**
      * Läser in sparad data från MySQL till Database-listorna.
@@ -540,45 +596,240 @@ public class AutoCoreFXApp extends Application {
         setActiveNavItem(dashboard);
         menuBox.getChildren().add(dashboard);
 
-        addNavSection(menuBox, "menu.section.customersVehicles",
-                createNavItem("show-customers", "menu.customers", () -> showView(new CustomerView())),
-                createNavItem("create-customer", "menu.createCustomer", () -> showView(new CreateCustomerView(customerService))),
-                createNavItem("show-vehicles", "menu.vehicles", () -> showView(ShowVehicleView.build(vehicleService))),
-                createNavItem("create-vehicle", "menu.createVehicle", () -> showView(CreateVehicleView.build(vehicleService))));
+        
+        boolean canEdit =
+                authenticationService.hasRole(Role.ADMIN)
+                || authenticationService.hasRole(Role.WORKSHOP);
 
-        addNavSection(menuBox, "menu.section.bookings",
-                createNavItem("show-bookings", "menu.bookings", () -> showView(new ShowBookingsView(bookingService).getView())),
-                createNavItem("create-booking", "menu.createBooking", () -> showView(new CreateBookingView(bookingService).getView())),
-                createNavItem("edit-booking", "menu.editBooking", () -> showView(new EditBookingServicesView(bookingService).getView())));
+        List<Button> customerVehicleItems = new ArrayList<>();
 
-        addNavSection(menuBox, "menu.section.workOrders",
-                createNavItem("show-work-orders", "menu.workOrders", () -> showView(new ShowWorkOrdersView(workOrderService, bookingService).getView())),
-                createNavItem("create-work-order", "menu.createWorkOrder", () -> showView(new CreateWorkOrderView(workOrderService, bookingService))),
-                createNavItem("create-draft-work-order", "menu.createDraftWorkOrder",
-                        () -> showView(new CreateDraftWorkOrderView(workOrderService).getView())),
-                createNavItem("start-work-order", "menu.startWorkOrder", () -> showView(new StartWorkOrderView(workOrderService))),
-                createNavItem("complete-work-order", "menu.completeWorkOrder", () -> showView(new CompleteWorkOrderView(workOrderService).getView())));
+        customerVehicleItems.add(
+                createNavItem("show-customers", "menu.customers",
+                        () -> showView(new CustomerView(securedCustomerActions, canEdit)))
+        );
 
-        addNavSection(menuBox, "menu.section.servicesMechanics",
-                createNavItem("show-services", "menu.services", () -> showView(new ServiceView(serviceItemService))),
-                createNavItem("create-service-package", "menu.createServicePackage",
-                        () -> showView(new CreateServicePackageView(servicePackageService).getView())),
-                createNavItem("manage-service-package", "menu.manageServicePackage", () -> showView(new ManageServicePackageView(servicePackageService).getView())),
-                createNavItem("show-mechanics", "menu.mechanics", () -> showView(new MechanicView(mechanicService))),
-                createNavItem("mechanic-schedule", "menu.schedule", () -> showView(new MechanicScheduleView(mechanicService).getView())));
+        if (canEdit) {
+            customerVehicleItems.add(
+                    createNavItem("create-customer", "menu.createCustomer",
+                            () -> showView(
+                                    new CreateCustomerView(securedCustomerActions)
+                            ))
+            );
+        }
 
-        addNavSection(menuBox, "menu.section.invoicesPayments",
+        customerVehicleItems.add(
+                createNavItem("show-vehicles", "menu.vehicles",
+                        () -> showView(ShowVehicleView.build(securedVehicleActions, canEdit)))
+        );
+
+        if (canEdit) {
+            customerVehicleItems.add(
+                    createNavItem("create-vehicle", "menu.createVehicle",
+                            () -> showView(CreateVehicleView.build(securedVehicleActions)))
+            );
+        }
+
+        addNavSection(
+                menuBox,
+                "menu.section.customersVehicles",
+                customerVehicleItems.toArray(new Button[0])
+        );
+
+
+        
+        List<Button> bookingItems = new ArrayList<>();
+        // Alla inloggade användare får visa bokningar
+        bookingItems.add(
+                createNavItem("show-bookings", "menu.bookings",
+                        () -> showView(
+                                new ShowBookingsView(securedBookingActions, canEdit).getView()
+                        ))
+        );
+        // Endast ADMIN och WORKSHOP får skapa bokningar
+        if (canEdit) {
+            bookingItems.add(
+                    createNavItem("create-booking", "menu.createBooking",
+                            () -> showView(
+                                    new CreateBookingView(securedBookingActions).getView()
+                            ))
+            );
+        }
+        addNavSection(
+                menuBox,
+                "menu.section.bookings",
+                bookingItems.toArray(new Button[0])
+        );
+
+
+        
+        List<Button> workOrderItems = new ArrayList<>();
+
+        // Alla inloggade användare får visa arbetsordrar
+        workOrderItems.add(
+                createNavItem("show-work-orders", "menu.workOrders",
+                        () -> showView(
+                                new ShowWorkOrdersView(
+                                        securedWorkOrderActions,
+                                        securedBookingActions,
+                                        canEdit
+                                ).getView()
+                        ))
+        );
+        // Endast ADMIN och WORKSHOP får hantera arbetsordrar
+        if (canEdit) {
+            workOrderItems.add(
+                    createNavItem("create-work-order", "menu.createWorkOrder",
+                            () -> showView(
+                                    new CreateWorkOrderView(
+                                            securedWorkOrderActions,
+                                            securedBookingActions
+                                    )
+                            ))
+            );
+
+            workOrderItems.add(
+                    createNavItem("create-draft-work-order", "menu.createDraftWorkOrder",
+                            () -> showView(
+                                    new CreateDraftWorkOrderView(securedWorkOrderActions).getView()
+                            ))
+            );
+
+            workOrderItems.add(
+                    createNavItem("start-work-order", "menu.startWorkOrder",
+                            () -> showView(
+                                    new StartWorkOrderView(securedWorkOrderActions)
+                            ))
+            );
+
+            workOrderItems.add(
+                    createNavItem("complete-work-order", "menu.completeWorkOrder",
+                            () -> showView(
+                                    new CompleteWorkOrderView(securedWorkOrderActions).getView()
+                            ))
+            );
+        }
+
+        addNavSection(
+                menuBox,
+                "menu.section.workOrders",
+                workOrderItems.toArray(new Button[0])
+        );
+
+
+        
+        boolean isAdmin =
+                authenticationService.hasRole(Role.ADMIN);
+
+        List<Button> serviceMechanicItems = new ArrayList<>();
+
+        // Alla inloggade användare får visa tjänster
+        serviceMechanicItems.add(
+                createNavItem("show-services", "menu.services",
+                        () -> showView(
+                                new ServiceView(
+                                    securedServiceItemActions,
+                                    canEdit,
+                                    isAdmin
+                                )
+                        ))
+        );
+
+        // Endast ADMIN får skapa och ändra servicepaket
+        if (isAdmin) {
+
+            serviceMechanicItems.add(
+                    createNavItem("create-service-package",
+                            "menu.createServicePackage",
+                            () -> showView(
+                                    new CreateServicePackageView(
+                                            securedServicePackageActions
+                                    ).getView()
+                            ))
+            );
+
+            serviceMechanicItems.add(
+                    createNavItem("manage-service-package",
+                            "menu.manageServicePackage",
+                            () -> showView(
+                                    new ManageServicePackageView(
+                                            securedServicePackageActions
+                                    ).getView()
+                            ))
+            );
+        }
+
+        // Alla inloggade användare får visa mekaniker
+        serviceMechanicItems.add(
+                createNavItem("show-mechanics", "menu.mechanics",
+                        () -> showView(
+                                new MechanicView(securedMechanicActions)
+                        ))
+        );
+
+        // Alla inloggade användare får visa scheman
+        serviceMechanicItems.add(
+                createNavItem("mechanic-schedule", "menu.schedule",
+                        () -> showView(
+                                new MechanicScheduleView(
+                                        securedMechanicActions
+                                ).getView()
+                        ))
+        );
+
+        addNavSection(
+                menuBox,
+                "menu.section.servicesMechanics",
+                serviceMechanicItems.toArray(new Button[0])
+        );
+
+
+        
+        List<Button> invoicePaymentItems = new ArrayList<>();
+
+        // Alla inloggade användare får visa fakturor
+        invoicePaymentItems.add(
                 createNavItem("show-invoices", "menu.invoices",
-                        () -> showView(ShowInvoiceView.build(invoiceService))),
+                        () -> showView(
+                                ShowInvoiceView.build(securedInvoiceActions, isAdmin)
+                        ))
+        );
 
-                createNavItem("create-invoice", "menu.createInvoice",
-                        () -> showView(CreateInvoiceView.build(invoiceService))),
+        // Endast ADMIN får skapa fakturor
+        if (isAdmin) {
+            invoicePaymentItems.add(
+                    createNavItem("create-invoice", "menu.createInvoice",
+                            () -> showView(
+                                    CreateInvoiceView.build(securedInvoiceActions)
+                            ))
+            );
+        }
 
+        // Alla inloggade användare får visa betalningar
+        invoicePaymentItems.add(
                 createNavItem("show-payments", "menu.payments",
-                        () -> showView(new ShowPaymentsView().getView(paymentService))),
+                        () -> showView(
+                                new ShowPaymentsView().getView(securedPaymentActions)
+                        ))
+        );
 
-                createNavItem("process-payment", "menu.processPayment",
-                        () -> showView(new ProcessPaymentView().getView(paymentService))));
+        // Endast ADMIN får registrera betalningar
+        if (isAdmin) {
+            invoicePaymentItems.add(
+                    createNavItem("process-payment", "menu.processPayment",
+                            () -> showView(
+                                    new ProcessPaymentView().getView(
+                                            securedPaymentActions
+                                    )
+                            ))
+            );
+        }
+
+        addNavSection(
+                menuBox,
+                "menu.section.invoicesPayments",
+                invoicePaymentItems.toArray(new Button[0])
+        );
+
         // Tunn linje och sedan Exit längst ned, i rött
         Region divider = new Region();
         divider.getStyleClass().add("nav-divider");
@@ -591,8 +842,16 @@ public class AutoCoreFXApp extends Application {
         exit.setMaxWidth(Double.MAX_VALUE);
         exit.setOnAction(event -> Platform.exit());
 
+        //Ny utloggnningsknapp
+        Button logoutButton = new Button();
+        logoutButton.textProperty().bind(language.text("menu.logout"));
+        logoutButton.getStyleClass().add("nav-item");
+        logoutButton.setMaxWidth(Double.MAX_VALUE);
+        logoutButton.setOnAction(event -> logout());
 
-        menuBox.getChildren().addAll(divider, exit);
+
+
+        menuBox.getChildren().addAll(divider, logoutButton, exit);
 
         ScrollPane scrollPane = new ScrollPane(menuBox);
         scrollPane.getStyleClass().add("sidebar-scroll");

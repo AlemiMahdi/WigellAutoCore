@@ -1,6 +1,6 @@
 package com.wac.autocore.ui.views;
 
-import com.wac.autocore.service.ServicePackageService;
+import com.wac.autocore.security.actions.SecuredServicePackageActions;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 
@@ -17,10 +17,11 @@ public class CreateServicePackageView {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateServicePackageView.class);
     private final LanguageManager language = LanguageManager.getInstance();
-    private final ServicePackageService servicePackageService;
+    private final SecuredServicePackageActions securedServicePackageActions;
 
-    public CreateServicePackageView(ServicePackageService servicePackageService) {
-        this.servicePackageService = servicePackageService;
+    public CreateServicePackageView(
+            SecuredServicePackageActions securedServicePackageActions) {
+        this.securedServicePackageActions = securedServicePackageActions;
     }
 
     public VBox getView() {
@@ -42,7 +43,7 @@ public class CreateServicePackageView {
             String name = nameField.getText();
 
             try {
-                servicePackageService.createServicePackage(name);
+                securedServicePackageActions.createServicePackage(name);
 
                 UiKit.showSuccess(messageLabel, language.text("createServicePackage.success").get());
 

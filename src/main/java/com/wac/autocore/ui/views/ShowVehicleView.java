@@ -3,7 +3,7 @@ package com.wac.autocore.ui.views;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Customer;
 import com.wac.autocore.model.Vehicle;
-import com.wac.autocore.service.VehicleService;
+import com.wac.autocore.security.actions.SecuredVehicleActions;
 import com.wac.autocore.ui.Navigator;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
@@ -23,19 +23,32 @@ public class ShowVehicleView {
      * Bygger upp sidan som visar alla fordon i systemet: rubrik, knapp och tabell.
      * Returnerar en VBox som kan visas i contentPane i AutoCoreApp.
      */
-    public static VBox build(VehicleService vehicleService) {
+    public static VBox build(SecuredVehicleActions securedVehicleActions, boolean canEdit) {
         LanguageManager language = LanguageManager.getInstance();
 
         // Knappen tar användaren direkt till formuläret, precis som ett klick i menyn
-        Button newVehicleButton = UiKit.primaryButton("+ New vehicle");
-        newVehicleButton.textProperty().bind(language.text("vehicles.new"));
-        newVehicleButton.setOnAction(event -> Navigator.goTo("create-vehicle"));
+        
+        Button newVehicleButton = null;
+
+        // Endast ADMIN och WORKSHOP får se knappen
+        if (canEdit) {
+            newVehicleButton = UiKit.primaryButton("+ New vehicle");
+
+            newVehicleButton.textProperty().bind(
+                    language.text("vehicles.new")
+            );
+
+            newVehicleButton.setOnAction(
+                    event -> Navigator.goTo("create-vehicle")
+            );
+        }
+
 
         TableView<Vehicle> table = createVehicleTable();
 
         // Hämtar alla fordon från vehicleService och gör om listan till en
         // ObservableList, som TableView kräver för att kunna visa datan.
-        ObservableList<Vehicle> data = FXCollections.observableArrayList(vehicleService.findAll());
+        ObservableList<Vehicle> data = FXCollections.observableArrayList(securedVehicleActions.findAll());
         table.setItems(data);
 
         return new VBox(20, UiKit.pageHeader(language.text("vehicles.title"), newVehicleButton), table);

@@ -6,8 +6,7 @@ import com.wac.autocore.model.*;
 import com.wac.autocore.exception.InvoiceValidationException;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
-import com.wac.autocore.model.WorkOrderTypeEnum;
-import com.wac.autocore.service.InvoiceService;
+import com.wac.autocore.security.actions.SecuredInvoiceActions;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -26,9 +25,9 @@ import java.util.List;
 
 public class CreateInvoiceView {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CreateInvoiceView.class);
-
-    public static VBox build(InvoiceService invoiceService) {
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(CreateInvoiceView.class);
+    public static VBox build(SecuredInvoiceActions securedInvoiceActions) {
         LanguageManager language = LanguageManager.getInstance();
 
 
@@ -48,7 +47,7 @@ public class CreateInvoiceView {
                 return null; // Används inte – listan går inte att skriva i
             }
         });
-        loadCompletedWorkOrders(workOrderBox, invoiceService);
+        loadCompletedWorkOrders(workOrderBox, securedInvoiceActions);
         UiKit.keepPromptWhenCleared(workOrderBox);
 
         // --- Datum ---
@@ -125,7 +124,7 @@ public class CreateInvoiceView {
                     }
                 }
 
-                Invoice preview = invoiceService.previewInvoice(
+                Invoice preview = securedInvoiceActions.previewInvoice(
                         selected.getId(),
                         discountField.getText(),
                         extraCostDescriptionField.getText().trim(),
@@ -221,7 +220,7 @@ public class CreateInvoiceView {
 
             try {
 
-                Invoice invoice = invoiceService.createInvoice(workOrderId, discountCode, extraDescription, extraCost);
+                Invoice invoice = securedInvoiceActions.createInvoice(workOrderId, discountCode, extraDescription, extraCost);
 
 
                 if (invoice == null) {
@@ -243,7 +242,7 @@ public class CreateInvoiceView {
                 workOrderBox.setValue(null);
                 discountField.clear();
 
-                loadCompletedWorkOrders(workOrderBox, invoiceService);
+                loadCompletedWorkOrders(workOrderBox, securedInvoiceActions);
 
             } catch (InvoiceValidationException exception) {
                 UiKit.showError(
@@ -297,24 +296,32 @@ public class CreateInvoiceView {
         }
     }
 
-    private static void loadCompletedWorkOrders(
-            ComboBox<InvoiceableOrder> workOrderBox,
-            InvoiceService invoiceService) {
+    
+        private static void loadCompletedWorkOrders(
+                ComboBox<InvoiceableOrder> workOrderBox,
+                SecuredInvoiceActions securedInvoiceActions) {
 
-        List<InvoiceableOrder> orders = invoiceService.getInvoiceableWorkOrders();
+            List<InvoiceableOrder> orders =
+                    securedInvoiceActions.getInvoiceableWorkOrders();
 
-        orders.sort((b, a) -> Integer.compare(a.getWorkOrder().getId(), b.getWorkOrder().getId()));
+            orders.sort((b, a) ->
+                    Integer.compare(
+                            a.getWorkOrder().getId(),
+                            b.getWorkOrder().getId()
+                    )
+            );
 
-        workOrderBox.getItems().setAll(orders);
+            workOrderBox.getItems().setAll(orders);
 
-        workOrderBox.promptTextProperty().unbind();
+            workOrderBox.promptTextProperty().unbind();
 
-        String key = workOrderBox.getItems().isEmpty()
-                ? "createInvoice.noCompletedPrompt"
-                : "startWorkOrder.prompt";
+            String key = workOrderBox.getItems().isEmpty()
+                    ? "createInvoice.noCompletedPrompt"
+                    : "startWorkOrder.prompt";
 
-        workOrderBox.promptTextProperty().bind(
-                LanguageManager.getInstance().text(key)
-        );
-     }
+            workOrderBox.promptTextProperty().bind(
+                    LanguageManager.getInstance().text(key)
+            );
+        }
+
     }

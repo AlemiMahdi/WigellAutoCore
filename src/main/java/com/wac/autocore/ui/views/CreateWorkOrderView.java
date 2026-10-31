@@ -3,8 +3,8 @@ package com.wac.autocore.ui.views;
 import com.wac.autocore.DTO.WorkOrderDto;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
-import com.wac.autocore.service.BookingService;
-import com.wac.autocore.service.WorkOrderService;
+import com.wac.autocore.security.actions.SecuredBookingActions;
+import com.wac.autocore.security.actions.SecuredWorkOrderActions;
 import com.wac.autocore.ui.Navigator;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import org.springframework.security.access.AccessDeniedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,12 +34,15 @@ public class CreateWorkOrderView  extends VBox {
 private static final Logger LOGGER = LoggerFactory.getLogger(CreateWorkOrderView.class);
 private final LanguageManager language = LanguageManager.getInstance();
     private final ObservableList<ServiceItem> selectedServices = FXCollections.observableArrayList();
-    private final WorkOrderService workOrderService;
-    private final BookingService bookingService;
+    private final SecuredWorkOrderActions securedWorkOrderActions;
+    private final SecuredBookingActions securedBookingActions;
 
-    public CreateWorkOrderView( WorkOrderService workOrderService, BookingService bookingService) {
-        this.bookingService = bookingService;
-        this.workOrderService = workOrderService;
+    public CreateWorkOrderView( 
+            SecuredWorkOrderActions securedWorkOrderActions, 
+            SecuredBookingActions securedBookingActions
+    ) {
+        this.securedBookingActions = securedBookingActions;
+        this.securedWorkOrderActions = securedWorkOrderActions;
         // Centrerar formulärkolumnen i innehållsytan
         setAlignment(Pos.TOP_CENTER);
 
@@ -195,7 +199,7 @@ private final LanguageManager language = LanguageManager.getInstance();
 
         ComboBox<WorkOrder> originalWorkOrderCombo = new ComboBox<>(
             UiKit.newestFirst(
-                Database.getWorkOrders()
+                securedWorkOrderActions.findAll()
                     .stream()
                     .filter(workOrder ->
                         workOrder.getStatus() == WorkOrderStatus.COMPLETED
@@ -419,8 +423,8 @@ private final LanguageManager language = LanguageManager.getInstance();
                     feedbackLabel.textProperty().bind(language.text("createBooking.selectService"));
                     return;
                 }
-// Validering för krockande/överlappande bokningar
-                boolean overlapping = bookingService.hasOverlappingBooking(mechanic.getId(), date, startTime, durationMinutes);
+                // Validering för krockande/överlappande bokningar
+                boolean overlapping = securedBookingActions.hasOverlappingBooking(mechanic.getId(), date, startTime, durationMinutes);
                 if (overlapping) {
                     UiKit.showError(feedbackLabel, "");
                     feedbackLabel.textProperty().bind(language.text("createBooking.overlapping"));
@@ -455,15 +459,45 @@ private final LanguageManager language = LanguageManager.getInstance();
             }
 
         // Skicka DTO till den generella metoden i servicen
-            try {
-                workOrderService.createAndSaveWorkOrder(selectedType, dto, originalBooking);
+            
+        try {
+            securedWorkOrderActions.createAndSaveWorkOrder(
+                    selectedType,
+                    dto,
+                    originalBooking
+            );
 
-            } catch (RuntimeException exception) {
-                String errorKey = "createWorkOrder.saveError".equals(exception.getMessage()) ? "createWorkOrder.saveError" : "createWorkOrder.createError";
-                UiKit.showError(feedbackLabel, language.text(errorKey).get());
-                LOGGER.error("Could not create work order of type {}", selectedType, exception);
-                return;
-            }
+        } catch (AccessDeniedException exception) {
+            feedbackLabel.textProperty().unbind();
+
+            UiKit.showError(
+                    feedbackLabel,
+                    language.text("security.accessDenied").get()
+            );
+            return;
+
+        } catch (RuntimeException exception) {
+            String errorKey =
+                    "createWorkOrder.saveError".equals(exception.getMessage())
+                            ? "createWorkOrder.saveError"
+                            : "createWorkOrder.createError";
+
+            feedbackLabel.textProperty().unbind();
+
+            UiKit.showError(
+                    feedbackLabel,
+                    language.text(errorKey).get()
+            );
+
+            LOGGER.error(
+                    "Could not create work order of type {}",
+                    selectedType,
+                    exception
+            );
+
+            return;
+        }
+
 
             //tömmer valen efter registreringen har lyckats.
             bookingComboBox.getSelectionModel().clearSelection();

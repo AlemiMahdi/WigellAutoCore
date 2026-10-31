@@ -137,31 +137,223 @@ public class BookingRepository implements IBookingRepository{
                                         Booking.class
                                 ).getResultList();
         }
-
+ 
         @Override
         public Booking findById(int id) {
-            return entityManager.find(Booking.class, id);
+            return entityManager.createQuery(
+                    "SELECT DISTINCT b FROM Booking b " +
+                    "LEFT JOIN FETCH b.services " +
+                    "WHERE b.id = :id",
+                    Booking.class
+            )
+            .setParameter("id", id)
+            .getResultStream()
+            .findFirst()
+            .orElse(null);
         }
 
-        @Override
-        public Booking findByIdAndServices(int id){
-            List<Booking> bookingList = entityManager.createQuery(
-                    "SELECT b FROM Booking b LEFT JOIN FETCH b.services WHERE b.id = :id",
-                    Booking.class)
-                    .setParameter("id", id)
-                    .getResultList();
-            return bookingList.isEmpty() ? null : bookingList.getFirst();
-        }
-        
-        @Override
-        public List<Booking> findOtherBookingsByMechanic(int mechanicId, int bookingId) {
-            return entityManager.createQuery(
-                    "FROM Booking WHERE mechanicId = :mechanicId and id <> :bookingId",
-                    Booking.class)
-                    .setParameter("mechanicId", mechanicId)
-                    .setParameter("bookingId", bookingId)
-                    .getResultList();
-        }
+        @Override 
+        public int updateBookingServices(
+            int bookingId,
+            List<Integer> serviceIds
+    ) {
+                Booking booking = entityManager.find(Booking.class, bookingId);
+                System.out.println("Booking ID: " + booking.getId());
+                System.out.println("Booking status: " + booking.getStatus());
+                System.out.println("Status type" + booking.getStatus().getClass().getName());
+                if (booking == null) {
+                    throw new IllegalArgumentException(
+                            "editBookingServices.notFound"
+                    );
+                }
+
+                // Endast bokningar d├ñr arbetet inte har b├Ârjat f├Ñr ├ñndras.
+                if (!"BOOKED".equals(booking.getStatus())
+                        && !"WORK_ORDER_CREATED".equals(
+                                booking.getStatus()
+                        )) {
+
+                    throw new IllegalArgumentException(
+                            "editBookingServices.locked"
+                    );
+                }
+
+                List<WorkOrder> workOrders =
+                        entityManager.createQuery(
+                                "from WorkOrder " +
+                                        "where bookingId = :bookingId",
+                                WorkOrder.class
+                        )
+                        .setParameter("bookingId", bookingId)
+                        .getResultList();
+
+                for (WorkOrder order : workOrders) {
+                    System.out.println("WorkOrder ID: " + order.getId());
+                    System.out.println("WorkOrder status: " + order.getStatus());
+
+                    if (order.getStatus() != WorkOrderStatus.CONFIRMED) {
+                        throw new IllegalArgumentException(
+                                "editBookingServices.locked"
+                        );
+                    }
+                }
+
+                if (serviceIds == null || serviceIds.isEmpty()) {
+                    throw new IllegalArgumentException(
+                            "editBookingServices.selectService"
+                    );
+                }
+
+                List<ServiceItem> services = new ArrayList<>();
+                List<Integer> uniqueIds = new ArrayList<>();
+
+                int totalMinutes = 0;
+
+                for (Integer serviceId : serviceIds) {
+
+                    if (serviceId == null) {
+                        throw new IllegalArgumentException(
+                                "editBookingServices.serviceMissing"
+                        );
+                    }
+
+                    if (uniqueIds.contains(serviceId)) {
+                        continue;
+                    }
+
+                    ServiceItem service = entityManager.find(ServiceItem.class, serviceId);
+                    if (service == null) {
+                        throw new IllegalArgumentException(
+                                "editBookingServices.serviceMissing"
+                        );
+                    }
+
+                    if (service.getEstimatedMinutes() <= 0) {
+                        throw new IllegalArgumentException(
+                                "editBookingServices.invalidDuration"
+                        );
+                    }
+
+                    services.add(service);
+                    uniqueIds.add(serviceId);
+
+                    totalMinutes = Math.addExact(
+                            totalMinutes,
+                            service.getEstimatedMinutes()
+                    );
+                }
+
+                if (booking.getDate() == null
+                        || booking.getStartTime() == null) {
+
+                    throw new IllegalArgumentException(
+                            "editBookingServices.missingTime"
+                    );
+                }
+
+                // Kontrollerar andra bokningar i samma session.
+                if (booking.getMechanicId() != null) {
+
+                    List<Booking> otherBookings =
+                            entityManager.createQuery(
+                                    "from Booking " +
+                                            "where mechanicId = :mechanicId " +
+                                            "and id <> :bookingId",
+                                    Booking.class
+                            )
+                            .setParameter(
+                                    "mechanicId",
+                                    booking.getMechanicId()
+                            )
+                            .setParameter(
+                                    "bookingId",
+                                    bookingId
+                            )
+                            .getResultList();
+
+                    LocalDateTime newStart =
+                            LocalDateTime.of(
+                                    booking.getDate(),
+                                    booking.getStartTime()
+                            );
+
+                    LocalDateTime newEnd =
+                            newStart.plusMinutes(totalMinutes);
+
+                    for (Booking other : otherBookings) {
+
+                        if (other.getDate() == null
+                                || other.getStartTime() == null
+                                || other.getDurationMinutes() <= 0) {
+                            continue;
+                        }
+
+                        LocalDateTime otherStart =
+                                LocalDateTime.of(
+                                        other.getDate(),
+                                        other.getStartTime()
+                                );
+
+                        LocalDateTime otherEnd =
+                                otherStart.plusMinutes(
+                                        other.getDurationMinutes()
+                                );
+
+                        if (newStart.isBefore(otherEnd)
+                                && newEnd.isAfter(otherStart)) {
+
+                            throw new IllegalArgumentException(
+                                    "editBookingServices.overlap"
+                            );
+                        }
+                    }
+                }
+
+                // Alla ├ñndringar sparas i samma transaktion.
+                booking.getServices().clear();
+                booking.getServices().addAll(services);
+                booking.setDurationMinutes(totalMinutes);
+
+                /*
+                 * Bokningens tj├ñnster f├Ñr ├ñndras innan arbetet har b├Ârjat.
+                 * D├ñrf├Âr uppdateras ├ñven historical-price-snapshoten.
+                 */
+                booking.getFrozenPrice().clear();
+                booking.getFrozenPrice().addAll(createFrozenPrices(services));
+
+                for (WorkOrder order : workOrders) {
+                    order.getServiceItemIds().clear();
+                    order.getServiceItemIds().addAll(uniqueIds);
+                }
+                return totalMinutes;
+    }
+    
+    @Override
+    public Booking findByIdAndServices(int id) {
+        List<Booking> bookingList = entityManager.createQuery(
+                "SELECT DISTINCT b FROM Booking b " +
+                "LEFT JOIN FETCH b.services WHERE b.id = :id",
+                Booking.class
+        )
+        .setParameter("id", id)
+        .getResultList();
+
+        return bookingList.isEmpty() ? null : bookingList.getFirst();
+    }
+
+    @Override
+    public List<Booking> findOtherBookingsByMechanic(
+            int mechanicId, int bookingId) {
+
+        return entityManager.createQuery(
+                "FROM Booking WHERE mechanicId = :mechanicId " +
+                "AND id <> :bookingId",
+                Booking.class
+        )
+        .setParameter("mechanicId", mechanicId)
+        .setParameter("bookingId", bookingId)
+        .getResultList();
+    }
 
     public List<InvoiceLine> createFrozenPrices(List<ServiceItem> serviceItems) {
 
