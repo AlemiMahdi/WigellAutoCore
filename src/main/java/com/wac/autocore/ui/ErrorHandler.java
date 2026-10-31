@@ -42,9 +42,11 @@ public final class ErrorHandler {
             messageKey = exception.getMessage();
         }
 
+        String where = context == null ? "" : " [" + context + "]";
+
         if (!isValidation) {
             String errorId = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-            LOGGER.error("Operation failed: {} (error id {})", messageKey, errorId, exception);
+            LOGGER.error("Operation failed: {}{} (error id {})", messageKey, where, errorId, exception);
 
             LanguageManager language = LanguageManager.getInstance();
             StringBinding message = language.text(messageKey);
@@ -59,7 +61,7 @@ public final class ErrorHandler {
             return;
         }
 
-        LOGGER.warn("Operation rejected: {}", messageKey);
+        LOGGER.warn("Operation rejected: {}{}", messageKey, where);
 
         label.textProperty().unbind();
         UiKit.showError(label, "");
