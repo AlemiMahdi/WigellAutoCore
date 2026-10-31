@@ -25,11 +25,14 @@ import java.util.List;
 import java.util.Locale;
 
 import org.springframework.security.access.AccessDeniedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 //Formulär för att skapa arbetsordrar.
 public class CreateWorkOrderView  extends VBox {
 
-    private final LanguageManager language = LanguageManager.getInstance();
+private static final Logger LOGGER = LoggerFactory.getLogger(CreateWorkOrderView.class);
+private final LanguageManager language = LanguageManager.getInstance();
     private final ObservableList<ServiceItem> selectedServices = FXCollections.observableArrayList();
     private final SecuredWorkOrderActions securedWorkOrderActions;
     private final SecuredBookingActions securedBookingActions;
@@ -480,12 +483,18 @@ public class CreateWorkOrderView  extends VBox {
                             : "createWorkOrder.createError";
 
             feedbackLabel.textProperty().unbind();
+
             UiKit.showError(
                     feedbackLabel,
                     language.text(errorKey).get()
             );
 
-            exception.printStackTrace();
+            LOGGER.error(
+                    "Could not create work order of type {}",
+                    selectedType,
+                    exception
+            );
+
             return;
         }
 

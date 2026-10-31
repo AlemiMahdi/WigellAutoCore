@@ -11,8 +11,12 @@ import com.wac.autocore.exception.DataAccessException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class PaymentService {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(PaymentService.class);
     private final IPaymentRepository paymentRepository;
 
     public PaymentService(IPaymentRepository paymentRepository) {
@@ -63,6 +67,8 @@ public class PaymentService {
                     exception
             );
         }
+        LOGGER.info("Payment {} registered for invoice {}", payment.getId(), selectedInvoice.getId());
+
     }
 
     public static List<Invoice> findUnpaidInvoices() {

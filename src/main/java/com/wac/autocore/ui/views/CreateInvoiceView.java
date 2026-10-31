@@ -15,13 +15,21 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 
 import javafx.util.StringConverter;
+
 import java.time.LocalDate;
+
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.List;
 
 public class CreateInvoiceView {
 
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(CreateInvoiceView.class);
     public static VBox build(SecuredInvoiceActions securedInvoiceActions) {
         LanguageManager language = LanguageManager.getInstance();
+
 
         // --- Arbetsorder ---
         // Bara avslutade (COMPLETED) arbetsordrar kan faktureras,
@@ -32,6 +40,8 @@ public class CreateInvoiceView {
             public String toString(InvoiceableOrder object) {
                 return object == null ? "" : object.toString();
             }
+
+
             @Override
             public InvoiceableOrder fromString(String text) {
                 return null; // Används inte – listan går inte att skriva i
@@ -245,7 +255,7 @@ public class CreateInvoiceView {
                 UiKit.showError(statusLabel,
                         language.text("createInvoice.saveError").get()
                 );
-                exception.printStackTrace();
+                LOGGER.error("Could not create invoice for work order {}", workOrderId, exception);
             }
 
 

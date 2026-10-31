@@ -19,8 +19,13 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class MechanicScheduleView {
 
+        private static final Logger LOGGER =
+        LoggerFactory.getLogger(MechanicScheduleView.class);
         private final LanguageManager language = LanguageManager.getInstance();
         private final SecuredMechanicActions securedMechanicActions;
 
@@ -149,6 +154,12 @@ public class MechanicScheduleView {
             try {
                 result = securedMechanicActions.getSchedule(selected.getId());
             } catch (RuntimeException exception) {
+                
+                LOGGER.error(
+                        "Could not load schedule for mechanic {}",
+                        selected.getId(),
+                        exception
+                );
                 table.getItems().clear();
                 countLabel.setText("");
 
@@ -159,8 +170,6 @@ public class MechanicScheduleView {
                 );
                 errorLabel.setWrapText(true);
                 table.setPlaceholder(errorLabel);
-
-                exception.printStackTrace();
                 return;
             }
 

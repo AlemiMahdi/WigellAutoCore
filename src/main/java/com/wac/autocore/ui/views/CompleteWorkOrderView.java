@@ -15,9 +15,13 @@ import javafx.scene.layout.VBox;
 import com.wac.autocore.security.actions.SecuredWorkOrderActions;
 import org.springframework.security.access.AccessDeniedException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 // Complete work order: ett centrerat kort per påbörjad (STARTED) arbetsorder.
 public class CompleteWorkOrderView {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(CompleteWorkOrderView.class);
     // Kortens maxbredd – ungefär som i designen
     private static final double CARD_MAX_WIDTH = 680;
 
@@ -83,7 +87,8 @@ public class CompleteWorkOrderView {
             cardList.getChildren().add(createEmptyCard());
         }
     }
-//Måste ändras hämta från BookingRepo findbooking
+
+    //Måste ändras hämta från BookingRepo findbooking
     // Ett kort: rubrik, STARTED-badge, mekaniker, tjänster som checkboxar och grön knapp.
     private VBox createWorkOrderCard(WorkOrder order, Button completeButton) {
         Booking booking = findBooking(order.getBookingId());
@@ -167,7 +172,7 @@ public class CompleteWorkOrderView {
             // Lagringsfel: fast text till användaren, tekniska detaljer i loggen
             UiKit.showError(statusLabel, "");
             statusLabel.textProperty().bind(language.text("completeWorkOrder.error"));
-            exception.printStackTrace();
+            LOGGER.error("Could not complete work order {}", workOrderId, exception);
             return false;
         }
     }

@@ -14,11 +14,15 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
 import org.springframework.security.access.AccessDeniedException;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.List;
 
 // Start work order: lista med arbetsordrar till vänster och detaljer om vald order till höger.
 public class StartWorkOrderView extends VBox {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(StartWorkOrderView.class);
     private final LanguageManager language = LanguageManager.getInstance();
     private final SecuredWorkOrderActions securedWorkOrderActions;
 
@@ -210,7 +214,7 @@ public class StartWorkOrderView extends VBox {
             // Lagringsfel: fast text till användaren, tekniska detaljer bara i loggen
             UiKit.showError(feedbackLabel, "");
             feedbackLabel.textProperty().bind(language.text("startWorkOrder.saveError"));
-            exception.printStackTrace();
+            LOGGER.error("Could not start work order {}", workOrder.getId(), exception);
         }
 
         // Laddar om listan (startad order försvinner ur den).

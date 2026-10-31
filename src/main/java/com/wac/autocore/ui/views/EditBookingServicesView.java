@@ -1,4 +1,5 @@
 package com.wac.autocore.ui.views;
+
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.ServiceItem;
@@ -9,6 +10,7 @@ import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+
 import java.util.Locale;
 
 import javafx.scene.input.MouseButton;
@@ -21,8 +23,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Arrays;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class EditBookingServicesView {
 
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(EditBookingServicesView.class);
     private final SecuredBookingActions securedBookingActions;
     public EditBookingServicesView( SecuredBookingActions securedBookingActions) {
         this.securedBookingActions = securedBookingActions;
@@ -240,12 +247,9 @@ public class EditBookingServicesView {
 
                 // Logga bara oväntade fel
                 if ("editBookingServices.saveError".equals(key)) {
-
-                    java.util.logging.Logger.getLogger(
-                            EditBookingServicesView.class.getName()
-                    ).log(
-                            java.util.logging.Level.SEVERE,
-                            "Could not update booking services",
+                    LOGGER.error(
+                            "Could not update services for booking {}",
+                            booking.getId(),
                             exception
                     );
                 }

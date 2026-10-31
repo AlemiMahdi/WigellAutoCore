@@ -20,11 +20,14 @@ import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.springframework.security.access.AccessDeniedException;
 
 public class EditWorkOrderDraftView {
 
+private static final Logger LOGGER = LoggerFactory.getLogger(EditWorkOrderDraftView.class);
     private final LanguageManager language =
             LanguageManager.getInstance();
     private final SecuredWorkOrderActions securedWorkOrderActions;
@@ -294,7 +297,7 @@ public class EditWorkOrderDraftView {
 
             } catch (RuntimeException exception) {
                 showFeedback(messageLabel, "editWorkOrderDraft.saveError", false);
-                exception.printStackTrace();
+                LOGGER.error("Could not save changes to draft {}", draft.getId(), exception);
             }
 
         });

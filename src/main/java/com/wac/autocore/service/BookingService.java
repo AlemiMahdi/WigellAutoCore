@@ -14,8 +14,12 @@ import com.wac.autocore.repository.IBookingRepository;
 import com.wac.autocore.repository.IServiceItemRepository;
 import com.wac.autocore.repository.IWorkOrderRepository;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class BookingService {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(BookingService.class);
     private final IBookingRepository bookingRepository;
     private final IWorkOrderRepository workOrderRepository;
     private final IServiceItemRepository serviceItemRepository;
@@ -174,6 +178,8 @@ public class BookingService {
 
         // 8. Uppdatera minnet efter lyckad lagring
         Database.getBookings().add(booking);
+
+        LOGGER.info("Booking {} created for vehicle {}", booking.getId(), vehicleId);
 
         return booking;
     }

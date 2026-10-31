@@ -20,9 +20,13 @@ import java.util.List;
 
 import javafx.scene.control.Button;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 // Visar arbetsordrarna som en kanban-tavla: CONFIRMED, IN_PROGRESS och COMPLETED.
 public class ShowWorkOrdersView {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ShowWorkOrdersView.class);
     private final LanguageManager language = LanguageManager.getInstance();
     private final SecuredWorkOrderActions securedWorkOrderActions;
     private boolean canEdit;
@@ -72,7 +76,7 @@ public class ShowWorkOrdersView {
         addEmptyTextIfNoCards(startedColumn);
         addEmptyTextIfNoCards(completedColumn);
 
-        HBox board = new HBox(24, draftColumn ,createdColumn, startedColumn, completedColumn);
+        HBox board = new HBox(24, draftColumn, createdColumn, startedColumn, completedColumn);
         board.setAlignment(Pos.TOP_LEFT);
 
         root.getChildren().addAll(
@@ -103,8 +107,8 @@ public class ShowWorkOrdersView {
             Label originalLabel = new Label();
 
             originalLabel.textProperty().bind(
-                language.text("workOrders.complaintOf")
-                    .concat(String.valueOf(workOrder.getOriginalWorkOrderId()))
+                    language.text("workOrders.complaintOf")
+                            .concat(String.valueOf(workOrder.getOriginalWorkOrderId()))
             );
 
             originalLabel.getStyleClass().add("kanban-card-hint");
@@ -126,8 +130,8 @@ public class ShowWorkOrdersView {
             Label complaintsLabel = new Label();
 
             complaintsLabel.textProperty().bind(
-                language.text("workOrders.relatedComplaints")
-                    .concat(": " + String.join(", ", complaintIds))
+                    language.text("workOrders.relatedComplaints")
+                            .concat(": " + String.join(", ", complaintIds))
             );
 
             complaintsLabel.getStyleClass().add("kanban-card-hint");
@@ -209,7 +213,11 @@ public class ShowWorkOrdersView {
                 feedbackBox.setVisible(true);
                 feedbackBox.setManaged(true);
 
-                exception.printStackTrace();
+                LOGGER.error(
+                        "Could not confirm work order {}",
+                        workOrder.getId(),
+                        exception
+                );
                 return;
             }
 
