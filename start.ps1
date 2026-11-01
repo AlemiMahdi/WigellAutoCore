@@ -9,10 +9,10 @@ if (-not (Test-Path ".env")) {
 
 # Läs in lösenorden från .env
 Get-Content ".env" | ForEach-Object {
-    if ($_ -match '^\s*(WAC_(ADMIN|WORKSHOP|VIEWER)_PASSWORD)=(.*)$') {
+    if ($_ -match '^\s*(WAC_(?:ADMIN|WORKSHOP|VIEWER)_PASSWORD|DB_USERNAME|DB_PASSWORD)\s*=(.*)$') {
         [Environment]::SetEnvironmentVariable(
             $matches[1],
-            $matches[3],
+            $matches[2].Trim(),
             "Process"
         )
     }

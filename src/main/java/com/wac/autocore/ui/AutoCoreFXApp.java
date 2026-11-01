@@ -162,7 +162,7 @@ public class AutoCoreFXApp extends Application {
     }
 
     private void showLogin() {
-        appRoot.setTop(null);
+        appRoot.setTop(createHeader());
         appRoot.setLeft(null);
 
         appRoot.setCenter(new LoginView(
@@ -563,7 +563,10 @@ public class AutoCoreFXApp extends Application {
         ToggleGroup languageGroup = new ToggleGroup();
         swedish.setToggleGroup(languageGroup);
         english.setToggleGroup(languageGroup);
-        swedish.setSelected(true); // appen startar på svenska
+        String currentLanguage = language.text("language.code").get();
+
+        swedish.setSelected("sv".equals(currentLanguage));
+        english.setSelected("en".equals(currentLanguage));
 
         swedish.setOnAction(actionEvent -> language.setLanguage("sv"));
         english.setOnAction(actionEvent -> language.setLanguage("en"));
