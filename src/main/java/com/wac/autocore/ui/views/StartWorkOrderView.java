@@ -194,7 +194,8 @@ public class StartWorkOrderView extends VBox {
             feedbackLabel.textProperty().bind(
                     language.text("startWorkOrder.success").concat(" " + workOrder.getId()));
         } catch (RuntimeException exception) {
-            ErrorHandler.show(feedbackLabel, exception, "startWorkOrder.saveError", "work order" + workOrder.getId());
+            feedbackLabel.setWrapText(true);
+            ErrorHandler.show(feedbackLabel, exception, "startWorkOrder.saveError", "work order " + workOrder.getId());
         }
 
         // Laddar om listan (startad order försvinner ur den).

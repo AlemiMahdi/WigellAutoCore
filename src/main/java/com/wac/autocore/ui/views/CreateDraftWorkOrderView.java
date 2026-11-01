@@ -1,7 +1,6 @@
 package com.wac.autocore.ui.views;
 
-import org.springframework.security.access.AccessDeniedException;
-
+import com.wac.autocore.ui.ErrorHandler;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Vehicle;
 import com.wac.autocore.model.WorkOrder;
@@ -19,15 +18,11 @@ import javafx.scene.control.TextArea;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
-
 
 // Formulär för att skapa en arbetsorder som utkast (WAC-63)
 // Bara fordon, typ och en kort problembeskrivning krävs.
 public class CreateDraftWorkOrderView {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(CreateDraftWorkOrderView.class);
     private final LanguageManager language = LanguageManager.getInstance();
     private final SecuredWorkOrderActions securedWorkOrderActions;
 
@@ -146,26 +141,8 @@ public class CreateDraftWorkOrderView {
                     originalId
             );
 
-        } catch (AccessDeniedException exception) {
-            UiKit.showError(
-                    messageLabel,
-                    language.text("security.accessDenied").get()
-            );
-            return;
-
-        } catch (IllegalArgumentException exception) {
-            UiKit.showError(
-                    messageLabel,
-                    language.text(exception.getMessage()).get()
-            );
-            return;
-
         } catch (RuntimeException exception) {
-            UiKit.showError(
-                    messageLabel,
-                    language.text("createDraft.saveError").get()
-            );
-            exception.printStackTrace();
+            ErrorHandler.show(messageLabel, exception, "createDraft.saveError", "vehicle " + vehicle.getId() + "type " + type);
             return;
         }
 
