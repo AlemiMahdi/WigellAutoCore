@@ -3,6 +3,7 @@ package com.wac.autocore.ui.views;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.security.actions.SecuredServiceItemActions;
+import com.wac.autocore.ui.ErrorHandler;
 import org.springframework.security.access.AccessDeniedException;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
@@ -18,14 +19,9 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 // Visar befintliga tjänster i en tabell och låter användaren ändra tidsåtgången.
 public class ServiceView extends VBox {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ServiceView.class);
     private final LanguageManager language = LanguageManager.getInstance();
     private final TableView<ServiceItem> table = new TableView<>();
     private final TextField durationField = new TextField();
@@ -148,19 +144,11 @@ public class ServiceView extends VBox {
                 securedServiceItemActions.saveDuration(selected, minutes);
                 table.refresh();
                 UiKit.showSuccess(feedbackLabel, language.text("services.saved").get());
-            } catch (AccessDeniedException exception) {
-                UiKit.showError(
-                        feedbackLabel,
-                        language.text("security.accessDenied").get()
-                );
             } catch (NumberFormatException exception) {
                 UiKit.showError(feedbackLabel, language.text("services.invalidNumber").get());
-            } catch (IllegalArgumentException exception) {
-                UiKit.showError(feedbackLabel, language.text(exception.getMessage()).get());
             } catch (RuntimeException exception) {
                 table.refresh();
-                UiKit.showError(feedbackLabel, language.text("services.error").get());
-                LOGGER.error("Could not save duration for service {}", selected.getId(), exception);
+                ErrorHandler.show(feedbackLabel, exception, "services.error", "service " + selected.getId());
             }
 
         });
@@ -191,19 +179,11 @@ public class ServiceView extends VBox {
                 securedServiceItemActions.savePrice(selected, price);
                 table.refresh();
                 UiKit.showSuccess(priceFeedbackLabel, language.text("services.priceSaved").get());
-            } catch (AccessDeniedException exception) {
-                UiKit.showError(
-                        feedbackLabel,
-                        language.text("security.accessDenied").get()
-                );
             } catch (NumberFormatException exception) {
                 UiKit.showError(priceFeedbackLabel, language.text("services.invalidPrice").get());
-            } catch (IllegalArgumentException exception) {
-                UiKit.showError(priceFeedbackLabel, language.text(exception.getMessage()).get());
             } catch (RuntimeException exception) {
                 table.refresh();
-                UiKit.showError(priceFeedbackLabel, language.text("services.priceError").get());
-                LOGGER.error("Could not save price for service {}", selected.getId(), exception);
+                ErrorHandler.show(priceFeedbackLabel, exception, "services.priceError", "service " + selected.getId());
             }
 
         });

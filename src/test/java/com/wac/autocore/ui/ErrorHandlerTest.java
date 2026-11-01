@@ -5,6 +5,7 @@ import com.wac.autocore.exception.DataAccessException;
 import com.wac.autocore.exception.InvoiceValidationException;
 import com.wac.autocore.exception.ValidationException;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.security.access.AccessDeniedException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -77,5 +78,16 @@ class ErrorHandlerTest {
 
         assertTrue(ErrorHandler.isValidation(exception));
         assertEquals(FALLBACK, ErrorHandler.messageKeyFor(exception, FALLBACK));
+    }
+
+    @Test
+    void wrappedIllegalArgumentIsUnwrapped() {
+        RuntimeException wrapped = new InvalidDataAccessApiUsageException(
+                "wrapped", new IllegalArgumentException("editBookingServices.overlap"));
+
+        RuntimeException unwrapped = ErrorHandler.unwrap(wrapped);
+
+        assertTrue(ErrorHandler.isValidation(unwrapped));
+        assertEquals("editBookingServices.overlap", ErrorHandler.messageKeyFor(unwrapped, FALLBACK));
     }
 }

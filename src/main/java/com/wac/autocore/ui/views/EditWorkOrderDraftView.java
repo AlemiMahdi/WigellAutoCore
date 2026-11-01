@@ -1,6 +1,7 @@
 package com.wac.autocore.ui.views;
 
 
+import com.wac.autocore.ui.ErrorHandler;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.security.actions.SecuredBookingActions;
 import com.wac.autocore.security.actions.SecuredWorkOrderActions;
@@ -21,14 +22,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.springframework.security.access.AccessDeniedException;
 
 public class EditWorkOrderDraftView {
 
-private static final Logger LOGGER = LoggerFactory.getLogger(EditWorkOrderDraftView.class);
     private final LanguageManager language =
             LanguageManager.getInstance();
     private final SecuredWorkOrderActions securedWorkOrderActions;
@@ -314,22 +310,10 @@ private static final Logger LOGGER = LoggerFactory.getLogger(EditWorkOrderDraftV
                                 : null);
 
                 showFeedback(messageLabel, "editWorkOrderDraft.saved", true);
-            
-            }catch (AccessDeniedException exception) {
-                showFeedback(
-                        messageLabel,
-                        "security.accessDenied",
-                        false
-                );
-                return;
-            }
-            
-            catch (IllegalArgumentException exception) {
-                showFeedback(messageLabel, exception.getMessage(), false);
 
             } catch (RuntimeException exception) {
-                showFeedback(messageLabel, "editWorkOrderDraft.saveError", false);
-                LOGGER.error("Could not save changes to draft {}", draft.getId(), exception);
+                ErrorHandler.show(messageLabel, exception, "editWorkOrderDraft.saveError",
+                        "draft " + draft.getId());
             }
 
         });

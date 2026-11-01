@@ -9,6 +9,7 @@ import javafx.beans.binding.StringBinding;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,6 +26,14 @@ public final class ErrorHandler {
 
     public static void show(Label label, RuntimeException exception, String fallbackKey) {
         show(label, exception, fallbackKey, null);
+    }
+
+    static RuntimeException unwrap(RuntimeException exception) {
+        if (exception instanceof InvalidDataAccessApiUsageException
+                && exception.getCause() instanceof IllegalArgumentException cause) {
+            return cause;
+        }
+        return exception;
     }
 
     static boolean isValidation(RuntimeException exception) {
@@ -51,6 +60,8 @@ public final class ErrorHandler {
             RuntimeException exception,
             String fallbackKey,
             String context) {
+
+        exception = unwrap(exception);
 
         boolean isValidation = isValidation(exception);
         String messageKey = messageKeyFor(exception, fallbackKey);
