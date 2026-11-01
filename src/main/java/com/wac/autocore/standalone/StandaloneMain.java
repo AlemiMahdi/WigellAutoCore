@@ -4,17 +4,27 @@ import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.WorkOrder;
 import com.wac.autocore.model.WorkOrderStatus;
 import com.wac.autocore.model.WorkOrderTypeEnum;
+import com.wac.autocore.security.AuthenticationService;
+import com.wac.autocore.security.UserService;
 import com.wac.autocore.service.BookingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import org.springframework.security.core.AuthenticationException;
+import java.util.Scanner;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 
 /**
  * Fristående program (WAC-106), "Main 2".
- * Kör två verksamhetsoperationer utan Spring, JavaFX eller databas.
- * Här skapas alla objekt med new (Composition Root).
+ * Kör två verksamhetsoperationer utan Spring Application Context, JavaFX eller databas.
+ * Här skapas alla objekt med new (Composition Root), även säkerheten.
+ * Samma användare, lösenordskontroll och roller som appen.
  */
 public class StandaloneMain {
 
@@ -29,9 +39,33 @@ public class StandaloneMain {
                 new InMemoryWorkOrderRepository(),
                 new InMemoryServiceItemRepository()
         );
-        StandaloneOperations operations = new StandaloneOperations(bookingService);
 
-        LOGGER.info("Standalone program started (no Spring, no JavaFX, no database)");
+        // Composition Root: säkerheten, samma som SecurityConfig fast med new
+        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+        UserService userService = new UserService(passwordEncoder);
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userService);
+        provider.setPasswordEncoder(passwordEncoder);
+        AuthenticationService authenticationService = new AuthenticationService(new ProviderManager(provider));
+
+        LOGGER.info("Standalone program started (no Spring context, no JavaFX, no database)");
+
+        // Inloggning mot samma användare som appen
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Username: ");
+        String username = scanner.nextLine();
+        System.out.print("Password: ");
+        String password = scanner.nextLine();
+
+        try {
+            authenticationService.login(username, password);
+        } catch (AuthenticationException exception) {
+            // Logga aldrig lösenordet, bara användarnamnet
+            LOGGER.warn("Login failed for user {}", username);
+            return;
+        }
+        LOGGER.info("User {} logged in", username);
+
+        StandaloneOperations operations = new StandaloneOperations(bookingService, authenticationService);
 
         // Operation 1: arbetsorderns status
         WorkOrder workOrder = WorkOrder.createDraft(1, 1, WorkOrderTypeEnum.PLANNED);
@@ -54,6 +88,7 @@ public class StandaloneMain {
         boolean overlapping = operations.canBook(1, date, LocalTime.of(10, 30), 60);
         LOGGER.info("New booking 10:30-11:30: {}", result(overlapping));
 
+        authenticationService.logout();
         LOGGER.info("Standalone program finished");
     }
 
