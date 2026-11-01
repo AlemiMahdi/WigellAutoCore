@@ -3,6 +3,7 @@ package com.wac.autocore.ui.views;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
 import com.wac.autocore.security.actions.SecuredBookingActions;
+import com.wac.autocore.ui.ErrorHandler;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 
@@ -31,14 +32,9 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 // Formulär för att boka in ett fordon: välj fordon, datum, mekaniker och skriv en beskrivning.
 public class CreateBookingView {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CreateBookingView.class);
     private final LanguageManager language = LanguageManager.getInstance();
     private final SecuredBookingActions securedBookingActions;
 
@@ -270,26 +266,10 @@ public class CreateBookingView {
                 UiKit.showSuccess(messageLabel, language.text("createBooking.success").get()
             );
 
-            } catch (IllegalArgumentException exception) {
-
-            // Visa det specifika valideringsfelet från BookingService.
-            UiKit.showError(
-                messageLabel,
-                language.text(exception.getMessage()).get()
-            );
-            return;
-
-        } catch (RuntimeException exception) {
-
-            // Visa ett generellt felmeddelande om databaslagringen misslyckas.
-            UiKit.showError(
-                messageLabel,
-                language.text("createBooking.saveError").get()
-            );
-
-            LOGGER.error("Could not create booking", exception);
-            return;
-        }
+            } catch (RuntimeException exception) {
+                ErrorHandler.show(messageLabel, exception, "createBooking.saveError", "vehicle " + vehicleId);
+                return;
+            }
 
             // Tömmer formuläret så att nästa bokning kan skrivas in direkt
             vehicleCombo.getSelectionModel().clearSelection();

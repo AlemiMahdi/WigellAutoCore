@@ -3,28 +3,24 @@ package com.wac.autocore.ui.views;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.ServiceItem;
+import com.wac.autocore.security.actions.SecuredBookingActions;
+import com.wac.autocore.ui.ErrorHandler;
+import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-
-import java.util.Locale;
-
-import javafx.scene.input.MouseButton;
-import com.wac.autocore.security.actions.SecuredBookingActions;
-import org.springframework.security.access.AccessDeniedException;
-import javafx.scene.input.MouseEvent;
-import com.wac.autocore.ui.UiKit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Arrays;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.Locale;
 
 public class EditBookingServicesView {
 
@@ -210,53 +206,9 @@ public class EditBookingServicesView {
                         booking.getId(), serviceIds
                 );
             }
-            catch(AccessDeniedException exception) {
-                noticeLabel.textProperty().unbind();
-                UiKit.showError(
-                    noticeLabel, 
-                    language.text("security.accessDenied").get()
-                );
-                return;
-            }
             catch (RuntimeException exception) {
-                String key = "editBookingServices.saveError";
-
-                List<String> validationKeys = Arrays.asList(
-                        "editBookingServices.notFound",
-                        "editBookingServices.locked",
-                        "editBookingServices.selectService",
-                        "editBookingServices.serviceMissing",
-                        "editBookingServices.invalidDuration",
-                        "editBookingServices.missingTime",
-                        "editBookingServices.overlap"
-                );
-
-                Throwable cause = exception;
-
-                while (cause != null) {
-
-                    if (cause instanceof IllegalArgumentException
-                            && validationKeys.contains(cause.getMessage())) {
-
-                        key = cause.getMessage();
-                        break;
-                    }
-
-                    cause = cause.getCause();
-                }
-
-                // Logga bara oväntade fel
-                if ("editBookingServices.saveError".equals(key)) {
-                    LOGGER.error(
-                            "Could not update services for booking {}",
-                            booking.getId(),
-                            exception
-                    );
-                }
-
-                noticeLabel.textProperty().unbind();
-                UiKit.showError(noticeLabel, "");
-                noticeLabel.textProperty().bind(language.text(key));
+                ErrorHandler.show(noticeLabel, exception, "editBookingServices.saveError",
+                        "booking " + booking.getId());
                 return;
             }
 

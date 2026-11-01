@@ -2,6 +2,7 @@
 package com.wac.autocore.ui.views;
 
 import com.wac.autocore.security.AuthenticationService;
+import com.wac.autocore.ui.ErrorHandler;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 
@@ -15,13 +16,7 @@ import javafx.scene.layout.VBox;
 
 import org.springframework.security.core.AuthenticationException;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 public class LoginView extends VBox {
-
-    private static final Logger LOGGER =
-            Logger.getLogger(LoginView.class.getName());
 
     private final AuthenticationService authenticationService;
     private final Runnable onLoginSuccess;
@@ -114,19 +109,8 @@ public class LoginView extends VBox {
             );
 
         } catch (RuntimeException exception) {
-
             passwordField.clear();
-
-            LOGGER.log(
-                    Level.SEVERE,
-                    "Unexpected login error",
-                    exception
-            );
-
-            UiKit.showError(
-                    feedback,
-                    language.text("login.unexpectedError").get()
-            );
+            ErrorHandler.show(feedback, exception, "login.unexpectedError", "user " + username);
         }
     }
 }

@@ -3,11 +3,11 @@ package com.wac.autocore.ui.views;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
 import com.wac.autocore.service.BookingService;
+import com.wac.autocore.ui.ErrorHandler;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 import com.wac.autocore.security.actions.SecuredBookingActions;
 import com.wac.autocore.security.actions.SecuredWorkOrderActions;
-import org.springframework.security.access.AccessDeniedException;
 
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
@@ -20,13 +20,9 @@ import java.util.List;
 
 import javafx.scene.control.Button;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 // Visar arbetsordrarna som en kanban-tavla: CONFIRMED, IN_PROGRESS och COMPLETED.
 public class ShowWorkOrdersView {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ShowWorkOrdersView.class);
     private final LanguageManager language = LanguageManager.getInstance();
     private final SecuredWorkOrderActions securedWorkOrderActions;
     private boolean canEdit;
@@ -186,38 +182,15 @@ public class ShowWorkOrdersView {
                         workOrder.getId()
                 );
 
-            } catch (AccessDeniedException exception) {
-                Label errorLabel = UiKit.feedbackLabel();
-                errorLabel.setWrapText(true);
-
-                UiKit.showError(errorLabel, "");
-                errorLabel.textProperty().bind(
-                        language.text("security.accessDenied")
-                );
-
-                feedbackBox.getChildren().add(errorLabel);
-                feedbackBox.setVisible(true);
-                feedbackBox.setManaged(true);
-                return;
-
             } catch (RuntimeException exception) {
                 Label errorLabel = UiKit.feedbackLabel();
                 errorLabel.setWrapText(true);
-
-                UiKit.showError(errorLabel, "");
-                errorLabel.textProperty().bind(
-                        language.text("confirmWorkOrder.saveError")
-                );
+                ErrorHandler.show(errorLabel, exception, "confirmWorkOrder.saveError",
+                        "work order " + workOrder.getId());
 
                 feedbackBox.getChildren().add(errorLabel);
                 feedbackBox.setVisible(true);
                 feedbackBox.setManaged(true);
-
-                LOGGER.error(
-                        "Could not confirm work order {}",
-                        workOrder.getId(),
-                        exception
-                );
                 return;
             }
 

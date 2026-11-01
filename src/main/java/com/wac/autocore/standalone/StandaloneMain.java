@@ -60,10 +60,8 @@ public class StandaloneMain {
             authenticationService.login(username, password);
         } catch (AuthenticationException exception) {
             // Logga aldrig lösenordet, bara användarnamnet
-            LOGGER.warn("Login failed for user {}", username);
             return;
         }
-        LOGGER.info("User {} logged in", username);
 
         StandaloneOperations operations = new StandaloneOperations(bookingService, authenticationService);
 

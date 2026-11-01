@@ -10,9 +10,14 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Repository
 @Transactional
 public class BookingRepository implements IBookingRepository{
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(BookingRepository.class);
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -185,8 +190,7 @@ public class BookingRepository implements IBookingRepository{
                         .getResultList();
 
                 for (WorkOrder order : workOrders) {
-                    System.out.println("WorkOrder ID: " + order.getId());
-                    System.out.println("WorkOrder status: " + order.getStatus());
+                    LOGGER.debug("Checking work order {} with status {}", order.getId(), order.getStatus());
 
                     if (order.getStatus() != WorkOrderStatus.CONFIRMED) {
                         throw new IllegalArgumentException(

@@ -1,6 +1,7 @@
 package com.wac.autocore.ui.views;
 
 import com.wac.autocore.security.actions.SecuredServicePackageActions;
+import com.wac.autocore.ui.ErrorHandler;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 
@@ -10,12 +11,8 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class CreateServicePackageView {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CreateServicePackageView.class);
     private final LanguageManager language = LanguageManager.getInstance();
     private final SecuredServicePackageActions securedServicePackageActions;
 
@@ -47,12 +44,8 @@ public class CreateServicePackageView {
 
                 UiKit.showSuccess(messageLabel, language.text("createServicePackage.success").get());
 
-            } catch (IllegalArgumentException exception) {
-                UiKit.showError(messageLabel, language.text(exception.getMessage()).get());
-                return;
             } catch (RuntimeException exception) {
-                UiKit.showError(messageLabel, language.text("createServicePackage.saveError").get());
-                LOGGER.error("Could not create service package", exception);
+                ErrorHandler.show(messageLabel, exception, "createServicePackage.saveError", null);
             }
 
             nameField.clear();
