@@ -24,23 +24,29 @@ public final class ErrorHandler {
         show(label, exception, fallbackKey, null);
     }
 
+    static boolean isValidation(RuntimeException exception) {
+        return exception instanceof IllegalArgumentException
+                || (exception instanceof ApplicationException
+                && !(exception instanceof DataAccessException));
+    }
+
+    static String messageKeyFor(RuntimeException exception, String fallbackKey) {
+        if ((exception instanceof ApplicationException
+                || exception instanceof IllegalArgumentException)
+                && exception.getMessage() != null) {
+            return exception.getMessage();
+        }
+        return fallbackKey;
+    }
+
     public static void show(
             Label label,
             RuntimeException exception,
             String fallbackKey,
             String context) {
 
-        boolean isValidation =
-                exception instanceof IllegalArgumentException
-                        || (exception instanceof ApplicationException
-                        && !(exception instanceof DataAccessException));
-
-        String messageKey = fallbackKey;
-        if ((exception instanceof ApplicationException
-                || exception instanceof IllegalArgumentException)
-                && exception.getMessage() != null) {
-            messageKey = exception.getMessage();
-        }
+        boolean isValidation = isValidation(exception);
+        String messageKey = messageKeyFor(exception, fallbackKey);
 
         String where = context == null ? "" : " [" + context + "]";
 
