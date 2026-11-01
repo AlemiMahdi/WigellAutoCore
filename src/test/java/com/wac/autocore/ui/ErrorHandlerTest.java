@@ -5,6 +5,7 @@ import com.wac.autocore.exception.DataAccessException;
 import com.wac.autocore.exception.InvoiceValidationException;
 import com.wac.autocore.exception.ValidationException;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.access.AccessDeniedException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -60,6 +61,14 @@ class ErrorHandlerTest {
 
         assertFalse(ErrorHandler.isValidation(exception));
         assertEquals(FALLBACK, ErrorHandler.messageKeyFor(exception, FALLBACK));
+    }
+
+    @Test
+    void accessDeniedIsValidationWithSecurityMessage() {
+        RuntimeException exception = new AccessDeniedException("Access Denied");
+
+        assertTrue(ErrorHandler.isValidation(exception));
+        assertEquals("security.accessDenied", ErrorHandler.messageKeyFor(exception, FALLBACK));
     }
 
     @Test

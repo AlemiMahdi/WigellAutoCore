@@ -9,6 +9,7 @@ import javafx.beans.binding.StringBinding;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.util.UUID;
 
@@ -26,11 +27,15 @@ public final class ErrorHandler {
 
     static boolean isValidation(RuntimeException exception) {
         return exception instanceof IllegalArgumentException
+                || exception instanceof AccessDeniedException
                 || (exception instanceof ApplicationException
                 && !(exception instanceof DataAccessException));
     }
 
     static String messageKeyFor(RuntimeException exception, String fallbackKey) {
+        if (exception instanceof AccessDeniedException) {
+            return "security.accessDenied";
+        }
         if ((exception instanceof ApplicationException
                 || exception instanceof IllegalArgumentException)
                 && exception.getMessage() != null) {
