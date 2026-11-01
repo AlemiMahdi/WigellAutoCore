@@ -142,7 +142,7 @@ public class CreateDraftWorkOrderView {
             );
 
         } catch (RuntimeException exception) {
-            ErrorHandler.show(messageLabel, exception, "createDraft.saveError", "vehicle " + vehicle.getId() + "type " + type);
+            ErrorHandler.show(messageLabel, exception, "createDraft.saveError", "vehicle " + vehicle.getId() + ", type " + type);
             return;
         }
 

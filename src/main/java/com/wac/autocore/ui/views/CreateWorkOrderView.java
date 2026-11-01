@@ -464,7 +464,7 @@ private final LanguageManager language = LanguageManager.getInstance();
             );
 
         } catch (RuntimeException exception) {
-            ErrorHandler.show(feedbackLabel, exception, "createWorkOrder.saveError", "Type " + selectedType);
+            ErrorHandler.show(feedbackLabel, exception, "createWorkOrder.saveError", "type " + selectedType);
             return;
         }
 

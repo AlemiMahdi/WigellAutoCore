@@ -240,7 +240,7 @@ public class CreateInvoiceView {
                 loadCompletedWorkOrders(workOrderBox, securedInvoiceActions);
 
             } catch (RuntimeException exception) {
-                ErrorHandler.show(statusLabel, exception, "createInvoice.saveError", "workOrder " + workOrderId);
+                ErrorHandler.show(statusLabel, exception, "createInvoice.saveError", "work order " + workOrderId);
                 return;
             }
 
