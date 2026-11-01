@@ -10,6 +10,8 @@ import javafx.beans.binding.StringBinding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.UUID;
 
@@ -72,12 +74,22 @@ public final class ErrorHandler {
             return;
         }
 
-        LOGGER.warn("Operation rejected: {}{}", messageKey, where);
+        if (exception instanceof AccessDeniedException) {
+            LOGGER.warn("Access denied for user {}{}", currentUsername(), where);
+        } else {
+            LOGGER.warn("Operation rejected: {}{}", messageKey, where);
+        }
 
         label.textProperty().unbind();
         UiKit.showError(label, "");
         label.textProperty().bind(
                 LanguageManager.getInstance().text(messageKey)
         );
+    }
+
+    //Hjälpmetod
+    private static String currentUsername() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication == null ? "unknown" : authentication.getName();
     }
 }
