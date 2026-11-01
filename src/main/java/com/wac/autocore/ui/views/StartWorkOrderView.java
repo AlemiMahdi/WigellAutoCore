@@ -3,6 +3,7 @@ package com.wac.autocore.ui.views;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
 import com.wac.autocore.security.actions.SecuredWorkOrderActions;
+import com.wac.autocore.ui.ErrorHandler;
 import com.wac.autocore.ui.Navigator;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
@@ -13,16 +14,11 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
-import org.springframework.security.access.AccessDeniedException;
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
-
 import java.util.List;
 
 // Start work order: lista med arbetsordrar till vänster och detaljer om vald order till höger.
 public class StartWorkOrderView extends VBox {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(StartWorkOrderView.class);
     private final LanguageManager language = LanguageManager.getInstance();
     private final SecuredWorkOrderActions securedWorkOrderActions;
 
@@ -197,24 +193,8 @@ public class StartWorkOrderView extends VBox {
             UiKit.showSuccess(feedbackLabel, "");
             feedbackLabel.textProperty().bind(
                     language.text("startWorkOrder.success").concat(" " + workOrder.getId()));
-        } catch (AccessDeniedException exception) {
-            UiKit.showError(feedbackLabel, "");
-            feedbackLabel.textProperty().bind(
-                    language.text("security.accessDenied")
-            );
-            return;
-        }
-        catch (IllegalArgumentException exception) {
-            // Regelfel: servicen skickar en språknyckel som vyn översätter.
-            // Måste fångas före RuntimeException (den är en underklass).
-            feedbackLabel.setWrapText(true);
-            UiKit.showError(feedbackLabel, "");
-            feedbackLabel.textProperty().bind(language.text(exception.getMessage()));
         } catch (RuntimeException exception) {
-            // Lagringsfel: fast text till användaren, tekniska detaljer bara i loggen
-            UiKit.showError(feedbackLabel, "");
-            feedbackLabel.textProperty().bind(language.text("startWorkOrder.saveError"));
-            LOGGER.error("Could not start work order {}", workOrder.getId(), exception);
+            ErrorHandler.show(feedbackLabel, exception, "startWorkOrder.saveError", "work order" + workOrder.getId());
         }
 
         // Laddar om listan (startad order försvinner ur den).

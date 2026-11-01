@@ -5,6 +5,7 @@ import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
 import com.wac.autocore.security.actions.SecuredBookingActions;
 import com.wac.autocore.security.actions.SecuredWorkOrderActions;
+import com.wac.autocore.ui.ErrorHandler;
 import com.wac.autocore.ui.Navigator;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
@@ -24,14 +25,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import org.springframework.security.access.AccessDeniedException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 //Formulär för att skapa arbetsordrar.
 public class CreateWorkOrderView  extends VBox {
 
-private static final Logger LOGGER = LoggerFactory.getLogger(CreateWorkOrderView.class);
 private final LanguageManager language = LanguageManager.getInstance();
     private final ObservableList<ServiceItem> selectedServices = FXCollections.observableArrayList();
     private final SecuredWorkOrderActions securedWorkOrderActions;
@@ -467,34 +463,8 @@ private final LanguageManager language = LanguageManager.getInstance();
                     originalBooking
             );
 
-        } catch (AccessDeniedException exception) {
-            feedbackLabel.textProperty().unbind();
-
-            UiKit.showError(
-                    feedbackLabel,
-                    language.text("security.accessDenied").get()
-            );
-            return;
-
         } catch (RuntimeException exception) {
-            String errorKey =
-                    "createWorkOrder.saveError".equals(exception.getMessage())
-                            ? "createWorkOrder.saveError"
-                            : "createWorkOrder.createError";
-
-            feedbackLabel.textProperty().unbind();
-
-            UiKit.showError(
-                    feedbackLabel,
-                    language.text(errorKey).get()
-            );
-
-            LOGGER.error(
-                    "Could not create work order of type {}",
-                    selectedType,
-                    exception
-            );
-
+            ErrorHandler.show(feedbackLabel, exception, "createWorkOrder.saveError", "Type" + selectedType);
             return;
         }
 
