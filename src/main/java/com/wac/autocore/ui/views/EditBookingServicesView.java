@@ -3,7 +3,6 @@ package com.wac.autocore.ui.views;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.ServiceItem;
-import com.wac.autocore.service.BookingService;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -14,11 +13,10 @@ import javafx.scene.layout.VBox;
 
 import java.util.Locale;
 
-import javafx.scene.control.ListCell;
 import javafx.scene.input.MouseButton;
+import com.wac.autocore.security.actions.SecuredBookingActions;
+import org.springframework.security.access.AccessDeniedException;
 import javafx.scene.input.MouseEvent;
-import com.wac.autocore.model.WorkOrder;
-import com.wac.autocore.model.WorkOrderStatus;
 import com.wac.autocore.ui.UiKit;
 
 import java.util.ArrayList;
@@ -30,11 +28,11 @@ import org.slf4j.LoggerFactory;
 
 public class EditBookingServicesView {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(EditBookingServicesView.class);
-    private final BookingService bookingService;
-
-    public EditBookingServicesView(BookingService bookingService) {
-        this.bookingService = bookingService;
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(EditBookingServicesView.class);
+    private final SecuredBookingActions securedBookingActions;
+    public EditBookingServicesView( SecuredBookingActions securedBookingActions) {
+        this.securedBookingActions = securedBookingActions;
     }
 
     public VBox getView() {
@@ -53,7 +51,7 @@ public class EditBookingServicesView {
         bookingLabel.textProperty().bind(language.text("editBookingServices.booking"));
 
         ComboBox<Booking> bookingComboBox = new ComboBox<>(
-                FXCollections.observableArrayList(Database.getBookings())
+                FXCollections.observableArrayList(securedBookingActions.getAllBookings())
         );
 
         bookingComboBox.setMaxWidth(Double.MAX_VALUE);
@@ -205,13 +203,22 @@ public class EditBookingServicesView {
                 serviceIds.add(service.getId());
             }
 
-            final int totalMinutes;
-
+           final int totalMinutes;
+            
             try {
-                totalMinutes = bookingService.updateBookingServices(
+                totalMinutes = securedBookingActions.updateBookingServices(
                         booking.getId(), serviceIds
                 );
-            } catch (RuntimeException exception) {
+            }
+            catch(AccessDeniedException exception) {
+                noticeLabel.textProperty().unbind();
+                UiKit.showError(
+                    noticeLabel, 
+                    language.text("security.accessDenied").get()
+                );
+                return;
+            }
+            catch (RuntimeException exception) {
                 String key = "editBookingServices.saveError";
 
                 List<String> validationKeys = Arrays.asList(
@@ -224,28 +231,33 @@ public class EditBookingServicesView {
                         "editBookingServices.overlap"
                 );
 
-                if (exception instanceof IllegalArgumentException
-                        && validationKeys.contains(exception.getMessage())) {
-                    key = exception.getMessage();
-                } else {
-                    LOGGER.error("Could not update services for booking {}", booking.getId(), exception);
+                Throwable cause = exception;
+
+                while (cause != null) {
+
+                    if (cause instanceof IllegalArgumentException
+                            && validationKeys.contains(cause.getMessage())) {
+
+                        key = cause.getMessage();
+                        break;
+                    }
+
+                    cause = cause.getCause();
+                }
+
+                // Logga bara oväntade fel
+                if ("editBookingServices.saveError".equals(key)) {
+                    LOGGER.error(
+                            "Could not update services for booking {}",
+                            booking.getId(),
+                            exception
+                    );
                 }
 
                 noticeLabel.textProperty().unbind();
                 UiKit.showError(noticeLabel, "");
                 noticeLabel.textProperty().bind(language.text(key));
                 return;
-            }
-
-            // Uppdaterar minnet först efter lyckat databassparande.
-            booking.setServices(new ArrayList<>(selectedServices));
-            booking.setDurationMinutes(totalMinutes);
-
-            for (WorkOrder order : Database.getWorkOrders()) {
-                if (order.getBookingId() == booking.getId()
-                        && order.getStatus().allowsServiceChanges()) {
-                    order.setServiceItemIds(new ArrayList<>(serviceIds));
-                }
             }
 
             noticeLabel.textProperty().unbind();

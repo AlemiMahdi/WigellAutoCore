@@ -3,9 +3,11 @@ package com.wac.autocore.ui.views;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
 import com.wac.autocore.service.BookingService;
-import com.wac.autocore.service.WorkOrderService;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
+import com.wac.autocore.security.actions.SecuredBookingActions;
+import com.wac.autocore.security.actions.SecuredWorkOrderActions;
+import org.springframework.security.access.AccessDeniedException;
 
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
@@ -26,12 +28,18 @@ public class ShowWorkOrdersView {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ShowWorkOrdersView.class);
     private final LanguageManager language = LanguageManager.getInstance();
-    private final WorkOrderService workOrderService;
-    private final BookingService bookingService;
+    private final SecuredWorkOrderActions securedWorkOrderActions;
+    private boolean canEdit;
+    private final SecuredBookingActions securedBookingActions;
 
-    public ShowWorkOrdersView(WorkOrderService workOrderService, BookingService bookingService) {
-        this.workOrderService = workOrderService;
-        this.bookingService = bookingService;
+    public ShowWorkOrdersView(
+        SecuredWorkOrderActions securedWorkOrderActions,
+        SecuredBookingActions securedBookingActions,
+        boolean canEdit
+    ) { 
+        this.securedWorkOrderActions = securedWorkOrderActions;
+        this.securedBookingActions = securedBookingActions;
+        this.canEdit = canEdit;
     }
 
     public VBox getView() {
@@ -46,7 +54,7 @@ public class ShowWorkOrdersView {
         // Sorterar varje arbetsorder till rätt kolumn utifrån dess status
         // Visa senaste arbetsordern överst i varje statuskolumn
         for (WorkOrder workOrder : UiKit.newestFirst(
-                Database.getWorkOrders(),
+                securedWorkOrderActions.findAll(),
                 WorkOrder::getId
         )) {
             WorkOrderStatus status = workOrder.getStatus();
@@ -135,7 +143,7 @@ public class ShowWorkOrdersView {
 
         card.getStyleClass().add("kanban-card");
 
-        if (workOrder.getStatus().isEditable()) {
+        if (canEdit && workOrder.getStatus().isEditable()) {
             Button editButton = UiKit.primaryButton("");
             editButton.textProperty().bind(
                     language.text("editWorkOrderDraft.open")
@@ -152,7 +160,7 @@ public class ShowWorkOrdersView {
                 );
 
                 VBox editView =
-                        new EditWorkOrderDraftView(workOrderService, bookingService).getView(workOrder);
+                        new EditWorkOrderDraftView(securedWorkOrderActions, securedBookingActions).getView(workOrder);
 
                 root.getChildren().setAll(backButton, editView);
             });
@@ -173,23 +181,46 @@ public class ShowWorkOrdersView {
 
                 List<String> errors;
 
-                try {
-                    errors = workOrderService.confirmWorkOrder(workOrder.getId());
-                } catch (RuntimeException exception) {
-                    Label errorLabel = UiKit.feedbackLabel();
-                    errorLabel.setWrapText(true);
-                    UiKit.showError(errorLabel, "");
-                    errorLabel.textProperty().bind(
-                            language.text("confirmWorkOrder.saveError")
-                    );
+            try {
+                errors = securedWorkOrderActions.confirmWorkOrder(
+                        workOrder.getId()
+                );
 
-                    feedbackBox.getChildren().add(errorLabel);
-                    feedbackBox.setVisible(true);
-                    feedbackBox.setManaged(true);
+            } catch (AccessDeniedException exception) {
+                Label errorLabel = UiKit.feedbackLabel();
+                errorLabel.setWrapText(true);
 
-                    LOGGER.error("Could not confirm work order {}", workOrder.getId(), exception);
-                    return;
-                }
+                UiKit.showError(errorLabel, "");
+                errorLabel.textProperty().bind(
+                        language.text("security.accessDenied")
+                );
+
+                feedbackBox.getChildren().add(errorLabel);
+                feedbackBox.setVisible(true);
+                feedbackBox.setManaged(true);
+                return;
+
+            } catch (RuntimeException exception) {
+                Label errorLabel = UiKit.feedbackLabel();
+                errorLabel.setWrapText(true);
+
+                UiKit.showError(errorLabel, "");
+                errorLabel.textProperty().bind(
+                        language.text("confirmWorkOrder.saveError")
+                );
+
+                feedbackBox.getChildren().add(errorLabel);
+                feedbackBox.setVisible(true);
+                feedbackBox.setManaged(true);
+
+                LOGGER.error(
+                        "Could not confirm work order {}",
+                        workOrder.getId(),
+                        exception
+                );
+                return;
+            }
+
 
                 if (!errors.isEmpty()) {
                     for (String key : errors) {

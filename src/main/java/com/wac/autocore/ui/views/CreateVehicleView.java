@@ -3,7 +3,8 @@ package com.wac.autocore.ui.views;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Customer;
 import com.wac.autocore.model.Vehicle;
-import com.wac.autocore.service.VehicleService;
+import com.wac.autocore.security.actions.SecuredVehicleActions;
+import org.springframework.security.access.AccessDeniedException;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.collections.FXCollections;
@@ -28,7 +29,7 @@ public class CreateVehicleView {
      * Bygger upp formuläret för att skapa ett nytt fordon.
      * Returnerar en VBox som kan visas i contentPane i AutoCoreApp.
      */
-    public static VBox build(VehicleService vehicleService) {
+    public static VBox build(SecuredVehicleActions securedVehicleActions) {
         LanguageManager language = LanguageManager.getInstance();
 
         TextField regField = new TextField();
@@ -80,8 +81,14 @@ public class CreateVehicleView {
 
             Vehicle vehicle;
             try {
-                vehicle = vehicleService.createVehicle(registrationNumber, brand, model, year, customerId);
-            } catch (IllegalArgumentException exception) {
+                vehicle = securedVehicleActions.createVehicle(registrationNumber, brand, model, year, customerId);
+            }catch (AccessDeniedException exception){
+                UiKit.showError(
+                    statusLabel, 
+                    language.text("security.accessDenied").get());
+                    return;
+            }
+             catch (IllegalArgumentException exception) {
                 UiKit.showError(statusLabel, language.text(exception.getMessage()).get());
                 return;
             } catch (RuntimeException exception) {

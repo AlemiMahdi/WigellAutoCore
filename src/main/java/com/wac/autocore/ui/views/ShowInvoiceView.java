@@ -1,6 +1,6 @@
 package com.wac.autocore.ui.views;
 
-import com.wac.autocore.service.InvoiceService;
+import com.wac.autocore.security.actions.SecuredInvoiceActions;
 import com.wac.autocore.model.Invoice;
 import com.wac.autocore.model.InvoiceLine;
 import com.wac.autocore.ui.Navigator;
@@ -27,7 +27,10 @@ import java.util.Collections;
 
 public class ShowInvoiceView {
 
-    public static VBox build(InvoiceService invoiceService) {
+    public static VBox build(
+        SecuredInvoiceActions securedInvoiceActions,
+        boolean isAdmin
+) {
         LanguageManager language = LanguageManager.getInstance();
 
         // "+ New invoice" byter sida via Navigator, så att menyn också
@@ -35,6 +38,8 @@ public class ShowInvoiceView {
         Button newInvoiceButton = UiKit.primaryButton("+ New invoice");
         newInvoiceButton.textProperty().bind(language.text("invoices.new"));
         newInvoiceButton.setOnAction(event -> Navigator.goTo("create-invoice"));
+        newInvoiceButton.setVisible(isAdmin);
+        newInvoiceButton.setManaged(isAdmin);
 
         TableView<Invoice> table = new TableView<>();
         Label emptyLabel = UiKit.emptyText("");
@@ -84,7 +89,7 @@ public class ShowInvoiceView {
 
         // Kopia av listan, vänd så att nyaste fakturan hamnar överst.
         // ursprungliga listan ändras inte.
-        ObservableList<Invoice> data = FXCollections.observableArrayList(invoiceService.getLoadedInvoices());
+        ObservableList<Invoice> data = FXCollections.observableArrayList(securedInvoiceActions.getLoadedInvoices());
         Collections.reverse(data);
         table.setItems(data);
 

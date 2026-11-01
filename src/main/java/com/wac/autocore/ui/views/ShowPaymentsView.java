@@ -3,7 +3,7 @@ package com.wac.autocore.ui.views;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Invoice;
 import com.wac.autocore.model.Payment;
-import com.wac.autocore.service.PaymentService;
+import com.wac.autocore.security.actions.SecuredPaymentActions;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 
@@ -24,7 +24,7 @@ public class ShowPaymentsView {
     private static final DateTimeFormatter DATE_TIME_FORMAT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
-    public VBox getView(PaymentService paymentService) {
+    public VBox getView(SecuredPaymentActions securedPaymentActions) {
         LanguageManager language = LanguageManager.getInstance();
 
         TableView<Payment> table = new TableView<>();
@@ -112,7 +112,7 @@ public class ShowPaymentsView {
         // Kopia av listan, vänd så att senaste betalningen hamnar överst
         ObservableList<Payment> payments =
                 FXCollections.observableArrayList(
-                        paymentService.findAll()
+                        securedPaymentActions.findAll()
                 );
         Collections.reverse(payments);
 

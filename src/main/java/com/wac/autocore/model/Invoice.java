@@ -1,9 +1,6 @@
 package com.wac.autocore.model;
 
 import jakarta.persistence.*;
-
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;

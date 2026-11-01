@@ -190,8 +190,16 @@ public class WorkOrderService {
             inMemory.changeStatus(WorkOrderStatus.COMPLETED);
 
             Mechanic mechanic = findMechanicInMemory(inMemory.getMechanicId());
+
             if (mechanic != null) {
-                mechanic.setAvailable(true);
+                boolean hasActiveOrders = Database.getWorkOrders().stream()
+                        .anyMatch(order ->
+                                order.getId() != workOrderId
+                                && order.getMechanicId() == mechanic.getId()
+                                && order.getStatus() == WorkOrderStatus.IN_PROGRESS
+                        );
+
+                mechanic.setAvailable(!hasActiveOrders);
             }
 
             Booking booking = findBookingInMemory(inMemory.getBookingId());

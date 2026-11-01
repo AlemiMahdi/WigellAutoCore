@@ -1,7 +1,7 @@
 package com.wac.autocore.ui.views;
 
-import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Customer;
+import com.wac.autocore.security.actions.SecuredCustomerActions;
 import com.wac.autocore.ui.Navigator;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
@@ -15,28 +15,49 @@ import javafx.scene.layout.VBox;
 // Visar alla befintliga kunder i en tabell
 public class CustomerView extends VBox {
 
-    private final LanguageManager language = LanguageManager.getInstance();
+        private final LanguageManager language = LanguageManager.getInstance();
 
-    public CustomerView() {
+        public CustomerView(
+                SecuredCustomerActions securedCustomerActions,
+                boolean canEdit) {
+
         setSpacing(20);
 
-        // Knappen tar användaren direkt till formuläret, precis som ett klick i menyn
-        Button newCustomerButton = UiKit.primaryButton("+ New customer");
-        newCustomerButton.textProperty().bind(language.text("customers.new"));
-        newCustomerButton.setOnAction(event -> Navigator.goTo("create-customer"));
+        Button newCustomerButton = null;
+
+        // Endast ADMIN och WORKSHOP ser knappen
+        if (canEdit) {
+                newCustomerButton =
+                        UiKit.primaryButton("+ New customer");
+
+                newCustomerButton.textProperty().bind(
+                        language.text("customers.new")
+                );
+
+                newCustomerButton.setOnAction(
+                        event -> Navigator.goTo("create-customer")
+                );
+        }
 
         TableView<Customer> table = createCustomerTable();
 
-        // Hämtar kundlistan när vyn skapas
+        // Hämta kunder genom säkerhetslagret
         table.setItems(
                 UiKit.newestFirst(
-                        Database.getCustomers(), 
+                        securedCustomerActions.findAll(),
                         Customer::getId
                 )
         );
 
-        getChildren().addAll(UiKit.pageHeader(language.text("customers.title"), newCustomerButton), table);
-    }
+        getChildren().addAll(
+                UiKit.pageHeader(
+                        language.text("customers.title"),
+                        newCustomerButton
+                ),
+                table
+        );
+        }
+
 
     /** Bygger tabellen med kolumnerna ID, Name, Phone, Email och VIP. */
     private TableView<Customer> createCustomerTable() {

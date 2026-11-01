@@ -4,7 +4,7 @@ package com.wac.autocore.ui.views;
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.model.ServicePackage;
-import com.wac.autocore.service.ServicePackageService;
+import com.wac.autocore.security.actions.SecuredServicePackageActions;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 
@@ -20,18 +20,20 @@ import org.slf4j.LoggerFactory;
 
 public class ManageServicePackageView {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ManageServicePackageView.class);
-    private final ServicePackageService servicePackageService;
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(ManageServicePackageView.class);
     private final LanguageManager language = LanguageManager.getInstance();
+    private final SecuredServicePackageActions securedServicePackageActions;
 
-    public ManageServicePackageView(ServicePackageService servicePackageService) {
-        this.servicePackageService = servicePackageService;
+    public ManageServicePackageView(
+            SecuredServicePackageActions securedServicePackageActions) {
+        this.securedServicePackageActions = securedServicePackageActions;
     }
 
     public VBox getView() {
 
         ComboBox<ServicePackage> packageBox = new ComboBox<>();
-        packageBox.getItems().addAll(servicePackageService.findAll());
+        packageBox.getItems().addAll(securedServicePackageActions.findAll());
         packageBox.promptTextProperty().bind(
                 language.text("manageServicePackage.packagePrompt")
         );
@@ -86,7 +88,7 @@ public class ManageServicePackageView {
                 }
             }
             try {
-                servicePackageService.updateServices(selectedPackage, selectedServices);
+                securedServicePackageActions.updateServices(selectedPackage, selectedServices);
             } catch (IllegalArgumentException exception) {
                 UiKit.showError(messageLabel, language.text(exception.getMessage()).get());
                 return;
