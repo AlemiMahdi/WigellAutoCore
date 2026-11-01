@@ -68,4 +68,9 @@ public class InMemoryBookingRepository implements IBookingRepository {
     public void updateBookingAndOrder(List<WorkOrder> orderList, Booking booking) {
         throw new UnsupportedOperationException("Not used in standalone program");
     }
+
+    @Override
+    public int updateBookingServices(int bookingId, List<Integer> serviceIds) {
+        throw new UnsupportedOperationException("Not used in standalone program");
+    }
 }
