@@ -10,6 +10,7 @@ import org.springframework.security.core.AuthenticationException;
 
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.MDC;
 
 @Service 
 public class AuthenticationService {
@@ -45,6 +46,7 @@ public class AuthenticationService {
         
         context.setAuthentication(result);
         SecurityContextHolder.setContext(context);
+        MDC.put("user", username);
         LOGGER.info("User {} logged in", username);
         
     }
@@ -53,6 +55,7 @@ public class AuthenticationService {
 
         LOGGER.info("User {} logged out", getCurrentUsername());
         SecurityContextHolder.clearContext();
+        MDC.remove("user");
     }
 
     public boolean isLoggedIn(){
