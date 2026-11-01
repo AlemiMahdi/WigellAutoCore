@@ -61,6 +61,13 @@ public class ServicePackageServiceTest {
         }
 
         @Override
+        public int updateBookingServices(int bookingId, List<Integer> serviceIds) {
+            throw new UnsupportedOperationException(
+                    "updateBookingServices is not implemented in this test fake"
+            );
+        }
+
+        @Override
         public List<Booking> findOtherBookingsByMechanic(int mechanicId, int bookingId) {
             return List.of();
         }

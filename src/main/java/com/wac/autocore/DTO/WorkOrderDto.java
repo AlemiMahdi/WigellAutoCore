@@ -1,7 +1,5 @@
 package com.wac.autocore.DTO;
 
-import com.wac.autocore.model.ServiceItem;
-
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;

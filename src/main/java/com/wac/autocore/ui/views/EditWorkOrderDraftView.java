@@ -1,10 +1,9 @@
 package com.wac.autocore.ui.views;
 
-import com.wac.autocore.service.BookingService;
-import com.wac.autocore.service.WorkOrderService;
+
 import com.wac.autocore.ui.UiKit;
-import com.wac.autocore.model.WorkOrderTypeEnum;
-import com.wac.autocore.ui.views.ViewHelpMethod;
+import com.wac.autocore.security.actions.SecuredBookingActions;
+import com.wac.autocore.security.actions.SecuredWorkOrderActions;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -14,24 +13,26 @@ import javafx.scene.layout.VBox;
 import com.wac.autocore.model.*;
 import com.wac.autocore.data.Database;
 import javafx.util.StringConverter;
-import com.wac.autocore.model.ServiceItem;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.security.access.AccessDeniedException;
+
 public class EditWorkOrderDraftView {
 
 private static final Logger LOGGER = LoggerFactory.getLogger(EditWorkOrderDraftView.class);
     private final LanguageManager language =
             LanguageManager.getInstance();
-    private final WorkOrderService workOrderService;
-    private final BookingService bookingService;
+    private final SecuredWorkOrderActions securedWorkOrderActions;
+    private final SecuredBookingActions securedBookingActions;
     private final ComboBox<WorkOrder> originalCombo = new ComboBox<>();
     private final ComboBox<Mechanic> mechanicCombo = new ComboBox<>();
     private final DatePicker plannedDateField = new DatePicker();
@@ -41,9 +42,12 @@ private static final Logger LOGGER = LoggerFactory.getLogger(EditWorkOrderDraftV
     private final TextArea commentsField = new TextArea();
     private final Label totalPriceLabel = new Label();
 
-    public EditWorkOrderDraftView(WorkOrderService workOrderService, BookingService bookingService) {
-        this.workOrderService = workOrderService;
-        this.bookingService = bookingService;
+    public EditWorkOrderDraftView(
+        SecuredWorkOrderActions securedWorkOrderActions, 
+        SecuredBookingActions securedBookingActions
+    ) {
+        this.securedWorkOrderActions = securedWorkOrderActions;
+        this.securedBookingActions = securedBookingActions;
     }
 
     private void showFeedback(Label label, String key, boolean success) {
@@ -70,7 +74,9 @@ private static final Logger LOGGER = LoggerFactory.getLogger(EditWorkOrderDraftV
             return new VBox(10, errorLabel);
         }
 
-        Booking booking = bookingService.getBookingById(draft.getBookingId()).orElse(null);
+        Booking booking = securedBookingActions.findByIdAndServices(
+                draft.getBookingId()
+        );
         if (booking == null) {
             javafx.scene.control.Label errorLabel = UiKit.feedbackLabel();
             UiKit.showError(errorLabel, "");
@@ -80,25 +86,47 @@ private static final Logger LOGGER = LoggerFactory.getLogger(EditWorkOrderDraftV
             return new VBox(10, errorLabel);
         }
 
-        // Problembeskrivning bor i boknien (en källa), här visas den bara
+        // Problembeskrivning bor i bokningen (en källa), här visas den bara
         Label descriptionLabel = new Label(booking.getDescription());
         descriptionLabel.getStyleClass().add("detail-text");
         descriptionLabel.setWrapText(true);
 
         boolean isComplaint = draft.getType() == WorkOrderTypeEnum.COMPLAINT;
 
+        ObservableList<ServiceItem> selectedServiceIds = FXCollections.observableArrayList();
+        ListView<ServiceItem> serviceList = new ListView<>(
+                FXCollections.observableArrayList(Database.getServiceItems())
+        );
+        serviceList.setPrefHeight(150);
+
+        List<ServiceItem> services = new ArrayList<>();
+        if (booking.getServices() != null) {
+            services.addAll(booking.getServices());
+        }
+
+        Label bookingInfoLabel = new Label(
+                "id: " + booking.getId() + " (" + booking.getDescription() + ")"
+        );
+        bookingInfoLabel.getStyleClass().add("detail-text");
+
+// 3. Lägg till det som ett vanligt låst formulärfält
+        VBox bookingField = UiKit.formField(
+                language.text("editWorkOrderDraft.linkedBooking"),
+                bookingInfoLabel
+        );
+
         originalCombo.setMaxWidth(Double.MAX_VALUE);
         originalCombo.promptTextProperty().bind(
                 language.text("createWorkOrder.selectOriginalWorkOrder")
         );
-        List<WorkOrder> completedOrders = workOrderService.findAll().stream()
+        List<WorkOrder> completedOrders = securedWorkOrderActions.findAll().stream()
                 .filter(order -> order.getId() != draft.getId())
                 .filter(order -> order.getStatus() == WorkOrderStatus.COMPLETED)
                 .sorted(Comparator.comparing(WorkOrder::getId).reversed())
                 .collect(Collectors.toList());
         originalCombo.getItems().setAll(completedOrders);
 
-        originalCombo.setConverter(new StringConverter<WorkOrder>() {
+        originalCombo.setConverter(new StringConverter<>() {
             @Override
             public String toString(WorkOrder order) {
                 return order == null ? "" : "WO-" + order.getId();
@@ -162,12 +190,10 @@ private static final Logger LOGGER = LoggerFactory.getLogger(EditWorkOrderDraftV
 
         plannedDateField.setValue(booking.getDate());
 
-        if (booking.getDurationMinutes() > 0) {
-            estimatedMinutesField.setText(
-                    String.valueOf(booking.getDurationMinutes())
-            );
+        if(isComplaint) {
+            priceField.setText("0");
         }
-        if (draft.getEstimatedPrice() != null) {
+        else if (draft.getEstimatedPrice() != null) {
             priceField.setText(draft.getEstimatedPrice().toPlainString());
         }
 
@@ -194,22 +220,31 @@ private static final Logger LOGGER = LoggerFactory.getLogger(EditWorkOrderDraftV
                 language.text("editWorkOrderDraft.saveButton")
         );
 
-        ObservableList<ServiceItem> selectedServiceIds = FXCollections.observableArrayList();
-        ListView<ServiceItem> serviceList = new ListView<>(
-                FXCollections.observableArrayList(Database.getServiceItems())
-        );
-        serviceList.setPrefHeight(150);
 
         ViewHelpMethod.setupServiceChecklist(
                 serviceList,
                 selectedServiceIds,
                 estimatedMinutesField,
                 totalPriceLabel,
-                booking.getServices() // Skickar med existerande tjänster som förval
+                services // Skickar med existerande tjänster som förval
         );
 
+        if (booking.getDurationMinutes() > 0) {
+            estimatedMinutesField.setText(
+                    String.valueOf(booking.getDurationMinutes())
+            );
+        }
+
+        //Uppdatera pris på tjänster när man klickar på tjänst
+        totalPriceLabel.textProperty().addListener((observable, oldValue, newValue) -> {
+           if(!isComplaint && newValue != null && !newValue.isEmpty()){
+               String cleanedPrice = newValue.replaceAll("[^0-9.,]", "").trim();
+               priceField.setText(cleanedPrice);
+           }
+        });
 
         saveButton.setOnAction(event -> {
+
             int minutes;
             BigDecimal price = null;
 
@@ -265,7 +300,7 @@ private static final Logger LOGGER = LoggerFactory.getLogger(EditWorkOrderDraftV
                     .collect(Collectors.toList());
 
             try {
-                workOrderService.updateDraftWorkOrder(draft,
+                securedWorkOrderActions.updateDraftWorkOrder(draft,
                         booking,
                         serviceIds,
                 mechanicId,
@@ -279,8 +314,17 @@ private static final Logger LOGGER = LoggerFactory.getLogger(EditWorkOrderDraftV
                                 : null);
 
                 showFeedback(messageLabel, "editWorkOrderDraft.saved", true);
-
-            } catch (IllegalArgumentException exception) {
+            
+            }catch (AccessDeniedException exception) {
+                showFeedback(
+                        messageLabel,
+                        "security.accessDenied",
+                        false
+                );
+                return;
+            }
+            
+            catch (IllegalArgumentException exception) {
                 showFeedback(messageLabel, exception.getMessage(), false);
 
             } catch (RuntimeException exception) {
@@ -294,6 +338,7 @@ private static final Logger LOGGER = LoggerFactory.getLogger(EditWorkOrderDraftV
                 UiKit.pageHeader(language.text("editWorkOrderDraft.title"), null ),
                 UiKit.formField(language.text("editWorkOrderDraft.description"), descriptionLabel),
                 originalField,
+                bookingField,
                 UiKit.formField(language.text("editWorkOrderDraft.mechanic"), mechanicFields),
                 UiKit.formField(language.text("editWorkOrderDraft.services"), serviceList
                 ),

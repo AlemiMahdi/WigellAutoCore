@@ -1,7 +1,7 @@
 package com.wac.autocore.ui.views;
 
-import com.wac.autocore.service.MechanicService;
 import com.wac.autocore.model.Mechanic;
+import com.wac.autocore.security.actions.SecuredMechanicActions;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.geometry.Pos;
@@ -20,11 +20,11 @@ public class MechanicView extends VBox {
     private static final int CARDS_PER_ROW = 2;
     private final LanguageManager language = LanguageManager.getInstance();
 
-    public MechanicView(MechanicService mechanicService) {
+    public MechanicView(SecuredMechanicActions securedMechanicActions) {
         setSpacing(20);
 
         // Hämtar aktuella mekaniker när vyn öppnas
-        List<Mechanic> mechanics = mechanicService.getLoadedMechanics();
+        List<Mechanic> mechanics = securedMechanicActions.getLoadedMechanics();
 
         if (mechanics.isEmpty()) {
             Label emptyLabel = UiKit.emptyText("");

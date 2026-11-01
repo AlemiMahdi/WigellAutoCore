@@ -89,9 +89,6 @@ public class WorkOrderRepository implements IWorkOrderRepository {
         validateSavedDraft(savedDraft);
         validateOriginalId(originalWorkOrderId, savedDraft);
 
-        WorkOrder original = entityManager.find(WorkOrder.class, originalWorkOrderId);
-        validateOriginal(original);
-
         Booking savedBooking = entityManager.find(
                 Booking.class,
                 savedDraft.getBookingId(),
@@ -113,7 +110,6 @@ public class WorkOrderRepository implements IWorkOrderRepository {
         savedBooking.setMechanicId(mechanicId == 0 ? null : mechanicId);
         savedBooking.getServices().clear();
         savedBooking.getServices().addAll(savedServices);
-        savedDraft.setOriginalWorkOrderId(originalWorkOrderId);
         savedBooking.setFrozenPrice(createFrozenPrices(savedServices));
 
         entityManager.merge(savedBooking);
@@ -147,9 +143,21 @@ public class WorkOrderRepository implements IWorkOrderRepository {
                 workOrder.changeStatus(WorkOrderStatus.COMPLETED);
 
                 if (mechanic != null) {
-                    mechanic.setAvailable(true);
-                    entityManager.merge(mechanic);
-                }
+                Long activeOrders = entityManager.createQuery(
+                        "SELECT COUNT(w) FROM WorkOrder w " +
+                        "WHERE w.mechanicId = :mechanicId " +
+                        "AND w.status = :status " +
+                        "AND w.id <> :workOrderId",
+                        Long.class
+                )
+                .setParameter("mechanicId", mechanic.getId())
+                .setParameter("status", WorkOrderStatus.IN_PROGRESS)
+                .setParameter("workOrderId", workOrderId)
+                .getSingleResult();
+
+                mechanic.setAvailable(activeOrders == 0);
+                entityManager.merge(mechanic);
+            }
 
                 if (booking != null && !sharesOriginalBooking(booking.getId(), workOrderId)) {
                     booking.setStatus("COMPLETED");
@@ -267,15 +275,22 @@ public class WorkOrderRepository implements IWorkOrderRepository {
     }
 
     private void validateOriginalId(Integer originalWorkOrderId, WorkOrder savedDraft) {
-        if (originalWorkOrderId != null) {
             if (savedDraft.getType() != WorkOrderTypeEnum.COMPLAINT) {
-                throw new IllegalArgumentException("confirmWorkOrder.originalWrongType");
+            savedDraft.setOriginalWorkOrderId(null);
+            return;
             }
 
-            if (originalWorkOrderId == savedDraft.getId()) {
-                throw new IllegalArgumentException("confirmWorkOrder.originalSelfReference");
+            if(originalWorkOrderId != null && originalWorkOrderId > 0) {
+                if (originalWorkOrderId.equals(savedDraft.getId())) {
+                    throw new IllegalArgumentException("confirmWorkOrder.originalSelfReference");
+                }
+                WorkOrder original = entityManager.find(WorkOrder.class, originalWorkOrderId);
+                validateOriginal(original);
+
+                savedDraft.setOriginalWorkOrderId(original.getId());
+            } else {
+                savedDraft.setOriginalWorkOrderId(null);
             }
-        }
     }
 
     private void validateOriginal(WorkOrder original) {

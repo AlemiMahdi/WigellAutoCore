@@ -156,6 +156,10 @@ public class WorkOrderService {
         if (errors.isEmpty()) {
             // Uppdatera minnet först när databasen har sparats.
             workOrder.changeStatus(WorkOrderStatus.CONFIRMED);
+            WorkOrder inMemory = findWorkOrderInMemory(workOrderId);
+            if (inMemory != null) {
+                inMemory.changeStatus(WorkOrderStatus.CONFIRMED);
+            }
             LOGGER.info("Workorder {} has been confirmed.", workOrderId);
 
         }
@@ -186,8 +190,16 @@ public class WorkOrderService {
             inMemory.changeStatus(WorkOrderStatus.COMPLETED);
 
             Mechanic mechanic = findMechanicInMemory(inMemory.getMechanicId());
+
             if (mechanic != null) {
-                mechanic.setAvailable(true);
+                boolean hasActiveOrders = Database.getWorkOrders().stream()
+                        .anyMatch(order ->
+                                order.getId() != workOrderId
+                                && order.getMechanicId() == mechanic.getId()
+                                && order.getStatus() == WorkOrderStatus.IN_PROGRESS
+                        );
+
+                mechanic.setAvailable(!hasActiveOrders);
             }
 
             Booking booking = findBookingInMemory(inMemory.getBookingId());
@@ -241,17 +253,31 @@ public class WorkOrderService {
         draft.setDraftComments(finalComments);
         draft.setOriginalWorkOrderId(originalWorkOrderId);
 
-        booking.setDate(plannedDate);
-        booking.setDurationMinutes(minutes);
-        booking.setMechanicId(mechanicId == 0 ? null : mechanicId);
+        //Uppdatera minnet till ShowBookingView
+        Booking targetBooking = Database.getBookings().stream()
+                .filter(b -> b.getId() == booking.getId())
+                .findFirst()
+                .orElse(booking);
+
+        targetBooking.setDate(plannedDate);
+        targetBooking.setDurationMinutes(minutes);
+        targetBooking.setMechanicId(mechanicId == 0 ? null : mechanicId);
 
 
         List<ServiceItem> updatedServices = new ArrayList<>();
         for (Integer serviceItem : selectedIds) {
             updatedServices.add(serviceItemRepository.findById(serviceItem));
         }
-        booking.setServices(updatedServices);
-        booking.setFrozenPrice(workOrderRepository.createFrozenPrices(updatedServices));
+        targetBooking.setServices(updatedServices);
+        targetBooking.setFrozenPrice(workOrderRepository.createFrozenPrices(updatedServices));
+
+        if(targetBooking != booking) {
+            booking.setDate(plannedDate);
+            booking.setDurationMinutes(minutes);
+            booking.setMechanicId(mechanicId);
+            booking.setServices(updatedServices);
+            booking.setFrozenPrice(targetBooking.getFrozenPrice());
+        }
     }
 
     private BigDecimal getBigDecimalPrice(BigDecimal price) {

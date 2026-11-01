@@ -2,13 +2,9 @@ package com.wac.autocore.ui.views;
 
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
-import com.wac.autocore.repository.BookingRepository;
-import com.wac.autocore.repository.WorkOrderRepository;
-import com.wac.autocore.service.GarageSystem;
-import com.wac.autocore.ui.ErrorHandler;
+import com.wac.autocore.security.actions.SecuredWorkOrderActions;
 import com.wac.autocore.ui.Navigator;
 import com.wac.autocore.ui.UiKit;
-import com.wac.autocore.service.WorkOrderService;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -17,13 +13,18 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
+import org.springframework.security.access.AccessDeniedException;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.List;
 
 // Start work order: lista med arbetsordrar till vänster och detaljer om vald order till höger.
 public class StartWorkOrderView extends VBox {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(StartWorkOrderView.class);
     private final LanguageManager language = LanguageManager.getInstance();
-    private final WorkOrderService workOrderService;
+    private final SecuredWorkOrderActions securedWorkOrderActions;
 
     // Vänster spalt (korten) och höger spalt (detaljkortet)
     private final VBox listColumn = new VBox(12);
@@ -36,8 +37,8 @@ public class StartWorkOrderView extends VBox {
     private WorkOrder selectedWorkOrder;
     private VBox selectedCard;
 
-    public StartWorkOrderView(WorkOrderService workOrderService) {
-        this.workOrderService = workOrderService;
+    public StartWorkOrderView( SecuredWorkOrderActions securedWorkOrderActions) {
+        this.securedWorkOrderActions = securedWorkOrderActions;
 
         setSpacing(20);
 
@@ -66,7 +67,7 @@ public class StartWorkOrderView extends VBox {
         selectedCard = null;
 
         // Bara ordrar som enligt statusreglerna får startas visas i listan.
-        List<WorkOrder> startable = workOrderService.findStartableWorkOrders();
+        List<WorkOrder> startable = securedWorkOrderActions.findStartableWorkOrders();
 
         startable.sort((first, second) ->
                 Integer.compare(second.getId(), first.getId())
@@ -190,22 +191,30 @@ public class StartWorkOrderView extends VBox {
         }
         try {
             // Servicen kontrollerar reglerna, ändrar status och sparar
-            workOrderService.startWorkOrder(workOrder.getId());
+            securedWorkOrderActions.startWorkOrder(workOrder.getId());
 
             // Lyckat: bind så att texten följer språkbytet, id läggs till sist
             UiKit.showSuccess(feedbackLabel, "");
             feedbackLabel.textProperty().bind(
                     language.text("startWorkOrder.success").concat(" " + workOrder.getId()));
-        } catch (IllegalArgumentException exception) {
+        } catch (AccessDeniedException exception) {
+            UiKit.showError(feedbackLabel, "");
+            feedbackLabel.textProperty().bind(
+                    language.text("security.accessDenied")
+            );
+            return;
+        }
+        catch (IllegalArgumentException exception) {
             // Regelfel: servicen skickar en språknyckel som vyn översätter.
             // Måste fångas före RuntimeException (den är en underklass).
             feedbackLabel.setWrapText(true);
             UiKit.showError(feedbackLabel, "");
             feedbackLabel.textProperty().bind(language.text(exception.getMessage()));
         } catch (RuntimeException exception) {
-            feedbackLabel.setWrapText(true);
-            ErrorHandler.show(feedbackLabel, exception, "startWorkOrder.saveError",
-                    "work order " + workOrder.getId());
+            // Lagringsfel: fast text till användaren, tekniska detaljer bara i loggen
+            UiKit.showError(feedbackLabel, "");
+            feedbackLabel.textProperty().bind(language.text("startWorkOrder.saveError"));
+            LOGGER.error("Could not start work order {}", workOrder.getId(), exception);
         }
 
         // Laddar om listan (startad order försvinner ur den).

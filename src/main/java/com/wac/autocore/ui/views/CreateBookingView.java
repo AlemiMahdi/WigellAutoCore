@@ -2,10 +2,9 @@ package com.wac.autocore.ui.views;
 
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
-import com.wac.autocore.ui.ErrorHandler;
+import com.wac.autocore.security.actions.SecuredBookingActions;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
-import com.wac.autocore.service.BookingService;
 
 import javafx.collections.FXCollections;
 import javafx.geometry.Pos;
@@ -32,25 +31,30 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+
 // Formulär för att boka in ett fordon: välj fordon, datum, mekaniker och skriv en beskrivning.
 public class CreateBookingView {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(CreateBookingView.class);
     private final LanguageManager language = LanguageManager.getInstance();
-    private  final BookingService bookingService;
+    private final SecuredBookingActions securedBookingActions;
 
     private final Booking sourceBooking;
 
     // tomt formulär
-    public CreateBookingView(BookingService bookingService) {
-    this(bookingService, null);
+    public CreateBookingView(SecuredBookingActions securedBookingActions) {
+    this(securedBookingActions, null);
 }
 
     // Tidigare bokning som underlag
     public CreateBookingView(
-            BookingService bookingService,
+            SecuredBookingActions securedBookingActions,
             Booking sourceBooking
     ) {
-        this.bookingService = bookingService;
+        this.securedBookingActions = securedBookingActions;
         this.sourceBooking = sourceBooking;
     }
 
@@ -253,7 +257,7 @@ public class CreateBookingView {
             }
 
             try {
-                bookingService.createBooking(
+                securedBookingActions.createBooking(
                     vehicleId,
                     date,
                     startTime,
@@ -275,10 +279,17 @@ public class CreateBookingView {
             );
             return;
 
-            } catch (RuntimeException exception) {
-                ErrorHandler.show(messageLabel, exception, "createBooking.saveError", "vehicle " + vehicleId);
-                return;
-            }
+        } catch (RuntimeException exception) {
+
+            // Visa ett generellt felmeddelande om databaslagringen misslyckas.
+            UiKit.showError(
+                messageLabel,
+                language.text("createBooking.saveError").get()
+            );
+
+            LOGGER.error("Could not create booking", exception);
+            return;
+        }
 
             // Tömmer formuläret så att nästa bokning kan skrivas in direkt
             vehicleCombo.getSelectionModel().clearSelection();

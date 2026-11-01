@@ -2,7 +2,8 @@ package com.wac.autocore.ui.views;
 
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.ServiceItem;
-import com.wac.autocore.service.ServiceItemService;
+import com.wac.autocore.security.actions.SecuredServiceItemActions;
+import org.springframework.security.access.AccessDeniedException;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.beans.property.ReadOnlyStringWrapper;
@@ -31,20 +32,30 @@ public class ServiceView extends VBox {
     private final Label feedbackLabel = UiKit.feedbackLabel();
     private final TextField priceField = new TextField();
     private final Label priceFeedbackLabel = UiKit.feedbackLabel();
-    private final ServiceItemService serviceItemService;
+    private final SecuredServiceItemActions securedServiceItemActions;
 
-    public ServiceView(ServiceItemService serviceItemService) {
-        this.serviceItemService = serviceItemService;
+    public ServiceView(
+            SecuredServiceItemActions securedServiceItemActions,
+            boolean canEditDuration,
+            boolean canEditPrice) {
+
+        this.securedServiceItemActions = securedServiceItemActions;
+
         setSpacing(20);
-
         buildTable();
 
         getChildren().addAll(
                 UiKit.pageHeader(language.text("services.title"), null),
-                table,
-                buildEditCard(),
-                buildPriceCard()
+                table
         );
+
+        if (canEditDuration) {
+            getChildren().add(buildEditCard());
+        }
+
+        if (canEditPrice) {
+            getChildren().add(buildPriceCard());
+        }
     }
 
     // Tabell: Service (fet) / Description (dämpad) / Price / Est. time (högerställda)
@@ -134,9 +145,14 @@ public class ServiceView extends VBox {
 
             try {
                 int minutes = Integer.parseInt(durationField.getText().trim());
-                serviceItemService.saveDuration(selected, minutes);
+                securedServiceItemActions.saveDuration(selected, minutes);
                 table.refresh();
                 UiKit.showSuccess(feedbackLabel, language.text("services.saved").get());
+            } catch (AccessDeniedException exception) {
+                UiKit.showError(
+                        feedbackLabel,
+                        language.text("security.accessDenied").get()
+                );
             } catch (NumberFormatException exception) {
                 UiKit.showError(feedbackLabel, language.text("services.invalidNumber").get());
             } catch (IllegalArgumentException exception) {
@@ -172,9 +188,14 @@ public class ServiceView extends VBox {
 
             try {
                 double price = Double.parseDouble(priceField.getText().trim().replace(",", "."));
-                serviceItemService.savePrice(selected, price);
+                securedServiceItemActions.savePrice(selected, price);
                 table.refresh();
                 UiKit.showSuccess(priceFeedbackLabel, language.text("services.priceSaved").get());
+            } catch (AccessDeniedException exception) {
+                UiKit.showError(
+                        feedbackLabel,
+                        language.text("security.accessDenied").get()
+                );
             } catch (NumberFormatException exception) {
                 UiKit.showError(priceFeedbackLabel, language.text("services.invalidPrice").get());
             } catch (IllegalArgumentException exception) {

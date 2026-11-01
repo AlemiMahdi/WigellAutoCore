@@ -4,13 +4,12 @@ import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Booking;
 import com.wac.autocore.model.Mechanic;
 import com.wac.autocore.model.Vehicle;
-import com.wac.autocore.service.BookingService;
+import com.wac.autocore.security.actions.SecuredBookingActions;
 import com.wac.autocore.ui.Navigator;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 
 import javafx.beans.property.ReadOnlyStringWrapper;
-import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -18,7 +17,6 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
-import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.HBox;
@@ -31,6 +29,7 @@ import javafx.scene.control.TextArea;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javafx.scene.Node;
@@ -41,13 +40,19 @@ import org.slf4j.LoggerFactory;
 // Visar alla bokningar i en tabell: fordon, datum, mekaniker, beskrivning och status.
 public class ShowBookingsView {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ShowWorkOrdersView.class);
-    private final LanguageManager language = LanguageManager.getInstance();
-    private final BookingService bookingService;
+        private static final Logger LOGGER = LoggerFactory.getLogger(ShowBookingsView.class);
+        private final LanguageManager language = LanguageManager.getInstance();
+        private final SecuredBookingActions securedBookingActions;
+        private final boolean canEdit;
 
-    public ShowBookingsView(BookingService bookingService) {
-        this.bookingService = bookingService;
-    }
+        public ShowBookingsView(
+                SecuredBookingActions securedBookingActions,
+                boolean canEdit
+        ){
+                this.securedBookingActions = securedBookingActions;
+                this.canEdit = canEdit;
+        }
+
 
     public VBox getView() {
 
@@ -61,14 +66,15 @@ public class ShowBookingsView {
             );
         }
 
+        List<Booking> loadedBookings;
         try {
 
-            for (Booking booking : bookingService.getAllBookings()) {
-                mechanicByBooking.put(
-                        booking.getId(),
-                        booking.getMechanicId()
-                );
-            }
+                loadedBookings = securedBookingActions.getAllBookings();
+                for(Booking booking : loadedBookings) {
+                        mechanicByBooking.put(
+                                booking.getId(), 
+                                booking.getMechanicId());
+                }
 
         } catch (RuntimeException e) {
             LOGGER.error("Could not load bookings", e);
@@ -78,6 +84,16 @@ public class ShowBookingsView {
         }
 
         TableView<Booking> table = new TableView<>();
+
+        TableColumn<Booking, String> idColumn =
+        new TableColumn<>("ID");
+        idColumn.setCellValueFactory(cell ->
+                new ReadOnlyStringWrapper(
+                        String.valueOf(cell.getValue().getId())
+                )
+        );
+
+        idColumn.getStyleClass().add("cell-muted");
 
         // Vehicle: "ABC123 · Volvo V70" i stället för bara ett ID
         TableColumn<Booking, String> vehicleColumn =
@@ -225,6 +241,7 @@ public class ShowBookingsView {
                 language.text("bookings.status")
         );
 
+        table.getColumns().add(idColumn);
         table.getColumns().add(vehicleColumn);
         table.getColumns().add(dateColumn);
         table.getColumns().add(startTimeColumn);
@@ -259,7 +276,7 @@ public class ShowBookingsView {
 
         ObservableList<Booking> bookings =
                 UiKit.newestFirst(
-                        Database.getBookings(),
+                        loadedBookings,
                         Booking::getId
                 );
 
@@ -390,25 +407,34 @@ public class ShowBookingsView {
                                         javafx.geometry.Pos.CENTER
                                 );
                             }
+        @Override
+        protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
 
-                            @Override
-                            protected void updateItem(
-                                    Void item,
-                                    boolean empty
-                            ) {
-                                super.updateItem(
-                                        item,
-                                        empty
-                                );
+                setText(null);
 
-                                setText(null);
+                Booking booking = null;
+                int index = getIndex();
 
-                                setGraphic(empty ? null : actions);
-                            }
-                        }
-        );
+                if (!empty
+                        && index >= 0
+                        && index < getTableView().getItems().size()) {
+                        booking = getTableView().getItems().get(index);
+                }
 
-        table.getColumns().add(editColumn);
+                boolean bookingEditable = canEditBookingServices(booking);
+
+                editButton.setVisible(bookingEditable);
+                editButton.setManaged(bookingEditable);
+
+                setGraphic(empty ? null : actions);
+                }
+        });
+
+        if (canEdit) {
+                table.getColumns().add(editColumn);    
+        }
+        
 
         // Skapar en ny bokning med den markerade som underlag.
         Button copyButton = UiKit.primaryButton("");
@@ -426,7 +452,7 @@ public class ShowBookingsView {
             if (selectedBooking != null) {
                 showBookingForm(
                         root,
-                        new CreateBookingView(bookingService, selectedBooking).getView()
+                        new CreateBookingView(securedBookingActions ,selectedBooking).getView()
                 );
             }
         });
@@ -434,27 +460,24 @@ public class ShowBookingsView {
         root.getChildren().addAll(buildHeader(copyButton), table);
 
         // Dubbelklick på en bokning öppnar formuläret.
+        if (canEdit) {
         table.setRowFactory(tableView -> {
 
-            TableRow<Booking> row =
-                    new TableRow<>();
+                TableRow<Booking> row = new TableRow<>();
 
-            row.setOnMouseClicked(event -> {
-
-                if (event.getButton()
-                        == MouseButton.PRIMARY
+                row.setOnMouseClicked(event -> {
+                if (event.getButton() == MouseButton.PRIMARY
                         && event.getClickCount() == 2
-                        && !row.isEmpty()) {
+                        && !row.isEmpty()
+                        && canEditBookingServices(row.getItem())) {
 
-                    openBookingEditor(
-                            root,
-                            row.getItem()
-                    );
+                openBookingEditor(root, row.getItem());
                 }
-            });
+                });
 
-            return row;
+                return row;
         });
+        }
 
         return root;
     }
@@ -515,7 +538,7 @@ public class ShowBookingsView {
     private void openBookingEditor(VBox root, Booking booking) {
         showBookingForm(
                 root,
-                new EditBookingServicesView(bookingService).getView(booking)
+                new EditBookingServicesView(securedBookingActions).getView(booking)
         );
     }
 
@@ -533,37 +556,42 @@ public class ShowBookingsView {
         return buildHeader(null);
     }
 
-    // Rubrik med "+ New booking" till höger.
-    private HBox buildHeader(Button copyButton) {
+        // Rubrik med "+ New booking" till höger.
+        private HBox buildHeader(Button copyButton) {
 
-        Button newBookingButton =
-                UiKit.primaryButton(
-                        "+ New booking"
+        // READ_ONLY får bara se rubriken
+        if (!canEdit) {
+                return UiKit.pageHeader(
+                        language.text("bookings.title"),
+                        null
                 );
+        }
+
+        // ADMIN och WORKSHOP får skapa bokningar
+        Button newBookingButton =
+                UiKit.primaryButton("+ New booking");
 
         newBookingButton.textProperty().bind(
                 language.text("bookings.new")
         );
 
         newBookingButton.setOnAction(
-                event ->
-                        Navigator.goTo(
-                                "create-booking"
-                        )
+                event -> Navigator.goTo("create-booking")
         );
 
         VBox actions = new VBox(8, newBookingButton);
         actions.setAlignment(javafx.geometry.Pos.TOP_RIGHT);
 
         if (copyButton != null) {
-            actions.getChildren().add(copyButton);
+                actions.getChildren().add(copyButton);
         }
 
         return UiKit.pageHeader(
                 language.text("bookings.title"),
                 actions
         );
-    }
+        }
+
 
     // Visas om bokningarna inte gick att läsa från databasen.
     private VBox buildErrorView(
@@ -610,4 +638,29 @@ public class ShowBookingsView {
                 + " "
                 + vehicleId;
     }
+
+    
+        private boolean canEditBookingServices(Booking booking) {
+
+        if (booking == null) {
+                return false;
+        }
+
+        String status = booking.getStatus();
+
+        if (!"BOOKED".equals(status)
+                && !"WORK_ORDER_CREATED".equals(status)) {
+                return false;
+        }
+
+        // Alla kopplade arbetsordrar måste tillåta
+        // ändring av bokningens tjänster.
+        return Database.getWorkOrders().stream()
+                .filter(order ->
+                        order.getBookingId() == booking.getId())
+                .allMatch(order ->
+                        order.getStatus() != null
+                        && order.getStatus().allowsServiceChanges());
+        }
+
 }

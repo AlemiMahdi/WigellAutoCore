@@ -1,7 +1,7 @@
 package com.wac.autocore.ui.views;
 
 import com.wac.autocore.model.Invoice;
-import com.wac.autocore.service.PaymentService;
+import com.wac.autocore.security.actions.SecuredPaymentActions;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 import com.wac.autocore.ui.ErrorHandler;
@@ -19,7 +19,7 @@ public class ProcessPaymentView {
 
     private final LanguageManager language = LanguageManager.getInstance();
 
-    public VBox getView(PaymentService paymentService) {
+    public VBox getView(SecuredPaymentActions securedPaymentActions) {
 
         // --- Faktura ---
         // Visar alla fakturor (som konsolversionen), med belopp och om den är betald
@@ -35,7 +35,7 @@ public class ProcessPaymentView {
                 return null; // Används inte – listan går inte att skriva i
             }
         });
-        refreshInvoices(invoiceBox);
+        refreshInvoices(invoiceBox, securedPaymentActions);
 
         invoiceBox.promptTextProperty().bind(language.text(
                 invoiceBox.getItems().isEmpty() ? "processPayment.noInvoicesPrompt" : "processPayment.invoiceSelectPrompt"
@@ -103,11 +103,11 @@ public class ProcessPaymentView {
 
         processButton.setOnAction(event -> {
             try {
-                paymentService.processPayment(invoiceBox.getValue(), paymentTypeBox.getValue());
+                securedPaymentActions.processPayment(invoiceBox.getValue(), paymentTypeBox.getValue());
                 UiKit.showSuccess(messageLabel, language.text("processPayment.success").get());
                 invoiceBox.setValue(null);
                 paymentTypeBox.setValue(null);
-                refreshInvoices(invoiceBox);
+                refreshInvoices(invoiceBox, securedPaymentActions);
             } catch (RuntimeException exception) {
                 ErrorHandler.show(
                         messageLabel,
@@ -143,12 +143,17 @@ public class ProcessPaymentView {
                 + language.text(invoice.isPaid() ? "badge.PAID" : "badge.UNPAID").get();
     }
 
-    private void refreshInvoices(ComboBox<Invoice> invoiceBox) {
+    
+    private void refreshInvoices(
+            ComboBox<Invoice> invoiceBox,
+            SecuredPaymentActions securedPaymentActions) {
+
         invoiceBox.getItems().setAll(
             UiKit.newestFirst(
-                PaymentService.findUnpaidInvoices(),
-                    Invoice::getId
+                securedPaymentActions.findUnpaidInvoices(),
+                Invoice::getId
             )
         );
     }
+
 }

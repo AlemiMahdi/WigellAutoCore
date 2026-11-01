@@ -2,8 +2,6 @@ package com.wac.autocore.ui.views;
 
 import com.wac.autocore.data.Database;
 import com.wac.autocore.model.*;
-import com.wac.autocore.service.WorkOrderService;
-import com.wac.autocore.ui.ErrorHandler;
 import com.wac.autocore.ui.Navigator;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
@@ -14,16 +12,21 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import com.wac.autocore.security.actions.SecuredWorkOrderActions;
+import org.springframework.security.access.AccessDeniedException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 // Complete work order: ett centrerat kort per påbörjad (STARTED) arbetsorder.
 public class CompleteWorkOrderView {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(CompleteWorkOrderView.class);
     // Kortens maxbredd – ungefär som i designen
     private static final double CARD_MAX_WIDTH = 680;
 
     private final LanguageManager language = LanguageManager.getInstance();
-    private final WorkOrderService workOrderService;
+    private final SecuredWorkOrderActions securedWorkOrderActions;
 
 
     // Meddelandet ligger ovanför korten så att det syns kvar när korten byggs om
@@ -31,8 +34,8 @@ public class CompleteWorkOrderView {
     private final VBox cardList = new VBox(20);
     private final VBox root;
 
-    public CompleteWorkOrderView(WorkOrderService workOrderService) {
-        this.workOrderService = workOrderService;
+    public CompleteWorkOrderView(SecuredWorkOrderActions securedWorkOrderActions) {
+        this.securedWorkOrderActions = securedWorkOrderActions;
 
         statusLabel.setMaxWidth(CARD_MAX_WIDTH);
         // Tomt meddelande ska inte ta plats ovanför korten
@@ -64,8 +67,8 @@ public class CompleteWorkOrderView {
         cardList.getChildren().clear();
 
         for (WorkOrder order : UiKit.newestFirst(
-                Database.getWorkOrders(),
-                WorkOrder::getId)) {
+            securedWorkOrderActions.findAll(), 
+            WorkOrder::getId)) {
             if (order.getStatus().canChangeTo(WorkOrderStatus.COMPLETED)) {
                 Button completeButton = UiKit.successButton("Complete work order");
                 completeButton.textProperty().bind(language.text("completeWorkOrder.button"));
@@ -151,17 +154,25 @@ public class CompleteWorkOrderView {
         statusLabel.textProperty().unbind();
 
         try {
-            workOrderService.completeWorkOrder(workOrderId);
+            securedWorkOrderActions.completeWorkOrder(workOrderId);
             UiKit.showSuccess(statusLabel, "");
             statusLabel.textProperty().bind(language.text("completeWorkOrder.success"));
             return true;
-        } catch (IllegalArgumentException exception) {
+        }  catch(AccessDeniedException exception){
+            UiKit.showError(statusLabel,"");
+            statusLabel.textProperty().bind(language.text("security.accessDenied"));
+            return false;
+        }
+         catch (IllegalArgumentException exception) {
             // Regelfel: servicen skickar en språknyckel (t.ex. fel status)
             UiKit.showError(statusLabel, "");
             statusLabel.textProperty().bind(language.text(exception.getMessage()));
             return false;
         } catch (RuntimeException exception) {
-            ErrorHandler.show(statusLabel, exception, "completeWorkOrder.error", "work order " + workOrderId);
+            // Lagringsfel: fast text till användaren, tekniska detaljer i loggen
+            UiKit.showError(statusLabel, "");
+            statusLabel.textProperty().bind(language.text("completeWorkOrder.error"));
+            LOGGER.error("Could not complete work order {}", workOrderId, exception);
             return false;
         }
     }
