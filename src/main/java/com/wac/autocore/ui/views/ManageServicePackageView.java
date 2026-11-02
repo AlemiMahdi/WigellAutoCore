@@ -5,6 +5,7 @@ import com.wac.autocore.data.Database;
 import com.wac.autocore.model.ServiceItem;
 import com.wac.autocore.model.ServicePackage;
 import com.wac.autocore.security.actions.SecuredServicePackageActions;
+import com.wac.autocore.ui.ErrorHandler;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 
@@ -15,13 +16,8 @@ import javafx.scene.layout.VBox;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class ManageServicePackageView {
 
-    private static final Logger LOGGER =
-        LoggerFactory.getLogger(ManageServicePackageView.class);
     private final LanguageManager language = LanguageManager.getInstance();
     private final SecuredServicePackageActions securedServicePackageActions;
 
@@ -89,12 +85,9 @@ public class ManageServicePackageView {
             }
             try {
                 securedServicePackageActions.updateServices(selectedPackage, selectedServices);
-            } catch (IllegalArgumentException exception) {
-                UiKit.showError(messageLabel, language.text(exception.getMessage()).get());
-                return;
             } catch (RuntimeException exception) {
-                UiKit.showError(messageLabel, language.text("manageServicePackage.saveError").get());
-                LOGGER.error("Could not update services in service package {}", selectedPackage.getId(), exception);
+                ErrorHandler.show(messageLabel, exception, "manageServicePackage.saveError",
+                        "service package " + selectedPackage.getId());
                 return;
             }
             UiKit.showSuccess(messageLabel, language.text("manageServicePackage.success").get());

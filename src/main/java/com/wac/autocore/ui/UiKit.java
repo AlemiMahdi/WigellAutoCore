@@ -392,6 +392,7 @@ public final class UiKit {
     // Samma etikett kan visa fel ena gången och lyckat nästa,
     // därför tar vi bort den gamla färgklassen innan vi lägger till den nya.
     private static void showFeedback(Label label, String message, String styleClass) {
+        label.textProperty().unbind();
         label.getStyleClass().removeAll("error-text", "success-text", "info-text");
         label.getStyleClass().add(styleClass);
         label.setText(message);

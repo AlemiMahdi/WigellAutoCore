@@ -3,7 +3,7 @@ package com.wac.autocore.ui.views;
 
 import com.wac.autocore.DTO.InvoiceableOrder;
 import com.wac.autocore.model.*;
-import com.wac.autocore.exception.InvoiceValidationException;
+import com.wac.autocore.ui.ErrorHandler;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 import com.wac.autocore.security.actions.SecuredInvoiceActions;
@@ -18,15 +18,10 @@ import javafx.util.StringConverter;
 
 import java.time.LocalDate;
 
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
-
 import java.util.List;
 
 public class CreateInvoiceView {
 
-    private static final Logger LOGGER =
-            LoggerFactory.getLogger(CreateInvoiceView.class);
     public static VBox build(SecuredInvoiceActions securedInvoiceActions) {
         LanguageManager language = LanguageManager.getInstance();
 
@@ -244,18 +239,9 @@ public class CreateInvoiceView {
 
                 loadCompletedWorkOrders(workOrderBox, securedInvoiceActions);
 
-            } catch (InvoiceValidationException exception) {
-                UiKit.showError(
-                        statusLabel,
-                        language.text(exception.getMessage()).get()
-                );
-
             } catch (RuntimeException exception) {
-
-                UiKit.showError(statusLabel,
-                        language.text("createInvoice.saveError").get()
-                );
-                LOGGER.error("Could not create invoice for work order {}", workOrderId, exception);
+                ErrorHandler.show(statusLabel, exception, "createInvoice.saveError", "work order " + workOrderId);
+                return;
             }
 
 

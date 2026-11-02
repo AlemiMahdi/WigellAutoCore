@@ -4,7 +4,7 @@ import com.wac.autocore.data.Database;
 import com.wac.autocore.model.Customer;
 import com.wac.autocore.model.Vehicle;
 import com.wac.autocore.security.actions.SecuredVehicleActions;
-import org.springframework.security.access.AccessDeniedException;
+import com.wac.autocore.ui.ErrorHandler;
 import com.wac.autocore.ui.UiKit;
 import com.wac.autocore.ui.language.LanguageManager;
 import javafx.collections.FXCollections;
@@ -16,15 +16,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 public class CreateVehicleView {
-
-    private static final Logger LOGGER =
-            LoggerFactory.getLogger(CreateVehicleView.class);
-
     /**
      * Bygger upp formuläret för att skapa ett nytt fordon.
      * Returnerar en VBox som kan visas i contentPane i AutoCoreApp.
@@ -82,18 +74,8 @@ public class CreateVehicleView {
             Vehicle vehicle;
             try {
                 vehicle = securedVehicleActions.createVehicle(registrationNumber, brand, model, year, customerId);
-            }catch (AccessDeniedException exception){
-                UiKit.showError(
-                    statusLabel, 
-                    language.text("security.accessDenied").get());
-                    return;
-            }
-             catch (IllegalArgumentException exception) {
-                UiKit.showError(statusLabel, language.text(exception.getMessage()).get());
-                return;
-            } catch (RuntimeException exception) {
-                UiKit.showError(statusLabel, language.text("vehicle.create.error").get());
-                LOGGER.error("Could not create vehicle", exception);
+            }catch (RuntimeException exception) {
+                ErrorHandler.show(statusLabel, exception, "vehicle.create.error", "customer " + customerId);
                 return;
             }
 

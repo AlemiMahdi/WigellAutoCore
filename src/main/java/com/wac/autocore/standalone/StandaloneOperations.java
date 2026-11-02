@@ -33,7 +33,7 @@ public class StandaloneOperations {
     // Operation 1: byter status på arbetsordern om regeln i WorkOrderStatus tillåter det.
     // Returnerar true om bytet godkändes, false om det nekades.
     public boolean changeWorkOrderStatus(WorkOrder workOrder, WorkOrderStatus newStatus) {
-        if (!canModifyData()) {
+        if (!canModifyData("changeWorkOrderStatus")) {
             return false;
         }
         try {
@@ -47,18 +47,22 @@ public class StandaloneOperations {
     // Operation 2: kontrollerar om mekanikern är ledig vid önskad tid.
     // Returnerar true om bokningen kan göras, false om den krockar.
     public boolean canBook(int mechanicId, LocalDate date, LocalTime startTime, int durationMinutes) {
-        if (!canModifyData()) {
+        if (!canModifyData("canBook")) {
             return false;
         }
         return !bookingService.hasOverlappingBooking(mechanicId, date, startTime, durationMinutes);
     }
 
     // Samma roller som @PreAuthorize("hasAnyRole('ADMIN', 'WORKSHOP')") i appen.
-    private boolean canModifyData() {
+    private boolean canModifyData(String operation) {
+        if (!authService.isLoggedIn()) {
+            LOGGER.warn("Not authenticated, {} denied", operation);
+            return false;
+        }
         if (authService.hasRole(Role.ADMIN) || authService.hasRole(Role.WORKSHOP)) {
             return true;
         }
-        LOGGER.warn("Access denied for user {}", authService.getCurrentUsername());
+        LOGGER.warn("Access denied for user {} on {}", authService.getCurrentUsername(), operation);
         return false;
     }
 }
